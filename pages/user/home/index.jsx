@@ -29,7 +29,7 @@ export default function UserHome() {
         },
       };
 
-      console.log("=== MSAL Token Info ===");
+      console.log("==== MSAL Token Info ====");
       console.log("Access Token:", info.accessToken);
       console.log("ID Token:", info.idToken);
       console.log("Token Type:", info.tokenType);
