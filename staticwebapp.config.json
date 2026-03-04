@@ -4,5 +4,8 @@
       "route": "/*",
       "allowedRoles": ["anonymous"]
     }
-  ]
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html"
+  }
 }
