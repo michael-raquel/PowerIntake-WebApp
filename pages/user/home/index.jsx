@@ -1,13 +1,11 @@
 import { useMsal } from "@azure/msal-react";
-import { loginRequest, graphConfig } from "@/lib/msalConfig";
+import { loginRequest } from "@/lib/msalConfig";
 import { useState } from "react";
 
 export default function UserHome() {
   const { instance, accounts } = useMsal();
   const account = accounts[0];
   const [tokenInfo, setTokenInfo] = useState(null);
-  const [groups, setGroups] = useState([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
 
   async function fetchTokenInfo() {
     try {
@@ -46,93 +44,17 @@ export default function UserHome() {
     }
   }
 
-  async function fetchUserGroups() {
-    setLoadingGroups(true);
-    try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account,
-      });
-
-      const groupsResponse = await fetch(graphConfig.graphGroupsEndpoint, {
-        headers: {
-          Authorization: `Bearer ${response.accessToken}`,
-        },
-      });
-
-      const data = await groupsResponse.json();
-
-      const filteredGroups = data.value
-        .filter((item) => item["@odata.type"] === "#microsoft.graph.group")
-        .map((group) => ({
-          id: group.id,
-          displayName: group.displayName,
-          securityEnabled: group.securityEnabled,
-          mailEnabled: group.mailEnabled,
-        }));
-
-      console.log("==== User Groups ====");
-      console.table(filteredGroups);
-
-      setGroups(filteredGroups);
-    } catch (error) {
-      console.error("Failed to fetch groups:", error);
-    } finally {
-      setLoadingGroups(false);
-    }
-  }
-
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Welcome, {account?.name}</h1>
       <p className="text-zinc-500 text-sm">Username: {account?.username}</p>
 
-      <div className="flex gap-3">
-        <button
-          onClick={fetchTokenInfo}
-          className="rounded-full bg-black text-white px-6 py-2 hover:bg-zinc-800"
-        >
-          Fetch Token Info
-        </button>
-        <button
-          onClick={fetchUserGroups}
-          className="rounded-full bg-blue-600 text-white px-6 py-2 hover:bg-blue-700"
-        >
-          {loadingGroups ? "Loading..." : "Fetch My Groups"}
-        </button>
-      </div>
-
-      {/* User Groups */}
-      {groups.length > 0 && (
-        <div className="border rounded-xl p-4 bg-zinc-50 dark:bg-zinc-900 space-y-3">
-          <h2 className="font-semibold text-lg">My Groups ({groups.length})</h2>
-          <div className="grid grid-cols-1 gap-2">
-            {groups.map((group) => (
-              <div
-                key={group.id}
-                className="flex items-center justify-between border rounded-lg p-3 bg-white dark:bg-black"
-              >
-                <div>
-                  <p className="font-medium text-sm">{group.displayName}</p>
-                  <p className="text-xs text-zinc-400">{group.id}</p>
-                </div>
-                <div className="flex gap-2">
-                  {group.securityEnabled && (
-                    <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
-                      Security
-                    </span>
-                  )}
-                  {group.mailEnabled && (
-                    <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                      Mail
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <button
+        onClick={fetchTokenInfo}
+        className="rounded-full bg-black text-white px-6 py-2 hover:bg-zinc-800"
+      >
+        Fetch Token Info
+      </button>
 
       {tokenInfo && (
         <div className="space-y-4">
