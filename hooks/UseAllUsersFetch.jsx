@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export function useAllUsers() {
   const [users, setUsers] = useState([]);
@@ -14,7 +13,7 @@ export function useAllUsers() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${API_BASE_URL}/users`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });

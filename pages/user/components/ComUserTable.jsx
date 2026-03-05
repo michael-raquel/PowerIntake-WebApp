@@ -119,7 +119,7 @@ export default function UsersTable() {
 
       {!loading && filteredUsers.length > 0 && (
         <p className="text-xs text-muted-foreground text-right">
-          Showing {filteredUsers.length} of {count} users
+        {filteredUsers.length} of {count} users
         </p>
       )}
     </div>
