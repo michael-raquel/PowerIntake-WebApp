@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { loginRequest } from "@/lib/msalConfig";
+import { Button} from "@/components/ui/button";
+
 
 export default function Home() {
   const isAuthenticated = useIsAuthenticated();
@@ -31,6 +33,10 @@ export default function Home() {
           </button>
         </div>
       )}
+
+      <div className="absolute bottom-4 text-xs text-zinc-400">
+       <Button onClick={() => router.push("/user")}>Go to User Page</Button>
+    </div>
     </div>
   );
 }
