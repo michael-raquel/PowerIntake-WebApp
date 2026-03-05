@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 
-
 export function useAllUsers() {
   const [users, setUsers] = useState([]);
   const [count, setCount] = useState(0);
@@ -13,7 +12,7 @@ export function useAllUsers() {
         setLoading(true);
         setError(null);
 
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/user`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users`, { 
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
