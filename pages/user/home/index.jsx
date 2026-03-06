@@ -1,11 +1,27 @@
 import { useMsal } from "@azure/msal-react";
 import { loginRequest } from "@/lib/msalConfig";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useFetchNote } from "@/hooks/UseFetchNotes";
 
 export default function UserHome() {
   const { instance, accounts } = useMsal();
   const account = accounts[0];
   const [tokenInfo, setTokenInfo] = useState(null);
+  const [accessToken, setAccessToken] = useState(null);
+
+  useEffect(() => {
+    if (!account) return;
+
+    instance
+      .acquireTokenSilent({ ...loginRequest, account })
+      .then((response) => setAccessToken(response.accessToken))
+      .catch((err) => console.error("Silent token acquisition failed:", err));
+  }, [account, instance]);
+
+
+  const { notes, count, loading, error } = useFetchNote(accessToken);
+  console.log("Notes:", notes);
+
 
   async function fetchTokenInfo() {
     try {
