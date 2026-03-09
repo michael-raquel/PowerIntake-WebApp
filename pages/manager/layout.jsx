@@ -1,4 +1,4 @@
-import AuthGuard from "@/components/ui/AuthGuard";
+import AuthGuard from "@/components/AuthGuard";
 
 export default function ManagerLayout({ children }) {
   return (
