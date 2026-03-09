@@ -3,8 +3,13 @@ import { useFetchNote } from "@/hooks/UseFetchNotes";
 
 export default function HomePage() {
   const { account, accessToken, tokenInfo } = useAuth();
+
+  // FETCH NOTES USING THE ACCESS TOKEN
+  // THIS IS HOW TO USE THE ACCESS TOKEN TO FETCH PROTECTED RESOURCES
   const { notes, count, loading, error } = useFetchNote(accessToken);
-  //console.log("Fetched notes:", notes);
+  console.log("Fetched notes:", notes);
+  // AN EXAMPLE ^^^^^
+  
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Welcome, {account?.name}</h1>
