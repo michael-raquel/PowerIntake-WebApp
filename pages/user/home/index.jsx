@@ -1,76 +1,14 @@
-import { useMsal } from "@azure/msal-react";
-import { loginRequest } from "@/lib/msalConfig";
-import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
 import { useFetchNote } from "@/hooks/UseFetchNotes";
 
 export default function HomePage() {
-  const { instance, accounts } = useMsal();
-  const account = accounts[0];
-  const [tokenInfo, setTokenInfo] = useState(null);
-  const [accessToken, setAccessToken] = useState(null);
-
-  useEffect(() => {
-    if (!account) return;
-
-    instance
-      .acquireTokenSilent({ ...loginRequest, account })
-      .then((response) => setAccessToken(response.accessToken))
-      .catch((err) => console.error("Silent token acquisition failed:", err));
-  }, [account, instance]);
-
-
+  const { account, accessToken, tokenInfo } = useAuth();
   const { notes, count, loading, error } = useFetchNote(accessToken);
-  console.log("Notes:", notes);
-
-
-  async function fetchTokenInfo() {
-    try {
-      const response = await instance.acquireTokenSilent({
-        ...loginRequest,
-        account,
-      });
-
-      const info = {
-        accessToken: response.accessToken,
-        idToken: response.idToken,
-        tokenType: response.tokenType,
-        scopes: response.scopes,
-        expiresOn: response.expiresOn?.toString(),
-        account: {
-          name: response.account.name,
-          username: response.account.username,
-          localAccountId: response.account.localAccountId,
-          tenantId: response.account.tenantId,
-          environment: response.account.environment,
-        },
-      };
-
-      console.log("==== MSAL Token Info ====");
-      console.log("Access Token:", info.accessToken);
-      console.log("ID Token:", info.idToken);
-      console.log("Token Type:", info.tokenType);
-      console.log("Scopes:", info.scopes);
-      console.log("Expires On:", info.expiresOn);
-      console.log("Account:", info.account);
-      console.table(info.account);
-
-      setTokenInfo(info);
-    } catch (error) {
-      console.error("Token acquisition failed:", error);
-    }
-  }
-
+  //console.log("Fetched notes:", notes);
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <h1 className="text-2xl font-bold">Welcome, {account?.name}</h1>
       <p className="text-zinc-500 text-sm">Username: {account?.username}</p>
-
-      <button
-        onClick={fetchTokenInfo}
-        className="rounded-full bg-black text-white px-6 py-2 hover:bg-zinc-800"
-      >
-        Fetch Token Info
-      </button>
 
       {tokenInfo && (
         <div className="space-y-4">
