@@ -1,6 +1,6 @@
 import AuthGuard from "@/components/AuthGuard";
 
-export default function UserLayout({ children }) {
+export default function SuperAdminLayout({ children }) {
   return (
     <AuthGuard>
       {children}

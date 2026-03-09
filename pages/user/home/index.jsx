@@ -3,7 +3,7 @@ import { loginRequest } from "@/lib/msalConfig";
 import { useState, useEffect } from "react";
 import { useFetchNote } from "@/hooks/UseFetchNotes";
 
-export default function UserHome() {
+export default function HomePage() {
   const { instance, accounts } = useMsal();
   const account = accounts[0];
   const [tokenInfo, setTokenInfo] = useState(null);
