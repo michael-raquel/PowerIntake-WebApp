@@ -21,7 +21,8 @@ const SideNavbar = () => {
   const router = useRouter();
 
   const account = accounts[0];
-  const hasProfileImage = false; 
+  const currentRole = router.pathname.split('/')[1];
+  
   const initials = account?.name
     ?.split(' ')
     .map(n => n[0])
@@ -43,13 +44,23 @@ const SideNavbar = () => {
     setShowLogout(false);
   }, [router.pathname]);
 
-  const menuItems = [
-    { icon: Home, label: 'Home', path: '/' },
-    { icon: Ticket, label: 'Ticket', path: '/ticket' },
-    { icon: LifeBuoy, label: 'Support', path: '/support' },
-    { icon: Users, label: 'Manage', path: '/manage' },
-    { icon: Settings, label: 'Settings', path: '/settings' }
-  ];
+  const getMenuItems = () => {
+    const baseItems = [
+      { icon: Home, label: 'Home', path: `/${currentRole}/home` },
+      { icon: Ticket, label: 'Ticket', path: `/${currentRole}/ticket` },
+      { icon: LifeBuoy, label: 'Support', path: `/${currentRole}/support` },
+    ];
+
+    if (['manager', 'system-admin', 'super-admin'].includes(currentRole)) {
+      baseItems.push({ icon: Users, label: 'Manage', path: `/${currentRole}/manage` });
+    }
+
+    baseItems.push({ icon: Settings, label: 'Settings', path: `/${currentRole}/settings` });
+
+    return baseItems;
+  };
+
+  const menuItems = getMenuItems();
 
   const handleLogout = () => {
     instance.logoutRedirect({ postLogoutRedirectUri: "/" });
@@ -68,13 +79,9 @@ const SideNavbar = () => {
 
           <div className="relative">
             <button onClick={() => setShowLogout(!showLogout)} className="w-8 h-8 rounded-full overflow-hidden">
-              {hasProfileImage ? (
-                <Image src="/path/to/profile.jpg" alt={account?.name} width={32} height={32} className="object-cover" />
-              ) : (
-                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-sm font-medium">
-                  {initials}
-                </div>
-              )}
+              <div className="w-full h-full bg-gray-200 flex items-center justify-center text-sm font-medium">
+                {initials}
+              </div>
             </button>
 
             {showLogout && (
@@ -115,6 +122,7 @@ const SideNavbar = () => {
     );
   }
 
+  // Desktop View
   return (
     <>
       <aside className={`fixed top-0 left-0 h-screen bg-white border-r transition-all duration-300 z-50 
@@ -159,13 +167,9 @@ const SideNavbar = () => {
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50
                 ${isCollapsed ? 'justify-center' : ''}`}>
               <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                {hasProfileImage ? (
-                  <Image src="/path/to/profile.jpg" alt={account?.name} width={32} height={32} className="object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center text-sm font-medium">
-                    {initials}
-                  </div>
-                )}
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center text-sm font-medium">
+                  {initials}
+                </div>
               </div>
               {!isCollapsed && (
                 <div className="flex-1 text-left">

@@ -2,19 +2,29 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { loginRequest } from "@/lib/msalConfig";
-import { Button} from "@/components/ui/button";
 
+
+const getUserRole = (account) => {
+
+  const roles = account?.idTokenClaims?.roles || [];
+  
+  if (roles.includes('SuperAdmin')) return 'super-admin';
+  if (roles.includes('SystemAdmin')) return 'system-admin';
+  if (roles.includes('Manager')) return 'manager';
+  return 'user'; 
+};
 
 export default function Home() {
   const isAuthenticated = useIsAuthenticated();
-  const { instance } = useMsal();
+  const { instance, accounts } = useMsal();
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push("/user/home");
+    if (isAuthenticated && accounts[0]) {
+      const role = getUserRole(accounts[0]);
+      router.push(`/${role}/home`);
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, accounts, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
@@ -33,10 +43,6 @@ export default function Home() {
           </button>
         </div>
       )}
-
-      <div className="absolute bottom-4 text-xs text-zinc-400">
-       <Button onClick={() => router.push("/user")}>Go to User Page</Button>
-    </div>
     </div>
   );
 }
