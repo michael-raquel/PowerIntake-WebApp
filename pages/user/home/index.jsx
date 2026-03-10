@@ -26,6 +26,7 @@ export default function HomePage() {
             <p><span className="font-medium">Local Account ID:</span> {tokenInfo.account.localAccountId}</p>
             <p><span className="font-medium">Tenant ID:</span> {tokenInfo.account.tenantId}</p>
             <p><span className="font-medium">Environment:</span> {tokenInfo.account.environment}</p>
+            <p><span className="font-medium">Roles:</span> {tokenInfo.account.roles?.join(", ") || "None"}</p>
           </div>
 
           {/* Token Details */}
