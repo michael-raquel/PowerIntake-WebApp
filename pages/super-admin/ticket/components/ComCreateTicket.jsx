@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { cn }     from "@/lib/utils";
 import { useAuth }             from "@/context/AuthContext";
-import { useCreateTicket }     from "../hooks/useCreateTicket";
+import { useCreateTicket }     from "@/hooks/useCreateTicket";
 import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
 
 const TIMEZONES = [
