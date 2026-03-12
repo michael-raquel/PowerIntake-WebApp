@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { loginRequest } from "@/lib/msalConfig";
 
-
+// testetst
 const getUserRole = (account) => {
 
   const roles = account?.idTokenClaims?.roles || [];
