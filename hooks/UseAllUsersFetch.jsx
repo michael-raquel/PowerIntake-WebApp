@@ -7,7 +7,6 @@ export function useAllUsers() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log("This is the API URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
     const fetchUsers = async () => {
       try {
         setLoading(true);
