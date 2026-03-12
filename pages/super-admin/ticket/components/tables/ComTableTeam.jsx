@@ -14,24 +14,27 @@ const getPriorityColor = (priority) => {
 };
 
 const cardFields = [
-  { key: 'userName', label: 'User' },
-  { key: 'title', label: 'Title' },
-  { key: 'category', label: 'Category' },
-  { key: 'priority', label: 'Priority' },
-  { key: 'created', label: 'Created' },
-  { key: 'status', label: 'Status' },
-  { key: 'daysOpen', label: 'Days Open' },
-  { key: 'technician', label: 'Technician' },
+  { key: 'v_username', label: 'User' },
+  { key: 'v_title', label: 'Title' },
+  { key: 'v_ticketcategory', label: 'Category' },
+  { key: 'v_priority', label: 'Priority' },
+  { key: 'v_createdat', label: 'Created' },
+  { key: 'v_status', label: 'Status' },
+  { key: 'v_technicianname', label: 'Technician' },
 ];
 
 const COLUMNS = [
   'Ticket ID', 'User', 'Title', 'Category',
-  'Priority', 'Created', 'Status', 'Days', 'Technician',
+  'Priority', 'Created', 'Status', 'Technician',
 ];
-export default function ComTableTeam({ currentPage, recordsPerPage, onTotalRecordsChange }) {
-  const { accessToken, tokenInfo } = useAuth();
-  const { tickets, loading, error } = useFetchTicket(accessToken, tokenInfo?.account?.localAccountId);
 
+export default function ComTableTeam({ currentPage, recordsPerPage, onTotalRecordsChange }) {
+  const { tokenInfo } = useAuth();
+
+  const { tickets, loading, error } = useFetchTicket({
+    ticketuuid: null,
+    entrauserid: tokenInfo?.account?.localAccountId ?? null,
+  });
 
   const start = (currentPage - 1) * recordsPerPage;
   const paginatedData = tickets.slice(start, start + recordsPerPage);
@@ -48,7 +51,7 @@ export default function ComTableTeam({ currentPage, recordsPerPage, onTotalRecor
       <div className="sm:hidden space-y-3 p-3">
         {paginatedData.length > 0 ? (
           paginatedData.map((ticket) => (
-            <ComCard key={ticket.id} ticket={ticket} fields={cardFields} />
+            <ComCard key={ticket.v_ticketid} ticket={ticket} fields={cardFields} />
           ))
         ) : (
           <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
@@ -69,20 +72,19 @@ export default function ComTableTeam({ currentPage, recordsPerPage, onTotalRecor
           <tbody className="bg-white dark:bg-black divide-y divide-gray-200 dark:divide-gray-800">
             {paginatedData.length > 0 ? (
               paginatedData.map((ticket) => (
-                <tr key={ticket.id} className="hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors duration-150">
-                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{ticket.id}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate" title={ticket.userName}>{ticket.userName}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[100px] truncate" title={ticket.title}>{ticket.title}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate" title={ticket.category}>{ticket.category}</td>
+                <tr key={ticket.v_ticketuuid} className="hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors duration-150">
+                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{ticket.v_ticketnumber}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate" title={ticket.v_username}>{ticket.v_username}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[100px] truncate" title={ticket.v_title}>{ticket.v_title}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate" title={ticket.v_ticketcategory}>{ticket.v_ticketcategory}</td>
                   <td className="px-3 py-2 whitespace-nowrap">
-                    <span className={`px-1.5 py-0.5 inline-flex text-sm leading-3 font-semibold rounded-full ${getPriorityColor(ticket.priority)}`}>
-                      {ticket.priority}
+                    <span className={`px-1.5 py-0.5 inline-flex text-sm leading-3 font-semibold rounded-full ${getPriorityColor(ticket.v_priority)}`}>
+                      {ticket.v_priority}
                     </span>
                   </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[100px] truncate" title={ticket.created}>{ticket.created}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[70px] truncate" title={ticket.status}>{ticket.status}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{ticket.daysOpen}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate" title={ticket.technician}>{ticket.technician}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[100px] truncate">{new Date(ticket.v_createdat).toLocaleDateString()}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[70px] truncate">{ticket.v_status}</td>
+                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate">{ticket.v_technicianname}</td>
                 </tr>
               ))
             ) : (
