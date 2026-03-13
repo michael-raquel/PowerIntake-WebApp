@@ -19,6 +19,7 @@ export function useFetchUserSettings({ useruuid = '', entrauserid = '' } = {}) {
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
+          cache: 'no-store'
         }
       );
 

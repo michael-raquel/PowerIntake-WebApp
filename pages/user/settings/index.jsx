@@ -1,6 +1,6 @@
 'use client';
  
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/context/AuthContext';
@@ -13,14 +13,18 @@ export default function SettingsPage() {
   const { accounts } = useMsal();
   const { account } = useAuth();
   const { setTheme } = useTheme();
+  const { theme, resolvedTheme } = useTheme();
   const [localSettings, setLocalSettings] = useState({});
   const [initialSettings, setInitialSettings] = useState({});
   const [isSaving, setIsSaving] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [loadingToggles, setLoadingToggles] = useState({});
-  const [settingsLoaded, setSettingsLoaded] = useState(false);  // ← new flag
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
  
-  const entrauserid = account?.localAccountId || '';
+  const entrauserid = useMemo(() => 
+    account?.localAccountId || accounts?.[0]?.localAccountId || '', 
+    [account?.localAccountId, accounts]
+  );
  
   const { userSettings, loading, error, refetch } = useFetchUserSettings({ entrauserid });
   const { updateUserSettings, submitting } = useUpdateUserSettings();
@@ -30,9 +34,18 @@ export default function SettingsPage() {
   }, []);
  
   useEffect(() => {
-    if (userSettings && userSettings.length > 0) {
+    if (userSettings && userSettings.length > 0 && entrauserid && !settingsLoaded) {
       const settings = userSettings[0];
-      const parseBool = (v) => v === true || v === 'true';
+      if (settings.v_entrauserid !== entrauserid) {
+        return;
+      }
+      const parseBool = (v) => {
+        if (v === null || v === undefined) return false;
+        if (typeof v === 'boolean') return v;
+        if (typeof v === 'number') return v === 1;
+        const str = String(v).toLowerCase();
+        return str === 'true' || str === '1';
+      };
       const newSettings = {
         usersettingsuuid: settings.v_usersettingsuuid,
         outlook: parseBool(settings.v_outlook),
@@ -50,52 +63,72 @@ export default function SettingsPage() {
         setTheme('light');
       }
     }
-  }, [userSettings]);
+  }, [userSettings, setTheme, entrauserid, settingsLoaded]);
  
-  const handleToggle = (setting) => {
+  useEffect(() => {
+    if (settingsLoaded && mounted && localSettings.usersettingsuuid) {
+      const isDark = resolvedTheme === 'dark';
+      if (localSettings.darkmode !== isDark) {
+        const updatedSettings = {
+          ...localSettings,
+          darkmode: isDark,
+        };
+        setLocalSettings(updatedSettings);
+        updateUserSettings({
+          ...updatedSettings,
+          modifiedby: accounts?.[0]?.username || null,
+        }).then(() => {
+          setInitialSettings(updatedSettings);
+        }).catch(() => {});
+      }
+    }
+  }, [resolvedTheme, settingsLoaded, mounted, localSettings.usersettingsuuid, localSettings.darkmode, accounts, updateUserSettings]);
+
+  const handleToggle = async (setting, value) => {
     setLoadingToggles((prev) => ({ ...prev, [setting]: true }));
-    setLocalSettings((prev) => ({
-      ...prev,
-      [setting]: !prev[setting],
-    }));
-    setTimeout(() => {
-      setLoadingToggles((prev) => ({ ...prev, [setting]: false }));
-    }, 500);
-  };
- 
-  const handleDarkModeToggle = () => {
-    const newDarkModeValue = !localSettings.darkmode;
-    setLoadingToggles((prev) => ({ ...prev, darkmode: true }));
-    setLocalSettings((prev) => ({
-      ...prev,
-      darkmode: newDarkModeValue,
-    }));
-    setTheme(newDarkModeValue ? 'dark' : 'light');
-    setTimeout(() => {
-      setLoadingToggles((prev) => ({ ...prev, darkmode: false }));
-    }, 500);
-  };
- 
-  const hasChanges = JSON.stringify(localSettings) !== JSON.stringify(initialSettings);
- 
-  const handleSave = async () => {
+    const updatedSettings = {
+      ...localSettings,
+      [setting]: value,
+    };
+    setLocalSettings(updatedSettings);
     try {
-      setIsSaving(true);
       await updateUserSettings({
-        ...localSettings,
+        ...updatedSettings,
         modifiedby: accounts?.[0]?.username || null,
       });
-      await refetch();
-      setInitialSettings(localSettings);
+      setInitialSettings(updatedSettings);
     } catch (err) {
+      setLocalSettings(localSettings);
     } finally {
-      setIsSaving(false);
+      setLoadingToggles((prev) => ({ ...prev, [setting]: false }));
+    }
+  };
+ 
+  const handleDarkModeToggle = async (value) => {
+    setLoadingToggles((prev) => ({ ...prev, darkmode: true }));
+    const updatedSettings = {
+      ...localSettings,
+      darkmode: value,
+    };
+    setLocalSettings(updatedSettings);
+    setTheme(value ? 'dark' : 'light');
+    try {
+      await updateUserSettings({
+        ...updatedSettings,
+        modifiedby: accounts?.[0]?.username || null,
+      });
+      setInitialSettings(updatedSettings);
+    } catch (err) {
+      setLocalSettings(localSettings);
+      setTheme(localSettings.darkmode ? 'dark' : 'light');
+    } finally {
+      setLoadingToggles((prev) => ({ ...prev, darkmode: false }));
     }
   };
  
   const handleReset = async () => {
+    setIsSaving(true);
     try {
-      setIsSaving(true);
       const resetSettings = {
         usersettingsuuid: localSettings.usersettingsuuid,
         outlook: true,
@@ -109,7 +142,6 @@ export default function SettingsPage() {
       setInitialSettings(resetSettings);
       setTheme('dark');
       await updateUserSettings(resetSettings);
-      await refetch();
     } catch (err) {
     } finally {
       setIsSaving(false);
@@ -126,22 +158,13 @@ export default function SettingsPage() {
       <div className="max-w-4xl mx-auto p-8">
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-3xl font-bold">Settings</h1>
-          <div className="flex gap-4">
-            <Button
-              onClick={handleSave}
-              disabled={isSaving || submitting || !hasChanges}
-              className="bg-purple-600 hover:bg-purple-700 text-white disabled:opacity-50"
-            >
-              {isSaving || submitting ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button
-              onClick={handleReset}
-              variant="outline"
-              disabled={isSaving || submitting}
-            >
-              Reset
-            </Button>
-          </div>
+          <Button
+            onClick={handleReset}
+            variant="outline"
+            disabled={isSaving || submitting}
+          >
+            Reset
+          </Button>
         </div>
  
         <div className="space-y-8">
