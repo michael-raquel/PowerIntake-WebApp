@@ -9,7 +9,7 @@ const getUserRole = (account) => {
   const roles = account?.idTokenClaims?.roles || [];
   
   if (roles.includes('SuperAdmin')) return 'super-admin';
-  if (roles.includes('Admin')) return 'admin';
+  if (roles.includes('SystemAdmin')) return 'system-admin';
   if (roles.includes('Manager')) return 'manager';
   return 'user'; 
 };

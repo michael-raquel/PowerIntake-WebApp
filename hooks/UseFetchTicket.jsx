@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export function useFetchTicket({ ticketuuid = "", entrauserid = null, role = null, view = null } = {}) {
+export function useFetchTicket({ ticketuuid = '', entrauserid = null } = {}) {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -14,8 +14,6 @@ export function useFetchTicket({ ticketuuid = "", entrauserid = null, role = nul
         const params = new URLSearchParams();
         if (ticketuuid) params.append("ticketuuid", ticketuuid);
         if (entrauserid) params.append("entrauserid", entrauserid);
-        if (role) params.append("role", role);
-        if (view) params.append("view", view);
 
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets?${params.toString()}`,
@@ -37,7 +35,7 @@ export function useFetchTicket({ ticketuuid = "", entrauserid = null, role = nul
     };
 
     fetchTickets();
-  }, [ticketuuid, entrauserid, role, view]);
+  }, [ticketuuid, entrauserid]);
 
   return { tickets, loading, error };
 }

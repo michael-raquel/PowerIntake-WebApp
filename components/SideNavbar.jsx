@@ -14,11 +14,14 @@ export default function SideNavbar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [showLogout, setShowLogout] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const { instance } = useMsal();
   const { tokenInfo } = useAuth();
   const { setTheme, resolvedTheme } = useTheme(); 
   const router = useRouter();
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -91,6 +94,8 @@ export default function SideNavbar() {
   const toggleCollapse = useCallback(() => {
     setIsCollapsed(prev => !prev);
   }, []);
+
+  if (!mounted) return null;
 
   // Mobile View
   if (isMobile) {

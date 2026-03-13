@@ -50,7 +50,6 @@ export function useFetchNote(ticketuuid = null, noteuuid = null) {
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
 
       const data = await res.json();
-
       setNotes(Array.isArray(data) ? data : []);
     } catch (err) {
       setError(err.message || "Failed to fetch notes");
