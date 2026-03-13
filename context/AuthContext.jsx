@@ -1,27 +1,34 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useMsal } from "@azure/msal-react";
+<<<<<<< Updated upstream
+=======
 import { InteractionStatus } from "@azure/msal-browser";
+>>>>>>> Stashed changes
 import { loginRequest } from "@/lib/msalConfig";
 
 const AuthContext = createContext(null);
 const GRAPH_URL = "https://graph.microsoft.com/v1.0";
 
 export function AuthProvider({ children }) {
-  const { instance, accounts, inProgress } = useMsal();
+  const { instance, accounts } = useMsal();
   const account = accounts[0] ?? null;
   const [accessToken, setAccessToken] = useState(null);
   const [tokenInfo, setTokenInfo] = useState(null);
+<<<<<<< Updated upstream
+=======
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+>>>>>>> Stashed changes
 
   useEffect(() => {
-    if (inProgress !== InteractionStatus.None) return;
-    if (!account) {
-      setLoading(false);
-      return;
-    }
+    if (!account) return;
 
     instance
+<<<<<<< Updated upstream
+      .acquireTokenSilent({ ...loginRequest, account })
+      .then((response) => {
+        setAccessToken(response.accessToken);
+=======
       .acquireTokenSilent({ ...loginRequest, account, forceRefresh: true })
       .then(async (response) => {
         const accessToken = response.accessToken;
@@ -45,6 +52,7 @@ export function AuthProvider({ children }) {
           : entraRoles;
 
         setAccessToken(accessToken);
+>>>>>>> Stashed changes
         setTokenInfo({
           accessToken,
           idToken: response.idToken,
@@ -62,6 +70,10 @@ export function AuthProvider({ children }) {
           },
         });
       })
+<<<<<<< Updated upstream
+      .catch((err) => console.error("Silent token acquisition failed:", err));
+  }, [account, instance]);
+=======
       .catch((err) => {
         if (err.errorCode === "uninitialized_public_client_application") {
           setError("uninitialized");
@@ -71,9 +83,10 @@ export function AuthProvider({ children }) {
       })
       .finally(() => setLoading(false));
   }, [account, instance, inProgress]);
+>>>>>>> Stashed changes
 
   return (
-    <AuthContext.Provider value={{ account, accessToken, tokenInfo, loading, error }}>
+    <AuthContext.Provider value={{ account, accessToken, tokenInfo }}>
       {children}
     </AuthContext.Provider>
   );
