@@ -34,7 +34,7 @@ const TIMEZONES = [
   { label: 'UTC+12:00 New Zealand Standard Time',   value: 'Pacific/Auckland'    },
 ];
 
-const LOCATIONS      = ['Remote', 'Hybrid', 'Onsite'];
+const LOCATIONS      = ['Remote', 'Hybrid', 'Office'];
 const ACCEPTED_TYPES = new Set(['image/png', 'image/jpeg', 'application/pdf', 'text/plain']);
 const MAX_FILE_SIZE  = 10 * 1024 * 1024;
 const DEFAULT_FORM   = { title: '', description: '', timezone: '', location: '' };

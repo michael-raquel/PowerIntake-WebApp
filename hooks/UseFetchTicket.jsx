@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-export function useFetchTicket({ ticketuuid = '', entrauserid = null } = {}) {
+export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenantid = null, refreshKey = 0 } = {}) {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -14,14 +14,15 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null } = {}) {
         const params = new URLSearchParams();
         if (ticketuuid) params.append("ticketuuid", ticketuuid);
         if (entrauserid) params.append("entrauserid", entrauserid);
+        if (entratenantid) params.append("entratenantid", entratenantid);
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets?${params.toString()}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
-        );
+        const query = params.toString();
+        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets${query ? `?${query}` : ""}`;
+
+        const res = await fetch(url, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
 
         if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
 
@@ -35,7 +36,7 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null } = {}) {
     };
 
     fetchTickets();
-  }, [ticketuuid, entrauserid]);
+  }, [ticketuuid, entrauserid, entratenantid, refreshKey]);
 
   return { tickets, loading, error };
 }

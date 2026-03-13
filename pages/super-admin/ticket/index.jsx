@@ -1,7 +1,9 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import ComFilters from './components/ComFilters';
 import ComTicketTable from './components/ComTicketTable';
 import ComCreateTicket from './components/ComCreateTicket';
+import { useAuth } from '@/context/AuthContext';
+import { useFetchTicketManagerTeam } from '@/hooks/UseFetchTicketManagerTeam';
 
 const TABS = [
   { id: 'my-client', label: 'My Client' },
@@ -13,6 +15,9 @@ const TABS = [
 const RECORDS_PER_PAGE = 10;
 
 export default function TicketPage() {
+  const { tokenInfo } = useAuth();
+  const managerId = tokenInfo?.account?.localAccountId ?? null;
+
   const [activeTab, setActiveTab] = useState('my-ticket');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -20,6 +25,23 @@ export default function TicketPage() {
   const [searchValue, setSearchValue] = useState('');
   const [selectedFilters, setSelectedFilters] = useState({});
   const [filterOptions, setFilterOptions] = useState({});
+
+  const { tickets: teamTickets } = useFetchTicketManagerTeam({
+    managerid: managerId,
+  });
+
+  const hasTeamTickets = (teamTickets?.length ?? 0) > 0;
+
+  const visibleTabs = useMemo(
+    () => (hasTeamTickets ? TABS : TABS.filter((t) => t.id !== 'my-team')),
+    [hasTeamTickets]
+  );
+
+  useEffect(() => {
+    if (!hasTeamTickets && activeTab === 'my-team') {
+      setActiveTab('my-ticket');
+    }
+  }, [hasTeamTickets, activeTab]);
 
   const totalPages = Math.max(1, Math.ceil(totalRecords / RECORDS_PER_PAGE));
 
@@ -70,7 +92,7 @@ export default function TicketPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div className="border-b border-gray-200 dark:border-gray-800 sm:flex-1">
             <nav className="flex flex-wrap gap-x-6 gap-y-2">
-              {TABS.map(({ id, label }) => (
+              {visibleTabs.map(({ id, label }) => (
                 <button
                   key={id}
                   onClick={() => handleTabChange(id)}
