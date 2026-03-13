@@ -5,24 +5,35 @@ import ComTableCompany from './tables/ComTableCompany';
 import ComTableTeam from './tables/ComTableTeam';
 import ComTableMyTicket from './tables/ComTableMyTickets';
 
-export default function ComTicketTable({ activeTab, currentPage, recordsPerPage, onTotalRecordsChange }) {
-  const tableProps = { currentPage, recordsPerPage, onTotalRecordsChange };
-
-  const renderTable = () => {
-    switch (activeTab) {
-      case 'my-client':   return <ComTableClient {...tableProps} />;
-      case 'my-company':  return <ComTableCompany {...tableProps} />;
-      case 'my-team':     return <ComTableTeam {...tableProps} />;
-      case 'my-ticket':   return <ComTableMyTicket {...tableProps} />;
-      default:            return <ComTableMyTicket {...tableProps} />;
-    }
+export default function ComTicketTable({
+  activeTab,
+  currentPage,
+  recordsPerPage,
+  onTotalRecordsChange,
+  onFilterOptionsChange,
+  searchValue = '',
+  filters = {},
+}) {
+  const tableProps = {
+    currentPage,
+    recordsPerPage,
+    onTotalRecordsChange,
+    onFilterOptionsChange,
+    searchValue,
+    filters,
   };
 
-  return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 overflow-hidden transition-colors duration-300">
-      {renderTable()}
-    </div>
-  );
+  switch (activeTab) {
+    case 'my-client':
+      return <ComTableClient {...tableProps} />;
+    case 'my-company':
+      return <ComTableCompany {...tableProps} />;
+    case 'my-team':
+      return <ComTableTeam {...tableProps} />;
+    case 'my-ticket':
+    default:
+      return <ComTableMyTicket {...tableProps} />;
+  }
 }
 
 ComTicketTable.propTypes = {
@@ -30,4 +41,7 @@ ComTicketTable.propTypes = {
   currentPage: PropTypes.number.isRequired,
   recordsPerPage: PropTypes.number.isRequired,
   onTotalRecordsChange: PropTypes.func.isRequired,
+  onFilterOptionsChange: PropTypes.func,
+  searchValue: PropTypes.string,
+  filters: PropTypes.object,
 };
