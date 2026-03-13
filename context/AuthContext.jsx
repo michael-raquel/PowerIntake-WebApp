@@ -1,27 +1,20 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { useMsal } from "@azure/msal-react";
-import { InteractionStatus } from "@azure/msal-browser"; 
 import { loginRequest } from "@/lib/msalConfig";
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const { instance, accounts, inProgress } = useMsal();
+  const { instance, accounts } = useMsal();
   const account = accounts[0] ?? null;
   const [accessToken, setAccessToken] = useState(null);
   const [tokenInfo, setTokenInfo] = useState(null);
-  const [loading, setLoading] = useState(true); 
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (inProgress !== InteractionStatus.None) return;
-    if (!account) {
-      setLoading(false);
-      return;
-    }
+    if (!account) return;
 
     instance
-      .acquireTokenSilent({ ...loginRequest, account, forceRefresh: true })
+      .acquireTokenSilent({ ...loginRequest, account })
       .then((response) => {
         setAccessToken(response.accessToken);
         setTokenInfo({
@@ -39,22 +32,12 @@ export function AuthProvider({ children }) {
             roles: response.account.idTokenClaims?.roles ?? [],
           },
         });
-
-      
-
       })
-      .catch((err) => {
-        if (err.errorCode === "uninitialized_public_client_application") {
-          setError("uninitialized");
-          return;
-        }
-        console.error("Silent token acquisition failed:", err);
-      })
-      .finally(() => setLoading(false)); 
-  }, [account, instance, inProgress]);
+      .catch((err) => console.error("Silent token acquisition failed:", err));
+  }, [account, instance]);
 
   return (
-    <AuthContext.Provider value={{ account, accessToken, tokenInfo, loading, error }}>
+    <AuthContext.Provider value={{ account, accessToken, tokenInfo }}>
       {children}
     </AuthContext.Provider>
   );
