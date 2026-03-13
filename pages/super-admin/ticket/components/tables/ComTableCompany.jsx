@@ -43,11 +43,15 @@ export default function ComTableCompany({
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const { tickets, loading, error } = useFetchTicket({
     ticketuuid: null,
-    entrauserid: tokenInfo?.account?.localAccountId ?? null,
+    entrauserid: null,
+    entratenantid: tokenInfo?.account?.tenantId ?? null,
+    refreshKey,
   });
+
 
   useEffect(() => {
     onFilterOptionsChange?.({
@@ -106,54 +110,63 @@ export default function ComTableCompany({
       </div>
 
       <div className="hidden sm:block overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
-          <thead className="bg-gray-50 dark:bg-gray-900">
-            <tr>
-              {COLUMNS.map((h) => (
-                <th key={h} scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-black divide-y divide-gray-200 dark:divide-gray-800">
-            {paginatedData.length > 0 ? (
-              paginatedData.map((ticket) => (
-                <tr
-                  key={ticket.v_ticketuuid}
-                  onClick={() => setSelectedTicket(ticket)}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors duration-150 cursor-pointer"
-                >
-                  <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{ticket.v_ticketnumber}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate" title={ticket.v_department}>{ticket.v_department}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate" title={ticket.v_username}>{ticket.v_username}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[100px] truncate" title={ticket.v_title}>{ticket.v_title}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate" title={ticket.v_ticketcategory}>{ticket.v_ticketcategory}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <span className={`px-1.5 py-0.5 inline-flex text-sm leading-3 font-semibold rounded-full ${getPriorityColor(ticket.v_priority)}`}>
-                      {ticket.v_priority}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[100px] truncate">{new Date(ticket.v_createdat).toLocaleDateString()}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[70px] truncate">{ticket.v_status}</td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 max-w-[80px] truncate">{ticket.v_technicianname}</td>
+        <div className="inline-block min-w-full align-middle">
+          <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-black">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800 text-sm">
+              <thead className="bg-gray-50/90 dark:bg-gray-900 border-b border-gray-200/80 dark:border-gray-800">
+                <tr>
+                  {COLUMNS.map((h) => (
+                    <th
+                      key={h}
+                      scope="col"
+                      className="px-4 py-3.5 text-left text-[11px] font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan={COLUMNS.length} className="px-3 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-                  No tickets found.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              </thead>
+              <tbody className="bg-white dark:bg-black divide-y divide-gray-100 dark:divide-gray-800">
+                {paginatedData.length > 0 ? (
+                  paginatedData.map((ticket) => (
+                    <tr
+                      key={ticket.v_ticketuuid}
+                      onClick={() => setSelectedTicket(ticket)}
+                      className="odd:bg-white even:bg-gray-50/70 hover:bg-gray-100 dark:odd:bg-black dark:even:bg-gray-900/40 dark:hover:bg-gray-900 transition-colors duration-150 cursor-pointer"
+                    >
+                      <td className="px-4 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white align-middle">{ticket.v_ticketnumber}</td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-[120px] truncate align-middle" title={ticket.v_department}>{ticket.v_department}</td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-[120px] truncate align-middle" title={ticket.v_username}>{ticket.v_username}</td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-[160px] truncate align-middle" title={ticket.v_title}>{ticket.v_title}</td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-[120px] truncate align-middle" title={ticket.v_ticketcategory}>{ticket.v_ticketcategory}</td>
+                      <td className="px-4 py-3.5 whitespace-nowrap align-middle">
+                        <span className={`px-1.5 py-0.5 inline-flex text-sm leading-3 font-semibold rounded-full ${getPriorityColor(ticket.v_priority)}`}>
+                          {ticket.v_priority}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-[120px] truncate align-middle">{new Date(ticket.v_createdat).toLocaleDateString()}</td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-[100px] truncate align-middle">{ticket.v_status}</td>
+                      <td className="px-4 py-3.5 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400 max-w-[120px] truncate align-middle">{ticket.v_technicianname}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={COLUMNS.length} className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                      No tickets found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       {selectedTicket && (
         <ComUpdateForm
           ticket={selectedTicket}
           onClose={() => setSelectedTicket(null)}
+          onUpdated={() => setRefreshKey((k) => k + 1)}
         />
       )}
     </>

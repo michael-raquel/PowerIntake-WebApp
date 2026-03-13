@@ -15,7 +15,7 @@ const getPriorityColor = (priority) => {
 };
 
 export default function ComCard({ ticket = {}, fields = [], onClick }) {
-  const ticketId = ticket?.v_ticketnumber || ticket?.v_ticketid || ticket?.id || '—';
+  const ticketId = ticket?.v_ticketnumber || '—';
   const priorityValue = ticket?.v_priority || ticket?.priority || null;
 
   const otherFields =
