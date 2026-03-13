@@ -5,7 +5,8 @@ import { MsalProvider } from "@azure/msal-react";
 import { msalConfig } from "@/lib/msalConfig";
 import { useRouter } from "next/router";
 import SideNavbar from "@/components/SideNavbar";
-import { AuthProvider } from "@/context/AuthContext"; // 👈 add this
+import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "next-themes";
 
 const msalInstance = new PublicClientApplication(msalConfig);
 const noSidebarPages = ['/', '/register', '/login'];
@@ -24,18 +25,20 @@ export default function App({ Component, pageProps }) {
   }, []);
 
   return (
-    <MsalProvider instance={msalInstance}>
-      <AuthProvider>  {/* 👈 wrap here, inside MsalProvider */}
-        <div className="flex h-screen overflow-hidden bg-white">
-          {showSidebar && <SideNavbar />}
-          <main className={`flex-1 overflow-y-auto ${showSidebar ? 'md:ml-0' : ''}`}>
-            {showSidebar && <div className="md:hidden h-14" />}
-            <div className="min-h-full pb-16 md:pb-0">
-              <Component {...pageProps} />
-            </div>
-          </main>
-        </div>
-      </AuthProvider>
-    </MsalProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
+      <MsalProvider instance={msalInstance}>
+        <AuthProvider>
+          <div className="flex h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300">
+            {showSidebar && <SideNavbar />}
+            <main className={`flex-1 overflow-y-auto ${showSidebar ? 'md:ml-0' : ''}`}>
+              {showSidebar && <div className="md:hidden h-14" />}
+              <div className="min-h-full pb-16 md:pb-0">
+                <Component {...pageProps} />
+              </div>
+            </main>
+          </div>
+        </AuthProvider>
+      </MsalProvider>
+    </ThemeProvider>
   );
 }
