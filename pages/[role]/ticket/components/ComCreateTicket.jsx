@@ -63,6 +63,10 @@ export default function ComCreateTicket({ onClose }) {
   const fileInputRef = useRef(null);
   const fieldRefs    = useRef({});
 
+  const setFieldRef = useCallback((key, el) => {
+    fieldRefs.current[key] = el;
+  }, []);
+
   const handleInputChange = useCallback(({ target: { name, value } }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   }, []);
@@ -162,7 +166,7 @@ export default function ComCreateTicket({ onClose }) {
                     key={call.id}
                     call={call}
                     isRemovable={supportCalls.length > 1}
-                    fieldRefs={fieldRefs}
+                    setFieldRef={setFieldRef}
                     onRemove={handleRemoveCall}
                     onChange={handleCallChange}
                     onSelectChange={handleSelectChange}
@@ -249,7 +253,7 @@ const Field = ({ label, children, required, className = '' }) => (
   </div>
 );
 
-const SupportCallCard = ({ call, isRemovable, fieldRefs, onRemove, onChange, onSelectChange }) => (
+const SupportCallCard = ({ call, isRemovable, setFieldRef, onRemove, onChange, onSelectChange }) => (
   <div className="relative p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border">
     {isRemovable && (
       <Button variant="ghost" size="icon" onClick={() => onRemove(call.id)} className="absolute top-2 right-2 h-8 w-8">
@@ -257,7 +261,7 @@ const SupportCallCard = ({ call, isRemovable, fieldRefs, onRemove, onChange, onS
       </Button>
     )}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div ref={el => fieldRefs.current[`call-${call.id}-date`] = el}>
+      <div ref={el => setFieldRef(`call-${call.id}-date`, el)}>
         <Field label="Available Date" required>
           <Popover>
             <PopoverTrigger asChild>
