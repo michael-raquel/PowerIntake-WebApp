@@ -1,46 +1,78 @@
-import React, { useState } from 'react';
+// components/ComFilters.jsx
+import React, { useState, useMemo, useCallback } from 'react';
 import { Search, Filter, Plus, X } from 'lucide-react';
 import PropTypes from 'prop-types';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 
-const FILTER_OPTIONS = {
+const FILTER_CONFIG = {
   'my-client': ['Client', 'Manager', 'Priority', 'Category', 'Status'],
   'my-company': ['Manager', 'Priority', 'Category', 'Status'],
   'my-team': ['Priority', 'Category', 'Status'],
   'my-ticket': ['Priority', 'Category', 'Status'],
 };
 
-export default function ComFilters({ onSearch, searchValue, onCreateTicket, activeTab }) {
-  const [selectedFilters, setSelectedFilters] = useState({});
+const PRIORITY_OPTIONS = ['High', 'Medium', 'Low'];
+const EMPTY_PREFIX = '__empty__';
+
+const normalizeOptions = (arr = []) => 
+  [...new Set(arr.map(v => String(v ?? '').trim()).filter(Boolean))];
+
+export default function ComFilters({
+  onSearch,
+  searchValue,
+  onCreateTicket,
+  activeTab,
+  selectedFilters = {},
+  onFiltersChange,
+  filterOptions = {},
+}) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  const handleFilterChange = (filter, value) => {
-    setSelectedFilters(prev => ({ ...prev, [filter]: value }));
-  };
+  const filtersForTab = FILTER_CONFIG[activeTab] ?? [];
+  const activeFilterCount = Object.keys(selectedFilters).length;
 
-  const clearFilter = (filter) => {
-    setSelectedFilters(prev => {
-      const newFilters = { ...prev };
-      delete newFilters[filter];
-      return newFilters;
+  const optionsByFilter = useMemo(() => {
+    const result = {};
+    
+    for (const filter of filtersForTab) {
+      if (filter === 'Priority') {
+        result[filter] = PRIORITY_OPTIONS;
+        continue;
+      }
+      
+      const options = normalizeOptions(filterOptions[filter]);
+      const selected = selectedFilters[filter];
+      
+      result[filter] = selected && !options.includes(selected) 
+        ? [selected, ...options] 
+        : options;
+    }
+    
+    return result;
+  }, [filtersForTab, filterOptions, selectedFilters]);
+
+  const handleFilterChange = useCallback((filter, value) => {
+    if (!value || value.startsWith(EMPTY_PREFIX)) return;
+    
+    onFiltersChange({
+      ...selectedFilters,
+      [filter]: value,
     });
-  };
+  }, [selectedFilters, onFiltersChange]);
 
-  const activeFilters = Object.keys(selectedFilters).length;
+  const clearFilter = useCallback((filter) => {
+    const next = { ...selectedFilters };
+    delete next[filter];
+    onFiltersChange(next);
+  }, [selectedFilters, onFiltersChange]);
+
+  const clearAllFilters = useCallback(() => {
+    onFiltersChange({});
+  }, [onFiltersChange]);
 
   return (
     <div className="flex flex-row items-center gap-2 w-full">
@@ -59,96 +91,84 @@ export default function ComFilters({ onSearch, searchValue, onCreateTicket, acti
         <PopoverTrigger asChild>
           <Button variant="outline" size="icon" className="relative shrink-0">
             <Filter className="w-4 h-4" />
-            {activeFilters > 0 && (
-              <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
-                {activeFilters}
+            {activeFilterCount > 0 && (
+              <Badge 
+                variant="secondary" 
+                className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center"
+              >
+                {activeFilterCount}
               </Badge>
             )}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80 p-4" align="end">
+
+        <PopoverContent className="w-72 p-4" align="end">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-sm">Filter by</h4>
-              {activeFilters > 0 && (
+              {activeFilterCount > 0 && (
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  onClick={() => setSelectedFilters({})}
+                  onClick={clearAllFilters} 
                   className="h-8 text-xs"
                 >
                   Clear all
                 </Button>
               )}
             </div>
-            
-            {FILTER_OPTIONS[activeTab]?.map((filter) => (
-              <div key={filter} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium">{filter}</span>
-                  {selectedFilters[filter] && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5"
-                      onClick={() => clearFilter(filter)}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  )}
+
+            {filtersForTab.map((filter) => {
+              const options = optionsByFilter[filter] ?? [];
+              const hasOptions = options.length > 0;
+              const currentValue = selectedFilters[filter];
+
+              return (
+                <div key={filter} className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium">{filter}</span>
+                    {currentValue && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5" 
+                        onClick={() => clearFilter(filter)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <Select
+                    value={currentValue || ''}
+                    onValueChange={(value) => handleFilterChange(filter, value)}
+                    disabled={!hasOptions}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={hasOptions ? `Select ${filter}` : 'No options'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hasOptions ? (
+                        options.map((opt) => (
+                          <SelectItem key={`${filter}-${opt}`} value={opt}>
+                            {opt}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value={`${EMPTY_PREFIX}${filter}`} disabled>
+                          No options available
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <Select
-                  value={selectedFilters[filter] || ''}
-                  onValueChange={(value) => handleFilterChange(filter, value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={`Select ${filter}`} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filter === 'Priority' && (
-                      <>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                      </>
-                    )}
-                    {filter === 'Category' && (
-                      <>
-                        <SelectItem value="internal">Internal Work</SelectItem>
-                        <SelectItem value="standard">Standard</SelectItem>
-                        <SelectItem value="rma">RMA</SelectItem>
-                      </>
-                    )}
-                    {filter === 'Status' && (
-                      <>
-                        <SelectItem value="submitted">Submitted</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="resolved">Resolved</SelectItem>
-                      </>
-                    )}
-                    {filter === 'Client' && (
-                      <>
-                        <SelectItem value="sparta">Sparta Services</SelectItem>
-                        <SelectItem value="are">A.R.E Auto Parts</SelectItem>
-                        <SelectItem value="brigs">BRIGS LLC</SelectItem>
-                      </>
-                    )}
-                    {filter === 'Manager' && (
-                      <>
-                        <SelectItem value="sarah">Sarah</SelectItem>
-                        <SelectItem value="alex">Alex</SelectItem>
-                        <SelectItem value="ken">Ken</SelectItem>
-                      </>
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </PopoverContent>
       </Popover>
 
-        <Button onClick={onCreateTicket} className="gap-2 w-auto sm:w-auto justify-center">
+      <Button onClick={onCreateTicket} className="gap-2 w-auto shrink-0">
         <Plus className="w-4 h-4" />
         <span>New</span>
       </Button>
@@ -159,12 +179,9 @@ export default function ComFilters({ onSearch, searchValue, onCreateTicket, acti
 ComFilters.propTypes = {
   onSearch: PropTypes.func,
   searchValue: PropTypes.string,
-  onCreateTicket: PropTypes.func,
+  onCreateTicket: PropTypes.func.isRequired,
   activeTab: PropTypes.string.isRequired,
-};
-
-ComFilters.defaultProps = {
-  onSearch: undefined,
-  searchValue: '',
-  onCreateTicket: undefined,
+  selectedFilters: PropTypes.object,
+  onFiltersChange: PropTypes.func.isRequired,
+  filterOptions: PropTypes.object,
 };
