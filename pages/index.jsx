@@ -1,30 +1,36 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { loginRequest } from "@/lib/msalConfig";
+import { useAuth } from "@/context/AuthContext";
 
-// testetst
-const getUserRole = (account) => {
-
-  const roles = account?.idTokenClaims?.roles || [];
-  
+const getUserRole = (roles = []) => {
   if (roles.includes('SuperAdmin')) return 'super-admin';
   if (roles.includes('Admin')) return 'admin';
   if (roles.includes('Manager')) return 'manager';
-  return 'user'; 
+  return 'user';
 };
 
 export default function Home() {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts } = useMsal();
+  const { instance } = useMsal();
+  const { tokenInfo } = useAuth();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (isAuthenticated && accounts[0]) {
-      const role = getUserRole(accounts[0]);
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    if (isAuthenticated && tokenInfo) {
+      const role = getUserRole(tokenInfo.account.roles);
       router.push(`/${role}/home`);
     }
-  }, [isAuthenticated, accounts, router]);
+  }, [isAuthenticated, tokenInfo, router, mounted]);
+
+  if (!mounted) return null;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 dark:bg-black">
@@ -44,5 +50,7 @@ export default function Home() {
         </div>
       )}
     </div>
+
+    
   );
 }
