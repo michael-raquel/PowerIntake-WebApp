@@ -4,9 +4,11 @@ import { PublicClientApplication } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
 import { msalConfig } from "@/lib/msalConfig";
 import { useRouter } from "next/router";
-import SideNavbar from "@/components/SideNavbar";
+import dynamic from "next/dynamic";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "next-themes";
+
+const SideNavbar = dynamic(() => import("@/components/SideNavbar"), { ssr: false });
 
 const msalInstance = new PublicClientApplication(msalConfig);
 const noSidebarPages = ['/', '/register', '/login'];
@@ -28,7 +30,7 @@ export default function App({ Component, pageProps }) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange={false}>
       <MsalProvider instance={msalInstance}>
         <AuthProvider>
-          <div className="flex h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300">
+          <div suppressHydrationWarning className="flex h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300">
             {showSidebar && <SideNavbar />}
             <main className={`flex-1 overflow-y-auto ${showSidebar ? 'md:ml-0' : ''}`}>
               {showSidebar && <div className="md:hidden h-14" />}

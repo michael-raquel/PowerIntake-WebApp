@@ -48,11 +48,11 @@ export function useUpdateUserSettings() {
 						},
 						body: JSON.stringify({
 							usersettingsuuid,
-							outlook: outlook ?? false,
-							teams: teams ?? false,
-							powersuiteai: powersuiteai ?? false,
-							spartaassist: spartaassist ?? false,
-							darkmode: darkmode ?? false,
+							outlook: (outlook ?? false).toString(),
+							teams: (teams ?? false).toString(),
+							powersuiteai: (powersuiteai ?? false).toString(),
+							spartaassist: (spartaassist ?? false).toString(),
+							darkmode: (darkmode ?? false).toString(),
 							modifiedby: modifiedby ?? null,
 						}),
 					}
