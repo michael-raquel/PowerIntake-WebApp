@@ -1,8 +1,8 @@
 import { useState } from "react";
-import ManageTabs from "@/pages/components/managetabs";
-import MyClientsTab from "@/pages/components/manage/MyClientsTab";
-import MyCompanyTab from "@/pages/components/manage/MyCompanyTab";
-import MyTeamTab from "@/pages/components/manage/MyTeamTab";
+import ManageTabs from "@/components/manage/ManageTabs";
+import MyClientsTab from "@/components/manage/MyClientsTab";
+import MyCompanyTab from "@/components/manage/MyCompanyTab";
+import MyTeamTab from "@/components/manage/MyTeamTab";
 
 const tabs = [
   { id: "my-clients", label: "My Clients" },
