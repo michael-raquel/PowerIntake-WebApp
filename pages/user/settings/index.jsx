@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateUserSettings } from '@/hooks/UseUpdateUserSettings';
 import { Button } from '@/components/ui/button';
-import { NotificationsSection, AssistSection, DarkModeSection } from './components/ComCards';
+import { NotificationsSection, AssistSection, DarkModeSection } from '../../../components/user/settings/ComCards';
  
 export default function SettingsPage() {
   const { accounts } = useMsal();
