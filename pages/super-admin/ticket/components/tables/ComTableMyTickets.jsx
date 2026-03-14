@@ -47,6 +47,7 @@ export default function ComTableMyTickets({
     refreshKey,
   });
 
+  console.log("Fetched tickets for user:", currentUserId, tickets);
   const myTickets = tickets.filter(
     (t) => t.v_entrauserid === currentUserId || t.entrauserid === currentUserId
   );

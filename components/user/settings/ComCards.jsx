@@ -1,10 +1,10 @@
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import powersuiteaiicon from '../assets/powersuiteai.svg';
-import spartaassisticon from '../assets/spartaassistai.svg';
-import teams from '../assets/teams.svg';
-import outlook from '../assets/outlook.svg';
-import darkmode from '../assets/darkmode.svg';
+import powersuiteaiicon from './assets/powersuiteai.svg';
+import spartaassisticon from './assets/spartaassistai.svg';
+import teams from './assets/teams.svg';
+import outlook from './assets/outlook.svg';
+import darkmode from './assets/darkmode.svg';
 
 export function SettingCard({ icon, title, description, isEnabled, onChange, isLoading }) {
   const isImageIcon = typeof icon === 'object' && icon?.src;
