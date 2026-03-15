@@ -33,13 +33,13 @@ export default function ComFilters({
 
   const getOptionsForFilter = (filter) => {
     if (filter === 'Priority') return PRIORITY_OPTIONS;
-    
+
     const options = filterOptions[filter] || [];
     const uniqueOptions = [...new Set(options.map(v => String(v).trim()).filter(Boolean))];
     const selected = selectedFilters[filter];
-    
-    return selected && !uniqueOptions.includes(selected) 
-      ? [selected, ...uniqueOptions] 
+
+    return selected && !uniqueOptions.includes(selected)
+      ? [selected, ...uniqueOptions]
       : uniqueOptions;
   };
 
@@ -55,8 +55,8 @@ export default function ComFilters({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
-      <div className="relative flex-1 min-w-0">
+    <div className="flex flex-row items-center gap-2 w-full">
+      <div className="relative flex-1 min-w-[150px]">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
         <Input
           value={searchValue}
