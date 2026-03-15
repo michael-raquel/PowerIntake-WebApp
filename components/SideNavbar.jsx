@@ -18,19 +18,18 @@ export default function SideNavbar() {
 
   const { instance } = useMsal();
   const { tokenInfo } = useAuth();
-  const { setTheme, resolvedTheme } = useTheme(); 
+  const { setTheme, resolvedTheme } = useTheme();
   const router = useRouter();
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     const checkMobile = () => {
-      if (typeof window === 'undefined') return; 
+      if (typeof window === 'undefined') return;
       const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
       setIsMobile(mobile);
       if (mobile) setIsCollapsed(false);
     };
-    
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -43,7 +42,7 @@ export default function SideNavbar() {
   }, [router.events]);
 
   const account = tokenInfo?.account;
-  
+
   const currentRole = useMemo(() => {
     const roles = account?.roles ?? [];
     if (roles.includes('SuperAdmin')) return 'super-admin';
@@ -52,28 +51,30 @@ export default function SideNavbar() {
     return 'user';
   }, [account]);
 
+  const isPrivileged = ['manager', 'system-admin', 'super-admin'].includes(currentRole);
+
   const menuItems = useMemo(() => {
     const items = [
-      { icon: Home, label: 'Home', path: `/${currentRole}/home` },
-      { icon: Ticket, label: 'Ticket', path: `/${currentRole}/ticket` },
-      { icon: LifeBuoy, label: 'Support', path: `/${currentRole}/support` },
+      { icon: Home,     label: 'Home',    path: '/home' },
+      { icon: Ticket,   label: 'Ticket',  path: '/ticket' },
+      { icon: LifeBuoy, label: 'Support', path: '/support' },
     ];
-    
-    if (['manager', 'system-admin', 'super-admin'].includes(currentRole)) {
-      items.push({ icon: Users, label: 'Manage', path: `/${currentRole}/manage` });
-    }
-    
-    items.push({ icon: Settings, label: 'Settings', path: `/${currentRole}/settings` });
-    return items;
-  }, [currentRole]);
 
-  const initials = useMemo(() => 
+    if (isPrivileged) {
+      items.push({ icon: Users, label: 'Manage', path: '/manage' });
+    }
+
+    items.push({ icon: Settings, label: 'Settings', path: '/settings' });
+    return items;
+  }, [isPrivileged]);
+
+  const initials = useMemo(() =>
     account?.name
       ?.split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2) ?? 'U' 
+      .slice(0, 2) ?? 'U'
   , [account]);
 
   const isDarkMode = resolvedTheme === 'dark';
@@ -97,7 +98,6 @@ export default function SideNavbar() {
 
   if (!mounted) return null;
 
-  // Mobile View
   if (isMobile) {
     return (
       <>
@@ -176,12 +176,11 @@ export default function SideNavbar() {
     );
   }
 
-  // Desktop View
   return (
     <>
       <aside className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 dark:bg-black dark:border-gray-800 transition-all duration-300 z-50 flex flex-col overflow-hidden
         ${isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED}`}>
-        
+
         <div className="h-14 flex items-center px-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
           <div className="flex items-center flex-1 min-w-0">
             <div className="relative w-6 h-6 flex-shrink-0">
