@@ -1,6 +1,6 @@
 'use client';
  
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/context/AuthContext';
@@ -12,33 +12,28 @@ import { NotificationsSection, AssistSection, DarkModeSection } from '@/componen
 export default function SettingsPage() {
   const { accounts } = useMsal();
   const { account } = useAuth();
-  const { setTheme } = useTheme();
-  const { theme, resolvedTheme } = useTheme();
-  const [localSettings, setLocalSettings] = useState({});
+  const { setTheme, resolvedTheme } = useTheme();
+  const [localSettings,   setLocalSettings]   = useState({});
   const [initialSettings, setInitialSettings] = useState({});
-  const [isSaving, setIsSaving] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [loadingToggles, setLoadingToggles] = useState({});
-  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [isSaving,        setIsSaving]        = useState(false);
+  const [loadingToggles,  setLoadingToggles]  = useState({});
+  const [settingsLoaded,  setSettingsLoaded]  = useState(false);
+
+  const prevThemeRef = useRef(null);
  
   const entrauserid = useMemo(() => 
     account?.localAccountId || accounts?.[0]?.localAccountId || '', 
     [account?.localAccountId, accounts]
   );
  
-  const { userSettings, loading, error, refetch } = useFetchUserSettings({ entrauserid });
+  const { userSettings, loading, error } = useFetchUserSettings({ entrauserid });
   const { updateUserSettings, submitting } = useUpdateUserSettings();
- 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
  
   useEffect(() => {
     if (userSettings && userSettings.length > 0 && entrauserid && !settingsLoaded) {
       const settings = userSettings[0];
-      if (settings.v_entrauserid !== entrauserid) {
-        return;
-      }
+      if (settings.v_entrauserid !== entrauserid) return;
+
       const parseBool = (v) => {
         if (v === null || v === undefined) return false;
         if (typeof v === 'boolean') return v;
@@ -46,50 +41,46 @@ export default function SettingsPage() {
         const str = String(v).toLowerCase();
         return str === 'true' || str === '1';
       };
+
       const newSettings = {
         usersettingsuuid: settings.v_usersettingsuuid,
-        outlook: parseBool(settings.v_outlook),
-        teams: parseBool(settings.v_teams),
-        powersuiteai: parseBool(settings.v_powersuiteai),
-        spartaassist: parseBool(settings.v_spartaassist),
-        darkmode: parseBool(settings.v_darkmode),
+        outlook:          parseBool(settings.v_outlook),
+        teams:            parseBool(settings.v_teams),
+        powersuiteai:     parseBool(settings.v_powersuiteai),
+        spartaassist:     parseBool(settings.v_spartaassist),
+        darkmode:         parseBool(settings.v_darkmode),
       };
+
       setLocalSettings(newSettings);
       setInitialSettings(newSettings);
       setSettingsLoaded(true);
-      if (newSettings.darkmode) {
-        setTheme('dark');
-      } else {
-        setTheme('light');
-      }
+      setTheme(newSettings.darkmode ? 'dark' : 'light');
     }
   }, [userSettings, setTheme, entrauserid, settingsLoaded]);
  
   useEffect(() => {
-    if (settingsLoaded && mounted && localSettings.usersettingsuuid) {
-      const isDark = resolvedTheme === 'dark';
-      if (localSettings.darkmode !== isDark) {
-        const updatedSettings = {
-          ...localSettings,
-          darkmode: isDark,
-        };
-        setLocalSettings(updatedSettings);
-        updateUserSettings({
-          ...updatedSettings,
-          modifiedby: accounts?.[0]?.username || null,
-        }).then(() => {
-          setInitialSettings(updatedSettings);
-        }).catch(() => {});
-      }
+    if (!settingsLoaded || !localSettings.usersettingsuuid) return;
+
+    const isDark = resolvedTheme === 'dark';
+
+    if (prevThemeRef.current === resolvedTheme) return;
+    prevThemeRef.current = resolvedTheme;
+
+    if (localSettings.darkmode !== isDark) {
+      const updatedSettings = { ...localSettings, darkmode: isDark };
+      setLocalSettings(updatedSettings);
+      updateUserSettings({
+        ...updatedSettings,
+        modifiedby: accounts?.[0]?.username || null,
+      })
+        .then(() => setInitialSettings(updatedSettings))
+        .catch(() => {});
     }
-  }, [resolvedTheme, settingsLoaded, mounted, localSettings.usersettingsuuid, localSettings.darkmode, accounts, updateUserSettings]);
+  }, [resolvedTheme, settingsLoaded, localSettings, accounts, updateUserSettings]);
 
   const handleToggle = async (setting, value) => {
     setLoadingToggles((prev) => ({ ...prev, [setting]: true }));
-    const updatedSettings = {
-      ...localSettings,
-      [setting]: value,
-    };
+    const updatedSettings = { ...localSettings, [setting]: value };
     setLocalSettings(updatedSettings);
     try {
       await updateUserSettings({
@@ -97,28 +88,27 @@ export default function SettingsPage() {
         modifiedby: accounts?.[0]?.username || null,
       });
       setInitialSettings(updatedSettings);
-    } catch (err) {
+    } catch {
       setLocalSettings(localSettings);
     } finally {
       setLoadingToggles((prev) => ({ ...prev, [setting]: false }));
     }
   };
- 
   const handleDarkModeToggle = async (value) => {
     setLoadingToggles((prev) => ({ ...prev, darkmode: true }));
-    const updatedSettings = {
-      ...localSettings,
-      darkmode: value,
-    };
+    const updatedSettings = { ...localSettings, darkmode: value };
     setLocalSettings(updatedSettings);
+
+    prevThemeRef.current = value ? 'dark' : 'light';
     setTheme(value ? 'dark' : 'light');
+
     try {
       await updateUserSettings({
         ...updatedSettings,
         modifiedby: accounts?.[0]?.username || null,
       });
       setInitialSettings(updatedSettings);
-    } catch (err) {
+    } catch {
       setLocalSettings(localSettings);
       setTheme(localSettings.darkmode ? 'dark' : 'light');
     } finally {
@@ -131,26 +121,26 @@ export default function SettingsPage() {
     try {
       const resetSettings = {
         usersettingsuuid: localSettings.usersettingsuuid,
-        outlook: true,
-        teams: true,
-        powersuiteai: true,
-        spartaassist: true,
-        darkmode: true,
-        modifiedby: accounts?.[0]?.username || null,
+        outlook:          true,
+        teams:            true,
+        powersuiteai:     true,
+        spartaassist:     true,
+        darkmode:         true,
+        modifiedby:       accounts?.[0]?.username || null,
       };
       setLocalSettings(resetSettings);
       setInitialSettings(resetSettings);
+      prevThemeRef.current = 'dark';
       setTheme('dark');
       await updateUserSettings(resetSettings);
-    } catch (err) {
+    } catch {
     } finally {
       setIsSaving(false);
     }
   };
  
-  if (!mounted) return null;
-  if (loading) return <div className="p-8">Loading settings...</div>;
-  if (error) return <div className="p-8 text-red-500">Error: {error}</div>;
+  if (loading)        return <div className="p-8">Loading settings...</div>;
+  if (error)          return <div className="p-8 text-red-500">Error: {error}</div>;
   if (!settingsLoaded) return <div className="p-8">Loading settings...</div>;
  
   return (

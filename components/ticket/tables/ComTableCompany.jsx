@@ -5,12 +5,12 @@ import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 
 const cardFields = [
-  { key: 'v_department', label: 'Dept' },
-  { key: 'v_username', label: 'User' },
-  { key: 'v_title', label: 'Title' },
+  { key: 'v_department',     label: 'Dept'     },
+  { key: 'v_username',       label: 'User'     },
+  { key: 'v_title',          label: 'Title'    },
   { key: 'v_ticketcategory', label: 'Category' },
-  { key: 'v_createdat', label: 'Created' },
-  { key: 'v_status', label: 'Status' },
+  { key: 'v_createdat',      label: 'Created'  },
+  { key: 'v_status',         label: 'Status'   },
 ];
 
 export default function ComTableCompany({
@@ -27,18 +27,16 @@ export default function ComTableCompany({
   const [selectedTicket, setSelectedTicket] = useState(null);
   const { tickets, loading, error } = useFetchTicket({
     entrauserid: tokenInfo?.account?.localAccountId,
-      refreshKey,
+    refreshKey,
   });
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const prevTicketsRef        = useRef();
+  const prevFilteredLengthRef = useRef();
 
   const filteredTickets = useMemo(
     () =>
       tickets.filter(t => {
-        const search = searchValue.toLowerCase().trim();
+        const search  = searchValue.toLowerCase().trim();
         const manager = t.v_managername || t.v_technicianname;
 
         const matchesSearch =
@@ -49,10 +47,10 @@ export default function ComTableCompany({
           t.v_title?.toLowerCase().includes(search) ||
           t.v_ticketcategory?.toLowerCase().includes(search);
 
-        const matchesManager = !filters.Manager || manager === filters.Manager;
-        const matchesPriority = !filters.Priority || t.v_priority === filters.Priority;
+        const matchesManager  = !filters.Manager  || manager            === filters.Manager;
+        const matchesPriority = !filters.Priority || t.v_priority       === filters.Priority;
         const matchesCategory = !filters.Category || t.v_ticketcategory === filters.Category;
-        const matchesStatus = !filters.Status || t.v_status === filters.Status;
+        const matchesStatus   = !filters.Status   || t.v_status         === filters.Status;
 
         return matchesSearch && matchesManager && matchesPriority && matchesCategory && matchesStatus;
       }),
@@ -64,39 +62,35 @@ export default function ComTableCompany({
     [filteredTickets, currentPage, recordsPerPage]
   );
 
-  const prevTicketsRef = useRef();
-  const prevFilteredLengthRef = useRef();
-
   useEffect(() => {
-    if (!mounted) return;
     const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(tickets);
     if (ticketsChanged) {
       prevTicketsRef.current = tickets;
-      const managers = [...new Set(tickets.map(t => t.v_managername || t.v_technicianname).filter(Boolean))];
-      const priorities = [...new Set(tickets.map(t => t.v_priority).filter(Boolean))];
-      const categories = [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))];
-      const statuses = [...new Set(tickets.map(t => t.v_status).filter(Boolean))];
-      onFilterOptionsChange?.({ Manager: managers, Priority: priorities, Category: categories, Status: statuses });
+      onFilterOptionsChange?.({
+        Manager:  [...new Set(tickets.map(t => t.v_managername || t.v_technicianname).filter(Boolean))],
+        Priority: [...new Set(tickets.map(t => t.v_priority).filter(Boolean))],
+        Category: [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))],
+        Status:   [...new Set(tickets.map(t => t.v_status).filter(Boolean))],
+      });
     }
-  }, [tickets, onFilterOptionsChange, mounted]);
+  }, [tickets, onFilterOptionsChange]);
 
   useEffect(() => {
-    if (!mounted) return;
     if (prevFilteredLengthRef.current !== filteredTickets.length) {
       prevFilteredLengthRef.current = filteredTickets.length;
       onTotalRecordsChange(filteredTickets.length);
     }
-  }, [filteredTickets.length, onTotalRecordsChange, mounted]);
+  }, [filteredTickets.length, onTotalRecordsChange]);
 
-  if (!mounted || loading) return <div className="text-center py-6">Loading...</div>;
-  if (error) return <div className="text-center py-6 text-red-500">{error}</div>;
+  if (loading) return <div className="text-center py-6">Loading...</div>;
+  if (error)   return <div className="text-center py-6 text-red-500">{error}</div>;
 
   const getPriorityClass = (priority) => {
     switch (priority?.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
+      case 'high':   return 'bg-red-100 text-red-800';
       case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'low':    return 'bg-green-100 text-green-800';
+      default:       return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -132,10 +126,10 @@ export default function ComTableCompany({
             {paginated.map(t => (
               <tr key={t.v_ticketuuid} onClick={() => setSelectedTicket(t)} className="hover:bg-gray-50 cursor-pointer">
                 <td className="px-3 py-2 text-sm font-medium">{t.v_ticketnumber}</td>
-                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px] truncate">{t.v_department}</td>
-                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px] truncate">{t.v_username}</td>
+                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px]  truncate">{t.v_department}</td>
+                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px]  truncate">{t.v_username}</td>
                 <td className="px-3 py-2 text-sm text-gray-500 max-w-[100px] truncate">{t.v_title}</td>
-                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px] truncate">{t.v_ticketcategory}</td>
+                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px]  truncate">{t.v_ticketcategory}</td>
                 <td className="px-3 py-2">
                   <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
                     {t.v_priority}
@@ -150,7 +144,13 @@ export default function ComTableCompany({
         </table>
       </div>
 
-      {selectedTicket && <ComUpdateForm ticket={selectedTicket} onClose={() => setSelectedTicket(null)} onUpdated={onTicketUpdated} />}
+      {selectedTicket && (
+        <ComUpdateForm
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+          onUpdated={onTicketUpdated}
+        />
+      )}
     </>
   );
 }

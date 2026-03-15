@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import {Home,Ticket,LifeBuoy,Users,Settings,Sun,Moon,ChevronLeft,ChevronRight,LogOut} from 'lucide-react';
+import { Home, Ticket, LifeBuoy, Users, Settings, Sun, Moon, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { useMsal } from "@azure/msal-react";
 import { useTheme } from "next-themes";
@@ -12,16 +12,13 @@ const SIDEBAR_EXPANDED = 'w-64';
 
 export default function SideNavbar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [showLogout, setShowLogout] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [isMobile,    setIsMobile]    = useState(false);
+  const [showLogout,  setShowLogout]  = useState(false);
 
-  const { instance } = useMsal();
-  const { tokenInfo } = useAuth();
+  const { instance }            = useMsal();
+  const { tokenInfo }           = useAuth();
   const { setTheme, resolvedTheme } = useTheme();
-  const router = useRouter();
-
-  useEffect(() => setMounted(true), []);
+  const router                  = useRouter();
 
   useEffect(() => {
     const checkMobile = () => {
@@ -45,9 +42,9 @@ export default function SideNavbar() {
 
   const currentRole = useMemo(() => {
     const roles = account?.roles ?? [];
-    if (roles.includes('SuperAdmin')) return 'super-admin';
+    if (roles.includes('SuperAdmin'))  return 'super-admin';
     if (roles.includes('SystemAdmin')) return 'system-admin';
-    if (roles.includes('Manager')) return 'manager';
+    if (roles.includes('Manager'))     return 'manager';
     return 'user';
   }, [account]);
 
@@ -55,15 +52,13 @@ export default function SideNavbar() {
 
   const menuItems = useMemo(() => {
     const items = [
-      { icon: Home,     label: 'Home',    path: '/home' },
-      { icon: Ticket,   label: 'Ticket',  path: '/ticket' },
-      { icon: LifeBuoy, label: 'Support', path: '/support' },
+      { icon: Home,     label: 'Home',    path: '/home'     },
+      { icon: Ticket,   label: 'Ticket',  path: '/ticket'   },
+      { icon: LifeBuoy, label: 'Support', path: '/support'  },
     ];
-
     if (isPrivileged) {
       items.push({ icon: Users, label: 'Manage', path: '/manage' });
     }
-
     items.push({ icon: Settings, label: 'Settings', path: '/settings' });
     return items;
   }, [isPrivileged]);
@@ -95,8 +90,6 @@ export default function SideNavbar() {
   const toggleCollapse = useCallback(() => {
     setIsCollapsed(prev => !prev);
   }, []);
-
-  if (!mounted) return null;
 
   if (isMobile) {
     return (

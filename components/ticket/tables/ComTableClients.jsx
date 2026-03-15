@@ -5,12 +5,12 @@ import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 
 const cardFields = [
-  { key: 'v_tenantname', label: 'Client' },
-  { key: 'v_username', label: 'User' },
-  { key: 'v_title', label: 'Title' },
+  { key: 'v_tenantname',     label: 'Client'   },
+  { key: 'v_username',       label: 'User'     },
+  { key: 'v_title',          label: 'Title'    },
   { key: 'v_ticketcategory', label: 'Category' },
-  { key: 'v_createdat', label: 'Created' },
-  { key: 'v_status', label: 'Status' },
+  { key: 'v_createdat',      label: 'Created'  },
+  { key: 'v_status',         label: 'Status'   },
 ];
 
 export default function ComTableClients({
@@ -20,25 +20,23 @@ export default function ComTableClients({
   onFilterOptionsChange,
   searchValue = '',
   filters = {},
-  refreshKey,     
-  onTicketUpdated, 
+  refreshKey,
+  onTicketUpdated,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
   const { tickets, loading, error } = useFetchTicket({
     entrauserid: tokenInfo?.account?.localAccountId,
-     refreshKey, 
+    refreshKey,
   });
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const prevTicketsRef        = useRef();
+  const prevFilteredLengthRef = useRef();
 
   const filteredTickets = useMemo(
     () =>
       tickets.filter(t => {
-        const search = searchValue.toLowerCase().trim();
+        const search  = searchValue.toLowerCase().trim();
         const manager = t.v_managername || t.v_technicianname;
 
         const matchesSearch =
@@ -49,11 +47,11 @@ export default function ComTableClients({
           t.v_title?.toLowerCase().includes(search) ||
           t.v_ticketcategory?.toLowerCase().includes(search);
 
-        const matchesClient = !filters.Client || t.v_tenantname === filters.Client;
-        const matchesManager = !filters.Manager || manager === filters.Manager;
-        const matchesPriority = !filters.Priority || t.v_priority === filters.Priority;
-        const matchesCategory = !filters.Category || t.v_ticketcategory === filters.Category;
-        const matchesStatus = !filters.Status || t.v_status === filters.Status;
+        const matchesClient   = !filters.Client   || t.v_tenantname      === filters.Client;
+        const matchesManager  = !filters.Manager  || manager             === filters.Manager;
+        const matchesPriority = !filters.Priority || t.v_priority        === filters.Priority;
+        const matchesCategory = !filters.Category || t.v_ticketcategory  === filters.Category;
+        const matchesStatus   = !filters.Status   || t.v_status          === filters.Status;
 
         return matchesSearch && matchesClient && matchesManager && matchesPriority && matchesCategory && matchesStatus;
       }),
@@ -65,52 +63,41 @@ export default function ComTableClients({
     [filteredTickets, currentPage, recordsPerPage]
   );
 
-  const prevTicketsRef = useRef();
-  const prevFilteredLengthRef = useRef();
-
   useEffect(() => {
-    if (!mounted) return;
     const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(tickets);
     if (ticketsChanged) {
       prevTicketsRef.current = tickets;
-      const clients = [...new Set(tickets.map(t => t.v_tenantname).filter(Boolean))];
-      const managers = [...new Set(tickets.map(t => t.v_managername || t.v_technicianname).filter(Boolean))];
-      const priorities = [...new Set(tickets.map(t => t.v_priority).filter(Boolean))];
-      const categories = [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))];
-      const statuses = [...new Set(tickets.map(t => t.v_status).filter(Boolean))];
       onFilterOptionsChange?.({
-        Client: clients,
-        Manager: managers,
-        Priority: priorities,
-        Category: categories,
-        Status: statuses,
+        Client:   [...new Set(tickets.map(t => t.v_tenantname).filter(Boolean))],
+        Manager:  [...new Set(tickets.map(t => t.v_managername || t.v_technicianname).filter(Boolean))],
+        Priority: [...new Set(tickets.map(t => t.v_priority).filter(Boolean))],
+        Category: [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))],
+        Status:   [...new Set(tickets.map(t => t.v_status).filter(Boolean))],
       });
     }
-  }, [tickets, onFilterOptionsChange, mounted]);
+  }, [tickets, onFilterOptionsChange]);
 
   useEffect(() => {
-    if (!mounted) return;
     if (prevFilteredLengthRef.current !== filteredTickets.length) {
       prevFilteredLengthRef.current = filteredTickets.length;
       onTotalRecordsChange(filteredTickets.length);
     }
-  }, [filteredTickets.length, onTotalRecordsChange, mounted]);
+  }, [filteredTickets.length, onTotalRecordsChange]);
 
-  if (!mounted || loading) return <div className="text-center py-6">Loading...</div>;
-  if (error) return <div className="text-center py-6 text-red-500">{error}</div>;
+  if (loading) return <div className="text-center py-6">Loading...</div>;
+  if (error)   return <div className="text-center py-6 text-red-500">{error}</div>;
 
   const getPriorityClass = (priority) => {
     switch (priority?.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800';
+      case 'high':   return 'bg-red-100 text-red-800';
       case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'low':    return 'bg-green-100 text-green-800';
+      default:       return 'bg-gray-100 text-gray-800';
     }
   };
 
   return (
     <>
-      {/* Mobile View */}
       <div className="sm:hidden space-y-3 p-3">
         {paginated.map(ticket => (
           <ComCard
@@ -126,7 +113,6 @@ export default function ComTableClients({
         )}
       </div>
 
-      {/* Desktop View */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -141,9 +127,9 @@ export default function ComTableClients({
               <tr key={t.v_ticketuuid} onClick={() => setSelectedTicket(t)} className="hover:bg-gray-50 cursor-pointer">
                 <td className="px-3 py-2 text-sm font-medium">{t.v_ticketnumber}</td>
                 <td className="px-3 py-2 text-sm text-gray-500 max-w-[100px] truncate">{t.v_tenantname}</td>
-                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px] truncate">{t.v_username}</td>
+                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px]  truncate">{t.v_username}</td>
                 <td className="px-3 py-2 text-sm text-gray-500 max-w-[100px] truncate">{t.v_title}</td>
-                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px] truncate">{t.v_ticketcategory}</td>
+                <td className="px-3 py-2 text-sm text-gray-500 max-w-[80px]  truncate">{t.v_ticketcategory}</td>
                 <td className="px-3 py-2">
                   <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
                     {t.v_priority}
@@ -158,7 +144,13 @@ export default function ComTableClients({
         </table>
       </div>
 
-      {selectedTicket && <ComUpdateForm ticket={selectedTicket} onClose={() => setSelectedTicket(null)} onUpdated={onTicketUpdated} />}
+      {selectedTicket && (
+        <ComUpdateForm
+          ticket={selectedTicket}
+          onClose={() => setSelectedTicket(null)}
+          onUpdated={onTicketUpdated}
+        />
+      )}
     </>
   );
 }

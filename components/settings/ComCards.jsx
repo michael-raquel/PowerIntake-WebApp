@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import Image from 'next/image';
 import powersuiteaiicon from './assets/powersuiteai.svg';
 import spartaassisticon from './assets/spartaassistai.svg';
 import teams from './assets/teams.svg';
@@ -8,14 +9,14 @@ import darkmode from './assets/darkmode.svg';
 
 export function SettingCard({ icon, title, description, isEnabled, onChange, isLoading }) {
   const isImageIcon = typeof icon === 'object' && icon?.src;
- 
+
   return (
     <Card className="p-4 border border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 w-10 h-10 flex items-center justify-center">
             {isImageIcon ? (
-              <img src={icon.src} alt="icon" className="w-10 h-10" />
+              <Image src={icon.src} alt={title} width={40} height={40} />
             ) : (
               <div className="text-2xl">{icon}</div>
             )}
@@ -29,7 +30,7 @@ export function SettingCard({ icon, title, description, isEnabled, onChange, isL
             </p>
           </div>
         </div>
- 
+
         <div className="flex items-center gap-3 flex-shrink-0">
           {isLoading ? (
             <span className="flex items-center justify-center h-6 w-11">
@@ -65,7 +66,6 @@ export function NotificationsSection({ localSettings, onToggle, loadingToggles =
           onChange={(checked) => onToggle('outlook', checked)}
           isLoading={isLoading || loadingToggles.outlook}
         />
-
         <SettingCard
           icon={teams}
           title="Microsoft Teams Notification"
@@ -92,7 +92,6 @@ export function AssistSection({ localSettings, onToggle, loadingToggles = {}, is
           onChange={(checked) => onToggle('powersuiteai', checked)}
           isLoading={isLoading || loadingToggles.powersuiteai}
         />
-
         <SettingCard
           icon={spartaassisticon}
           title="Sparta Assist"
