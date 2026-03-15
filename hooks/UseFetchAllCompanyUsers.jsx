@@ -9,32 +9,24 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
- const fetchData = useCallback(async (currentPage = 1) => {
-  setLoading(true);
-  setError(null);
-  try {
-    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/mycompany?page=${currentPage}&limit=${limit}`;
-    console.log('[useFetchAllCompanyUsers] Fetching:', url);
+  const fetchData = useCallback(async (currentPage = 1) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/mycompany?page=${currentPage}&limit=${limit}`);
+      if (!res.ok) throw new Error("Failed to fetch company users");
 
-    const res = await fetch(url);
-
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`${res.status} ${res.statusText} — ${body}`);
+      const json = await res.json();
+      setData(json.data);
+      setTotal(json.total);
+      setTotalPages(json.totalPages);
+      setPage(currentPage);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
-
-    const json = await res.json();
-    setData(json.data);
-    setTotal(json.total);
-    setTotalPages(json.totalPages);
-    setPage(currentPage);
-  } catch (err) {
-    console.error('[useFetchAllCompanyUsers] Error:', err); 
-    setError(err.message);
-  } finally {
-    setLoading(false);
-  }
-}, [limit]);
+  }, [limit]);
 
   useEffect(() => {
     fetchData(1);
