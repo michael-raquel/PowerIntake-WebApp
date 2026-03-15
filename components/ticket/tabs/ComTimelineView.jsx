@@ -12,19 +12,34 @@ export default function ComTimelineView({ ticket }) {
   const statuses = ticket?.v_ticketstatuses || [];
 
   if (!statuses.length) {
-    return <p className="text-sm text-gray-400 py-4 text-center">No timeline entries.</p>;
+    return (
+      <p className="text-sm text-gray-400 dark:text-gray-500 py-4 text-center">
+        No timeline entries.
+      </p>
+    );
   }
 
   return (
     <div className="relative pl-4">
-      <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200" />
+      <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200 dark:bg-gray-700" />
+
       <div className="space-y-5">
-        {statuses.map(s => (
+        {statuses.map((s) => (
           <div key={s.v_ticketstatusid} className="relative flex gap-3">
-            <div className={cn('w-3.5 h-3.5 rounded-full border-2 border-white shrink-0 mt-0.5 z-10', STATUS_DOT[s.v_status] || 'bg-gray-400')} />
-            <div>
-              <p className="text-sm font-medium text-gray-900">{s.v_status}</p>
-              <p className="text-xs text-gray-400">{format(new Date(s.v_createdat), 'MMM dd, yyyy • hh:mm a')}</p>
+            <div
+              className={cn(
+                'w-3.5 h-3.5 rounded-full border-2 border-white dark:border-gray-900 shrink-0 mt-0.5 z-10',
+                STATUS_DOT[s.v_status] || 'bg-gray-400'
+              )}
+            />
+
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 dark:text-white break-words">
+                {s.v_status}
+              </p>
+              <p className="text-xs text-gray-400 dark:text-gray-500">
+                {format(new Date(s.v_createdat), 'MMM dd, yyyy • hh:mm a')}
+              </p>
             </div>
           </div>
         ))}

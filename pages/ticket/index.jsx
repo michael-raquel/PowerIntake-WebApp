@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ComFilters from '@/components/ticket/ComFilters';
 import ComTicketTable from '@/components/ticket/ComTicketTable';
 import ComCreateTicket from '@/components/ticket/ComCreateTicket';
-
-const TABS = [
-  { id: 'my-client', label: 'My Client' },
-  { id: 'my-company', label: 'My Company' },
-  { id: 'my-team', label: 'My Team' },
-  { id: 'my-ticket', label: 'My Ticket' },
-];
+import { useAuth } from '@/context/AuthContext';
+import { useFetchTeamTickets } from '@/hooks/UseFetchTeamTickets';
 
 const RECORDS_PER_PAGE = 10;
 
 export default function TicketPage() {
+  const { tokenInfo } = useAuth();
+  const roles = tokenInfo?.account?.roles || [];
+  const isSuperAdmin = roles.includes('SuperAdmin');
+  const isAdmin = roles.includes('Admin');
+
   const [activeTab, setActiveTab] = useState('my-ticket');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
@@ -23,6 +23,33 @@ export default function TicketPage() {
   const [selectedFilters, setSelectedFilters] = useState({});
   const [filterOptions, setFilterOptions] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const { teamTickets } = useFetchTeamTickets({
+    managerid: tokenInfo?.account?.localAccountId,
+    refreshKey,
+  });
+
+  const showTeamTab = (isSuperAdmin || isAdmin) && teamTickets.length > 0;
+
+  const tabs = [];
+  if (isSuperAdmin) {
+    tabs.push({ id: 'my-client', label: 'My Client' });
+    tabs.push({ id: 'my-company', label: 'My Company' });
+  } else if (isAdmin) {
+    tabs.push({ id: 'my-company', label: 'My Company' });
+  }
+  if (showTeamTab) {
+    tabs.push({ id: 'my-team', label: 'My Team' });
+  }
+  tabs.push({ id: 'my-ticket', label: 'My Ticket' });
+
+  useEffect(() => {
+    const tabIds = tabs.map(t => t.id);
+    if (!tabIds.includes(activeTab)) {
+      setActiveTab('my-ticket');
+    }
+  }, [tabs, activeTab]);
+
   const totalPages = Math.ceil(totalRecords / RECORDS_PER_PAGE);
 
   const handleTabChange = (tabId) => {
@@ -58,14 +85,14 @@ export default function TicketPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
         <div className="border-b border-gray-200 dark:border-gray-800 sm:flex-1">
           <nav className="flex gap-x-6">
-            {TABS.map(({ id, label }) => (
+            {tabs.map(({ id, label }) => (
               <button
                 key={id}
                 onClick={() => handleTabChange(id)}
-                className={`pb-3 text-sm font-medium border-b-2 whitespace-nowrap ${
+                className={`pb-3 text-sm font-medium border-b-2 whitespace-nowrap transition-colors ${
                   activeTab === id
                     ? 'border-blue-500 text-blue-600 dark:border-blue-400 dark:text-blue-400'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
                 }`}
               >
                 {label}
@@ -93,24 +120,23 @@ export default function TicketPage() {
         onFilterOptionsChange={setFilterOptions}
         searchValue={searchValue}
         filters={selectedFilters}
-        refreshKey={refreshKey}                          
+        refreshKey={refreshKey}
         onTicketUpdated={() => setRefreshKey(k => k + 1)}
       />
 
       {totalRecords > 0 && (
-        <div className="mt-4 bg-white dark:bg-gray-900 px-4 py-3 rounded-lg border flex items-center justify-between">
+        <div className="mt-4 bg-white dark:bg-gray-900 px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-800 flex items-center justify-between">
           <span className="text-sm text-gray-700 dark:text-gray-300">
             {getPaginationText()}
           </span>
-          
           <div className="flex gap-2">
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 currentPage === 1
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white border hover:bg-gray-50'
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+                  : 'bg-white border border-gray-200 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300'
               }`}
             >
               Previous
@@ -118,10 +144,10 @@ export default function TicketPage() {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className={`px-4 py-2 text-sm font-medium rounded-md ${
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                 currentPage === totalPages
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-white border hover:bg-gray-50'
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+                  : 'bg-white border border-gray-200 hover:bg-gray-50 dark:bg-gray-900 dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300'
               }`}
             >
               Next
