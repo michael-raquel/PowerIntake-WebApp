@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from 'react';
-import { X, StickyNote, ChevronLeft, User, CalendarCheck, Paperclip, GitBranch } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, StickyNote, ChevronLeft, User, CalendarCheck, Paperclip, GitBranch, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
 import { useAuth } from '@/context/AuthContext';
 import { useUpdateTicket } from '@/hooks/UseUpdateTicket';
 import ComNotes from './tabs/ComNotes';
@@ -23,16 +26,16 @@ const TABS = [
 ];
 
 const STATUS_COLORS = {
-  Submitted: 'bg-green-50 text-green-700 border-green-200',
-  'In Progress': 'bg-blue-50 text-blue-700 border-blue-200',
-  Closed: 'bg-gray-50 text-gray-600 border-gray-200',
-  Pending: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+  Submitted: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900',
+  'In Progress': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  Closed: 'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700',
+  Pending: 'bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-950/30 dark:text-yellow-400 dark:border-yellow-900',
 };
 
 const PRIORITY_COLORS = {
-  High: 'bg-red-50 text-red-700',
-  Medium: 'bg-yellow-50 text-yellow-700',
-  Low: 'bg-green-50 text-green-700',
+  High: 'bg-red-50 text-red-700 dark:bg-red-950/30 dark:text-red-400',
+  Medium: 'bg-yellow-50 text-yellow-700 dark:bg-yellow-950/30 dark:text-yellow-400',
+  Low: 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400',
 };
 
 export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
@@ -51,25 +54,64 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
         }))
       : []
   );
+  const [supportCalls, setSupportCalls] = useState([]);
+
+  useEffect(() => {
+    if (ticket) {
+      const initialCalls = Array.isArray(ticket.v_supportcalls)
+        ? ticket.v_supportcalls.map(call => ({
+            id: call.v_supportcallid || Date.now() + Math.random(),
+            date: call.v_date ? new Date(call.v_date) : null,
+            fromTime: call.v_starttime?.slice(0,5) || '09:00',
+            toTime: call.v_endtime?.slice(0,5) || '17:00',
+          }))
+        : [];
+      setSupportCalls(initialCalls);
+    }
+  }, [ticket]);
 
   if (!ticket) return null;
 
-  const isEditable = ticket.v_status === 'Submitted';
+  const currentUserId = account?.localAccountId;
+  const isOwner = ticket.v_entrauserid === currentUserId;
+  const isEditableStatus = ticket.v_status === 'Submitted';
+  const canEdit = isOwner && isEditableStatus;
 
-  const supportCalls = Array.isArray(ticket.v_supportcalls)
-    ? ticket.v_supportcalls.map(c => ({
-        date: new Date(c.v_date),
-        fromTime: c.v_starttime,
-        toTime: c.v_endtime,
-      }))
-    : null;
+  const handleAddCall = () => {
+    if (!canEdit) return;
+    setSupportCalls(prev => [
+      ...prev,
+      {
+        id: Date.now(),
+        date: null,
+        fromTime: '09:00',
+        toTime: '17:00',
+      },
+    ]);
+  };
+
+  const handleRemoveCall = (id) => {
+    if (!canEdit) return;
+    setSupportCalls(prev => prev.filter(call => call.id !== id));
+  };
+
+  const handleCallChange = (id, field, value) => {
+    if (!canEdit) return;
+    setSupportCalls(prev =>
+      prev.map(call => (call.id === id ? { ...call, [field]: value } : call))
+    );
+  };
 
   const handleUpdate = async () => {
-    if (!ticket.v_ticketuuid) return;
+    if (!ticket.v_ticketuuid || !canEdit) return;
     await updateTicket({
       ticketuuid: ticket.v_ticketuuid,
       formData: { title, description, timezone: ticket.v_usertimezone, location: ticket.v_officelocation },
-      supportCalls,
+      supportCalls: supportCalls.map(c => ({
+        date: c.date,
+        fromTime: c.fromTime,
+        toTime: c.toTime,
+      })),
       attachments,
     });
     onUpdated?.(ticket.v_ticketuuid);
@@ -96,103 +138,200 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
       case 'notes': return <ComNotes ticket={ticket} ticketUuid={ticket.v_ticketuuid} />;
       case 'user': return <ComUserInformation ticket={ticket} />;
       case 'closure': return <ComClosureDate ticket={ticket} />;
-      case 'attachments': return <ComAttachment attachments={attachments} onChange={setAttachments} />;
+      case 'attachments': return <ComAttachment attachments={attachments} onChange={setAttachments} canEdit={canEdit} />;
       case 'timeline': return <ComTimelineView ticket={ticket} />;
       default: return null;
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden relative">
-        <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
+    return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden relative">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-medium text-gray-500">Ticket</span>
-            <span className="text-xs font-semibold text-gray-900 bg-gray-100 px-2.5 py-1 rounded-md">
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ticket</span>
+            <span className="text-xs font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-md">
               #{ticket.v_ticketnumber}
             </span>
             <span className={cn('text-xs font-medium px-2.5 py-1 rounded-md', STATUS_COLORS[ticket.v_status])}>
               {ticket.v_status}
             </span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={onClose} className="dark:text-gray-400 dark:hover:bg-gray-800">
+            <X className="w-4 h-4" />
+          </Button>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto">
-            <div className="px-6 py-5 border-b">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-semibold text-base shrink-0">
-                  {ticket.v_username?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-800">
+              <div className="flex items-center justify-between gap-4 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 flex items-center justify-center text-white font-semibold text-base shrink-0">
+                    {ticket.v_username?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 uppercase">Requester</p>
+                    <p className="text-base font-semibold text-gray-900 dark:text-white truncate">{ticket.v_username}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{ticket.v_useremail}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400 uppercase">Requester</p>
-                  <p className="text-base font-semibold text-gray-900">{ticket.v_username}</p>
-                  <p className="text-sm text-gray-500">{ticket.v_useremail}</p>
-                </div>
+                {canEdit && (
+                  <Button
+                    className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700 text-white shadow-sm px-5 shrink-0"
+                    onClick={handleUpdate}
+                    disabled={loading}
+                  >
+                    {loading ? 'Updating...' : 'Update'}
+                  </Button>
+                )}
               </div>
-              <Button
-                className="bg-purple-600 hover:bg-purple-700 text-white shadow-sm px-5 w-full sm:w-auto mt-4"
-                onClick={handleUpdate}
-                disabled={loading || !isEditable}
-              >
-                {loading ? 'Updating...' : 'Update'}
-              </Button>
             </div>
 
-            <div className="px-6 py-5 space-y-6">
-              <div>
-                <h3 className="text-xs font-semibold text-gray-400 uppercase mb-3">Issue Details</h3>
-                <div className="space-y-3">
-                  <div className="bg-gray-50 rounded-lg p-4 border">
-                    <p className="text-xs text-gray-500 mb-1">Title</p>
-                    <Input
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      disabled={!isEditable}
-                      className="text-sm font-medium text-gray-900 bg-transparent border-none px-0 shadow-none focus-visible:ring-0"
-                    />
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-4 border">
-                    <p className="text-xs text-gray-500 mb-1">Description</p>
-                    <Textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      rows={4}
-                      disabled={!isEditable}
-                      className="text-sm text-gray-900 bg-transparent border-none px-0 shadow-none focus-visible:ring-0 resize-none"
-                    />
+            <div className="px-6 py-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4 w-full min-w-0">
+                <div>
+                  <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-3">Issue Details</h3>
+                  <div className="space-y-3">
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-800 w-full">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Title</p>
+                      {canEdit ? (
+                        <Input
+                          value={title}
+                          onChange={(e) => setTitle(e.target.value)}
+                          className="text-sm font-medium text-gray-900 dark:text-white bg-transparent border-none px-0 shadow-none focus-visible:ring-0 w-full"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-gray-200 break-words">{title}</p>
+                      )}
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-800 w-full">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Description</p>
+                      {canEdit ? (
+                        <Textarea
+                          value={description}
+                          onChange={(e) => setDescription(e.target.value)}
+                          rows={3}
+                          className="text-sm text-gray-900 dark:text-white bg-transparent border-none px-0 shadow-none focus-visible:ring-0 resize-none w-full"
+                        />
+                      ) : (
+                        <p className="text-sm text-gray-900 dark:text-gray-200 whitespace-pre-wrap break-words">{description}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-xs font-semibold text-gray-400 uppercase mb-3">Ticket Details</h3>
+              <div className="w-full min-w-0">
+                <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase mb-3">Ticket Details</h3>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-4 border">
-                    <p className="text-xs text-gray-500 mb-1">Type</p>
-                    <p className="text-sm font-medium text-gray-900">{ticket.v_ticketcategory || '—'}</p>
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-800 min-w-0">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Type</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{ticket.v_ticketcategory || '—'}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4 border">
-                    <p className="text-xs text-gray-500 mb-1">Lifecycle</p>
-                    <p className="text-sm font-medium text-gray-900">{ticket.v_ticketlifecycle || '—'}</p>
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-800 min-w-0">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Lifecycle</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{ticket.v_ticketlifecycle || '—'}</p>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4 border">
-                    <p className="text-xs text-gray-500 mb-1">Priority</p>
-                    <span className={cn('text-xs font-medium px-2 py-0.5 rounded', PRIORITY_COLORS[ticket.v_priority])}>
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-800 min-w-0">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Priority</p>
+                    <span className={cn('text-xs font-medium px-2 py-0.5 rounded inline-block', PRIORITY_COLORS[ticket.v_priority])}>
                       {ticket.v_priority || '—'}
                     </span>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-4 border">
-                    <p className="text-xs text-gray-500 mb-1">Technician</p>
-                    <p className="text-sm font-medium text-gray-900">{ticket.v_technicianname || '—'}</p>
+                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-100 dark:border-gray-800 min-w-0">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Technician</p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{ticket.v_technicianname || '—'}</p>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div className="px-6 pb-5 w-full">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase">Support Calls</h3>
+                {canEdit && (
+                  <Button variant="outline" size="sm" onClick={handleAddCall} className="gap-1 h-8 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 shrink-0">
+                    <Plus className="w-3.5 h-3.5" /> Add
+                  </Button>
+                )}
+              </div>
+              <div className="space-y-3 w-full">
+                {supportCalls.map((call) => (
+                  <div key={call.id} className="relative p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-800 w-full">
+                    {canEdit && supportCalls.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveCall(call.id)}
+                        className="absolute top-2 right-2 h-6 w-6 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Date</p>
+                        {canEdit ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-8 text-sm dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800">
+                                <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0 dark:text-gray-400" />
+                                <span className="truncate">{call.date ? format(call.date, "PPP") : "Select date"}</span>
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 dark:bg-gray-900 dark:border-gray-800">
+                              <Calendar
+                                mode="single"
+                                selected={call.date}
+                                onSelect={(date) => handleCallChange(call.id, 'date', date)}
+                                disabled={(date) => date < new Date()}
+                                initialFocus
+                                className="dark:bg-gray-900 dark:text-gray-100"
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        ) : (
+                          <p className="text-sm text-gray-900 dark:text-gray-200 break-words">{call.date ? format(call.date, "PPP") : '—'}</p>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Start Time</p>
+                        {canEdit ? (
+                          <Input
+                            type="time"
+                            value={call.fromTime}
+                            onChange={(e) => handleCallChange(call.id, 'fromTime', e.target.value)}
+                            className="h-8 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 w-full"
+                          />
+                        ) : (
+                          <p className="text-sm text-gray-900 dark:text-gray-200">{call.fromTime}</p>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">End Time</p>
+                        {canEdit ? (
+                          <Input
+                            type="time"
+                            value={call.toTime}
+                            onChange={(e) => handleCallChange(call.id, 'toTime', e.target.value)}
+                            className="h-8 text-sm dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 w-full"
+                          />
+                        ) : (
+                          <p className="text-sm text-gray-900 dark:text-gray-200">{call.toTime}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {supportCalls.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 italic">No support calls scheduled.</p>
+                )}
               </div>
             </div>
           </div>
 
-          <div className="w-14 border-l flex flex-col items-center py-5 gap-2 shrink-0 bg-gray-50">
+          <div className="w-14 border-l border-gray-200 dark:border-gray-800 flex flex-col items-center py-5 gap-2 shrink-0 bg-gray-50/50 dark:bg-gray-900/50">
             {TABS.map(({ id, icon: Icon, label }) => (
               <button
                 key={id}
@@ -201,8 +340,8 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                 className={cn(
                   'w-9 h-9 rounded-lg flex items-center justify-center transition-all',
                   activeTab === id
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'text-gray-400 hover:bg-gray-200 hover:text-gray-600'
+                    ? 'bg-purple-600 text-white shadow-md dark:bg-purple-600'
+                    : 'text-gray-400 hover:bg-gray-200 hover:text-gray-600 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300'
                 )}
               >
                 <Icon className="w-4 h-4" />
@@ -213,21 +352,21 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
         <div
           className={cn(
-            'absolute top-0 left-0 h-full bg-white border-r shadow-xl transition-all duration-300 overflow-hidden z-30',
+            'absolute top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl transition-all duration-300 overflow-hidden z-30',
             panelOpen ? 'w-80' : 'w-0'
           )}
         >
           {panelOpen && (
             <div className="w-80 h-full flex flex-col">
-              <div className="flex items-center justify-between px-4 py-4 border-b shrink-0">
-                <h3 className="text-sm font-semibold text-gray-900">
+              <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                   {TABS.find(t => t.id === activeTab)?.label}
                 </h3>
-                <Button variant="ghost" size="icon" onClick={closePanel} className="h-7 w-7">
+                <Button variant="ghost" size="icon" onClick={closePanel} className="h-7 w-7 dark:text-gray-400 dark:hover:bg-gray-800">
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </Button>
               </div>
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="flex-1 overflow-y-auto p-4 dark:text-gray-200">
                 {renderTabContent()}
               </div>
             </div>

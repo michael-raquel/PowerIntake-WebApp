@@ -55,88 +55,90 @@ export default function ComFilters({
   };
 
   return (
-    <div className="flex items-center gap-2 w-full">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+      <div className="relative flex-1 min-w-0">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
         <Input
           value={searchValue}
           onChange={(e) => onSearch?.(e.target.value)}
           placeholder="Search username or ID"
-          className="pl-9 w-full"
+          className="pl-9 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500"
         />
       </div>
 
-      <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" size="icon" className="relative shrink-0">
-            <Filter className="w-4 h-4" />
-            {activeFilterCount > 0 && (
-              <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
-                {activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-        </PopoverTrigger>
-
-        <PopoverContent className="w-72 p-4" align="end">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium text-sm">Filter by</h4>
+      <div className="flex items-center gap-2 shrink-0">
+        <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon" className="relative shrink-0 dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300">
+              <Filter className="w-4 h-4" />
               {activeFilterCount > 0 && (
-                <Button variant="ghost" size="sm" onClick={() => onFiltersChange({})} className="h-8 text-xs">
-                  Clear all
-                </Button>
+                <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center dark:bg-gray-700 dark:text-gray-200">
+                  {activeFilterCount}
+                </Badge>
               )}
-            </div>
+            </Button>
+          </PopoverTrigger>
 
-            {filtersForTab.map((filter) => {
-              const options = getOptionsForFilter(filter);
-              const currentValue = selectedFilters[filter];
+          <PopoverContent className="w-72 p-4 dark:bg-gray-900 dark:border-gray-800" align="end">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-medium text-sm dark:text-gray-200">Filter by</h4>
+                {activeFilterCount > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => onFiltersChange({})} className="h-8 text-xs dark:text-gray-300 dark:hover:bg-gray-800">
+                    Clear all
+                  </Button>
+                )}
+              </div>
 
-              return (
-                <div key={filter} className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">{filter}</span>
-                    {currentValue && (
-                      <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => clearFilter(filter)}>
-                        <X className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
+              {filtersForTab.map((filter) => {
+                const options = getOptionsForFilter(filter);
+                const currentValue = selectedFilters[filter];
 
-                  <Select
-                    value={currentValue || ''}
-                    onValueChange={(value) => handleFilterChange(filter, value)}
-                    disabled={!options.length}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={options.length ? `Select ${filter}` : 'No options'} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {options.length ? (
-                        options.map((opt) => (
-                          <SelectItem key={`${filter}-${opt}`} value={opt}>
-                            {opt}
-                          </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem value="no-options" disabled>
-                          No options available
-                        </SelectItem>
+                return (
+                  <div key={filter} className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium dark:text-gray-300">{filter}</span>
+                      {currentValue && (
+                        <Button variant="ghost" size="icon" className="h-5 w-5 dark:text-gray-400 dark:hover:bg-gray-800" onClick={() => clearFilter(filter)}>
+                          <X className="h-3 w-3" />
+                        </Button>
                       )}
-                    </SelectContent>
-                  </Select>
-                </div>
-              );
-            })}
-          </div>
-        </PopoverContent>
-      </Popover>
+                    </div>
 
-      <Button onClick={onCreateTicket} className="gap-2 shrink-0">
-        <Plus className="w-4 h-4" />
-        New
-      </Button>
+                    <Select
+                      value={currentValue || ''}
+                      onValueChange={(value) => handleFilterChange(filter, value)}
+                      disabled={!options.length}
+                    >
+                      <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:focus:ring-gray-700">
+                        <SelectValue placeholder={options.length ? `Select ${filter}` : 'No options'} />
+                      </SelectTrigger>
+                      <SelectContent className="dark:bg-gray-900 dark:border-gray-800">
+                        {options.length ? (
+                          options.map((opt) => (
+                            <SelectItem key={`${filter}-${opt}`} value={opt} className="dark:text-gray-200 dark:focus:bg-gray-800 dark:focus:text-gray-100">
+                              {opt}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem value="no-options" disabled className="dark:text-gray-500">
+                            No options available
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <Button onClick={onCreateTicket} className="gap-2 shrink-0 dark:bg-purple-600 dark:hover:bg-purple-700 dark:text-white">
+          <Plus className="w-4 h-4" />
+          New
+        </Button>
+      </div>
     </div>
   );
 }
