@@ -6,9 +6,9 @@ export default function HomePage() {
 
   // FETCH NOTES USING THE ACCESS TOKEN
   // THIS IS HOW TO USE THE ACCESS TOKEN TO FETCH PROTECTED RESOURCES
-  const { notes, count, loading, error } = useFetchNote(accessToken);
-  console.log("Fetched notes:", notes);
-  // AN EXAMPLE ^^^^^
+  // const { notes, count, loading, error } = useFetchNote(accessToken);
+  // console.log("Fetched notes:", notes);
+  // // AN EXAMPLE ^^^^^
   
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
