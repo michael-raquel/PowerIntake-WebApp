@@ -74,9 +74,21 @@ export default function MyCompanyTab() {
         </button>
       </div>
 
-      {error && (
-        <div className="px-4 py-3 text-sm text-red-500 dark:text-red-400 border-b border-gray-200 dark:border-gray-800">
-          {error}
+     {error && (
+        <div className="px-4 py-3 text-sm border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-start gap-2 text-red-500 dark:text-red-400">
+            <span className="font-medium">Error:</span>
+            <span>{error}</span>
+          </div>
+          {process.env.NODE_ENV === 'development' && (
+            <pre className="mt-2 text-xs text-red-400 dark:text-red-500 bg-red-50 dark:bg-red-950/30 rounded p-2 overflow-x-auto whitespace-pre-wrap">
+              {JSON.stringify({ 
+                message: error,
+                url: `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/mycompany`,
+                timestamp: new Date().toISOString()
+              }, null, 2)}
+            </pre>
+          )}
         </div>
       )}
 
