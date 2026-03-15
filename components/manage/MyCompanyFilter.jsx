@@ -1,44 +1,77 @@
-import { useState, useRef, useEffect } from "react";
-import { Search, SlidersHorizontal, X, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
-export default function CompanyFilter({ onFilter, managers = [], roles = [], departments = [], statuses = [] }) {
+export default function CompanyFilter({
+  onFilter,
+  managers    = [],
+  roles       = [],
+  departments = [],
+  statuses    = [],
+}) {
   const [search,     setSearch]     = useState("");
-  const [open,       setOpen]       = useState(false);
   const [manager,    setManager]    = useState("");
   const [role,       setRole]       = useState("");
   const [department, setDepartment] = useState("");
   const [status,     setStatus]     = useState("");
 
-  const popoverRef = useRef(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
   const activeFilterCount = [manager, role, department, status].filter(Boolean).length;
 
-  const handleApply = () => {
-    onFilter({ search, manager, role, department, status });
-    setOpen(false);
+  // ── Call onFilter directly with merged current + new values ──────────────
+  // No useCallback — avoids stale closure on any field
+  const emit = (overrides = {}) => {
+    onFilter({
+      search,
+      manager,
+      role,
+      department,
+      status,
+      ...overrides,
+    });
   };
 
-  const handleClear = () => {
-    setManager("");
-    setRole("");
-    setDepartment("");
-    setStatus("");
-    onFilter({ search, manager: "", role: "", department: "", status: "" });
-  };
-
-  const handleSearchChange = (e) => {
+  const handleSearch = (e) => {
     setSearch(e.target.value);
-    onFilter({ search: e.target.value, manager, role, department, status });
+    emit({ search: e.target.value });
+  };
+
+  const handleManager = (e) => {
+    setManager(e.target.value);
+    emit({ manager: e.target.value });
+  };
+
+  const handleRole = (val) => {
+    const v = val === "__all__" ? "" : val;
+    setRole(v);
+    emit({ role: v });
+  };
+
+  const handleDepartment = (val) => {
+    const v = val === "__all__" ? "" : val;
+    setDepartment(v);
+    emit({ department: v });
+  };
+
+  const handleStatus = (val) => {
+    const v = val === "__all__" ? "" : val;
+    setStatus(v);
+    emit({ status: v });
+  };
+
+  const clearOne = (key) => {
+    if (key === "manager")    { setManager("");    emit({ manager: "" }); }
+    if (key === "role")       { setRole("");       emit({ role: "" }); }
+    if (key === "department") { setDepartment(""); emit({ department: "" }); }
+    if (key === "status")     { setStatus("");     emit({ status: "" }); }
+  };
+
+  const clearAll = () => {
+    setSearch(""); setManager(""); setRole(""); setDepartment(""); setStatus("");
+    onFilter({ search: "", manager: "", role: "", department: "", status: "" });
   };
 
   return (
@@ -46,16 +79,15 @@ export default function CompanyFilter({ onFilter, managers = [], roles = [], dep
 
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-        <input
-          type="text"
+        <Input
           value={search}
-          onChange={handleSearchChange}
+          onChange={handleSearch}
           placeholder="Search user name..."
-          className="w-full pl-9 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-colors"
+          className="pl-9 pr-8"
         />
         {search && (
           <button
-            onClick={() => { setSearch(""); onFilter({ search: "", manager, role, department, status }); }}
+            onClick={() => { setSearch(""); emit({ search: "" }); }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
             <X className="w-3.5 h-3.5" />
@@ -63,121 +95,131 @@ export default function CompanyFilter({ onFilter, managers = [], roles = [], dep
         )}
       </div>
 
-      <div className="relative" ref={popoverRef}>
-        <button
-          onClick={() => setOpen(!open)}
-          className={`relative flex items-center gap-2 px-3 py-2 text-sm rounded-lg border transition-colors
-            ${open || activeFilterCount > 0
-              ? "border-violet-500 bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-500"
-              : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={`relative gap-2 ${
+              activeFilterCount > 0
+                ? "border-violet-500 bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-500 dark:hover:bg-violet-900/30"
+                : ""
             }`}
-        >
-          <SlidersHorizontal className="w-4 h-4" />
-          <span>Filters</span>
-          {activeFilterCount > 0 && (
-            <span className="flex items-center justify-center w-4 h-4 text-[10px] font-bold rounded-full bg-violet-600 text-white dark:bg-violet-500">
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span>Filters</span>
+            {activeFilterCount > 0 && (
+              <Badge className="h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-violet-600 hover:bg-violet-600 text-white dark:bg-violet-500">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+        </PopoverTrigger>
 
-        {open && (
-          <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-700 shadow-lg z-50 p-4 space-y-4">
+        <PopoverContent className="w-72 p-4" align="end">
+          <div className="space-y-4">
 
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-900 dark:text-white">Filters</span>
-              <button
-                onClick={() => setOpen(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearAll}
+                  className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
+                >
+                  Clear all
+                </button>
+              )}
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Manager</label>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Manager</label>
+                {manager && (
+                  <button onClick={() => clearOne("manager")}>
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-                <input
-                  type="text"
+                <Input
                   value={manager}
-                  onChange={(e) => setManager(e.target.value)}
+                  onChange={handleManager}
                   placeholder="Search manager..."
-                  className="w-full pl-8 pr-4 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-colors"
+                  className="pl-8 h-9 text-sm"
                 />
               </div>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Role</label>
-              <div className="relative">
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-colors cursor-pointer"
-                >
-                  <option value="">All Roles</option>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Role</label>
+                {role && (
+                  <button onClick={() => clearOne("role")}>
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <Select value={role || "__all__"} onValueChange={handleRole} className=" ">
+                <SelectTrigger className="h-9 text-sm w-full">
+                  <SelectValue placeholder="All Roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All Roles</SelectItem>
                   {roles.map((r) => (
-                    <option key={r} value={r}>{r}</option>
+                    <SelectItem key={r} value={r}>{r}</SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              </div>
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Department</label>
-              <div className="relative">
-                <select
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  className="w-full appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-colors cursor-pointer"
-                >
-                  <option value="">All Departments</option>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Department</label>
+                {department && (
+                  <button onClick={() => clearOne("department")}>
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <Select value={department || "__all__"} onValueChange={handleDepartment}>
+                <SelectTrigger className="h-9 text-sm w-full">
+                  <SelectValue placeholder="All Departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All Departments</SelectItem>
                   {departments.map((d) => (
-                    <option key={d} value={d}>{d}</option>
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              </div>
+                </SelectContent>
+              </Select>
             </div>
-
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-              <div className="relative">
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full appearance-none pl-3 pr-8 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-violet-500 dark:focus:ring-violet-400 transition-colors cursor-pointer"
-                >
-                  <option value="">All Statuses</option>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
+                {status && (
+                  <button onClick={() => clearOne("status")}>
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <Select value={status || "__all__"} onValueChange={handleStatus}>
+                <SelectTrigger className="h-9 text-sm w-full">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All Statuses</SelectItem>
                   {statuses.map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                    <SelectItem key={s} value={s}>{s}</SelectItem>
                   ))}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 pt-1">
-              <button
-                onClick={handleClear}
-                disabled={activeFilterCount === 0}
-                className="flex-1 py-2 text-sm rounded-lg border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                Clear
-              </button>
-              <button
-                onClick={handleApply}
-                className="flex-1 py-2 text-sm rounded-lg bg-violet-600 hover:bg-violet-700 text-white font-medium transition-colors"
-              >
-                Apply
-              </button>
+                </SelectContent>
+              </Select>
             </div>
 
           </div>
-        )}
-      </div>
+        </PopoverContent>
+      </Popover>
+
     </div>
   );
 }

@@ -1,20 +1,34 @@
 import { useState, useEffect, useCallback } from "react";
 
 export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 12) {
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [page, setPage] = useState(initialPage);
-  const [limit] = useState(initialLimit);
-  const [total, setTotal] = useState(0);
+  const [data,       setData]       = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState(null);
+  const [page,       setPage]       = useState(initialPage);
+  const [limit]                     = useState(initialLimit);
+  const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchData = useCallback(async (currentPage = 1) => {
+  const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/mycompany?page=${currentPage}&limit=${limit}`);
-      if (!res.ok) throw new Error("Failed to fetch company users");
+      const params = new URLSearchParams({ page: currentPage, limit });
+
+      if (filters.search)     params.append("search",     filters.search);
+      if (filters.manager)    params.append("manager",    filters.manager);
+      if (filters.role)       params.append("role",       filters.role);
+      if (filters.department) params.append("department", filters.department);
+      if (filters.status)     params.append("status",     filters.status);
+
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/mycompany?${params}`;
+      console.log('[useFetchAllCompanyUsers] Fetching:', url);
+
+      const res = await fetch(url);
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`${res.status} ${res.statusText} — ${body}`);
+      }
 
       const json = await res.json();
       setData(json.data);
@@ -22,6 +36,7 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
       setTotalPages(json.totalPages);
       setPage(currentPage);
     } catch (err) {
+      console.error('[useFetchAllCompanyUsers] Error:', err);
       setError(err.message);
     } finally {
       setLoading(false);

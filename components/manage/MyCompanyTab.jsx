@@ -1,11 +1,9 @@
 "use client";
 
 import { useState } from "react";
-
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useFetchAllCompanyUsers from "@/hooks/UseFetchAllCompanyUsers";
 import { Switch } from '@/components/ui/switch';
-
 import CompanyFilter from "@/components/manage/MyCompanyFilter";
 
 const TABLE_HEADERS = [
@@ -19,7 +17,7 @@ const TABLE_HEADERS = [
   "Demote",
 ];
 
-const LIMIT = 12;
+const LIMIT = 10;
 
 export default function MyCompanyTab() {
   const {
@@ -34,27 +32,20 @@ export default function MyCompanyTab() {
     fetchData,
   } = useFetchAllCompanyUsers(1, LIMIT);
 
-  const [filters, setFilters] = useState({ search: "", manager: "", role: "", department: "", status: "" });
+  const handleFilter = (newFilters) => {
+    fetchData(1, newFilters);
+  };
 
   const roles       = [...new Set(data.map((r) => r.v_role).filter(Boolean))];
   const departments = [...new Set(data.map((r) => r.v_department).filter(Boolean))];
   const statuses    = [...new Set(data.map((r) => r.v_status).filter(Boolean))];
   const managers    = [...new Set(data.map((r) => r.v_managername).filter(Boolean))];
 
-  const filteredData = data.filter((row) => {
-    const matchSearch  = !filters.search     || row.v_username?.toLowerCase().includes(filters.search.toLowerCase());
-    const matchManager = !filters.manager    || row.v_managername?.toLowerCase().includes(filters.manager.toLowerCase());
-    const matchRole    = !filters.role       || row.v_role       === filters.role;
-    const matchDept    = !filters.department || row.v_department  === filters.department;
-    const matchStatus  = !filters.status     || row.v_status      === filters.status;
-    return matchSearch && matchManager && matchRole && matchDept && matchStatus;
-  });
-
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
 
-       <CompanyFilter
-        onFilter={setFilters}
+      <CompanyFilter
+        onFilter={handleFilter}
         managers={managers}
         roles={roles}
         departments={departments}
@@ -70,13 +61,16 @@ export default function MyCompanyTab() {
           disabled={loading}
           className="p-1.5 rounded-lg text-green-500 font-bold hover:text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/30 transition-colors cursor-pointer disabled:opacity-50"
         >
-          <RefreshCw className="w-5 h-5" />
+          <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
       {error && (
-        <div className="px-4 py-3 text-sm text-red-500 dark:text-red-400 border-b border-gray-200 dark:border-gray-800">
-          {error}
+        <div className="px-4 py-3 text-sm border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-start gap-2 text-red-500 dark:text-red-400">
+            <span className="font-medium">Error:</span>
+            <span>{error}</span>
+          </div>
         </div>
       )}
 
@@ -124,7 +118,7 @@ export default function MyCompanyTab() {
                 </div>
               </div>
               <div className="flex items-center justify-start gap-4 text-xs text-gray-500 dark:text-gray-400">
-                 Demote <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
+                Demote <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
               </div>
             </div>
           ))
@@ -169,8 +163,8 @@ export default function MyCompanyTab() {
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_role}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_department}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       row.v_status === "Active"
@@ -181,7 +175,7 @@ export default function MyCompanyTab() {
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                   <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
+                    <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
                   </td>
                 </tr>
               ))
@@ -205,11 +199,7 @@ export default function MyCompanyTab() {
 
           {[...Array(totalPages)].map((_, i) => {
             const pageNum = i + 1;
-            if (
-              pageNum === 1 ||
-              pageNum === totalPages ||
-              Math.abs(pageNum - page) <= 1
-            ) {
+            if (pageNum === 1 || pageNum === totalPages || Math.abs(pageNum - page) <= 1) {
               return (
                 <button
                   key={pageNum}

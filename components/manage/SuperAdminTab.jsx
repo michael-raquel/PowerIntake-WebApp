@@ -25,7 +25,6 @@ export default function SuperAdminTab() {
         </button>
       </div>
 
-      {/* Mobile */}
       <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
         {rows.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
@@ -66,7 +65,6 @@ export default function SuperAdminTab() {
         )}
       </div>
 
-      {/* Desktop */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -74,7 +72,7 @@ export default function SuperAdminTab() {
               {TABLE_HEADERS.map((header) => (
                 <th
                   key={header}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                 >
                   {header}
                 </th>
