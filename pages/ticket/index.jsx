@@ -6,10 +6,12 @@ import ComTicketTable from '@/components/ticket/ComTicketTable';
 import ComCreateTicket from '@/components/ticket/ComCreateTicket';
 import { useAuth } from '@/context/AuthContext';
 import { useFetchTeamTickets } from '@/hooks/UseFetchTeamTickets';
-
+import { useSearchParams, useRouter } from 'next/navigation';
 const RECORDS_PER_PAGE = 10;
 
 export default function TicketPage() {
+  const searchParams = useSearchParams(); 
+  const router = useRouter();
   const { tokenInfo } = useAuth();
   const roles = tokenInfo?.account?.roles || [];
   const isSuperAdmin = roles.includes('SuperAdmin');
@@ -24,6 +26,12 @@ export default function TicketPage() {
   const [filterOptions, setFilterOptions] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
 
+  useEffect(() => {
+    if (searchParams.get('create') === 'true') {
+      setShowCreateTicket(true);
+      router.replace('/ticket', undefined, { shallow: true });
+    }
+  }, [searchParams, router]);
   const { teamTickets } = useFetchTeamTickets({
     managerid: tokenInfo?.account?.localAccountId,
     refreshKey,

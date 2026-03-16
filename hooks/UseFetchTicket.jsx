@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 
-export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenantid = null, refreshKey = 0 } = {}) {
+export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenantid = null, refreshKey = 0, enabled = true } = {}) {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const fetchTickets = async () => {
       try {
         setLoading(true);
@@ -36,7 +40,7 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenan
     };
 
     fetchTickets();
-  }, [ticketuuid, entrauserid, entratenantid, refreshKey]);
+  }, [ticketuuid, entrauserid, entratenantid, refreshKey, enabled]);
 
   return { tickets, loading, error };
 }
