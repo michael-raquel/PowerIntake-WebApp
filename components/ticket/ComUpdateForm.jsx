@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react'; 
 import { X, StickyNote, ChevronLeft, User, CalendarCheck, Paperclip, GitBranch, Plus, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -54,21 +54,62 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
         }))
       : []
   );
-  const [supportCalls, setSupportCalls] = useState([]);
+  const [supportCalls, setSupportCalls] = useState(() => {
+    if (!ticket || !Array.isArray(ticket.v_supportcalls)) return [];
+    return ticket.v_supportcalls.map(call => ({
+      id: call.v_supportcallid || Date.now() + Math.random(),
+      date: call.v_date ? new Date(call.v_date) : null,
+      fromTime: call.v_starttime?.slice(0, 5) || '09:00',
+      toTime: call.v_endtime?.slice(0, 5) || '17:00',
+    }));
+  });
 
-  useEffect(() => {
-    if (ticket) {
-      const initialCalls = Array.isArray(ticket.v_supportcalls)
-        ? ticket.v_supportcalls.map(call => ({
-            id: call.v_supportcallid || Date.now() + Math.random(),
-            date: call.v_date ? new Date(call.v_date) : null,
-            fromTime: call.v_starttime?.slice(0,5) || '09:00',
-            toTime: call.v_endtime?.slice(0,5) || '17:00',
+  const original = useMemo(() => {
+    if (!ticket) return null;
+    return {
+      title: ticket.v_title || '',
+      description: ticket.v_description || '',
+      attachments: Array.isArray(ticket.v_attachments)
+        ? ticket.v_attachments.map(a => ({
+            name: a.v_attachment,
+            createdAt: a.v_createdat,
           }))
-        : [];
-      setSupportCalls(initialCalls);
-    }
+        : [],
+      supportCalls: Array.isArray(ticket.v_supportcalls)
+        ? ticket.v_supportcalls.map(call => ({
+            date: call.v_date ? new Date(call.v_date).toISOString() : null,
+            fromTime: call.v_starttime?.slice(0, 5) || '09:00',
+            toTime: call.v_endtime?.slice(0, 5) || '17:00',
+          }))
+        : [],
+    };
   }, [ticket]);
+
+  const hasChanges = useMemo(() => {
+    if (!original) return false;
+
+    if (title !== original.title) return true;
+    if (description !== original.description) return true;
+
+    if (attachments.length !== original.attachments.length) return true;
+    for (let i = 0; i < attachments.length; i++) {
+      const a = attachments[i];
+      const oa = original.attachments[i];
+      if (a.name !== oa.name || a.createdAt !== oa.createdAt) return true;
+    }
+
+    if (supportCalls.length !== original.supportCalls.length) return true;
+    for (let i = 0; i < supportCalls.length; i++) {
+      const c = supportCalls[i];
+      const oc = original.supportCalls[i];
+      const currentDateStr = c.date ? new Date(c.date).toISOString() : null;
+      if (currentDateStr !== oc.date) return true;
+      if (c.fromTime !== oc.fromTime) return true;
+      if (c.toTime !== oc.toTime) return true;
+    }
+
+    return false;
+  }, [title, description, attachments, supportCalls, original]);
 
   if (!ticket) return null;
 
@@ -78,17 +119,17 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const canEdit = isOwner && isEditableStatus;
 
   const handleAddCall = () => {
-    if (!canEdit) return;
-    setSupportCalls(prev => [
-      ...prev,
-      {
-        id: Date.now(),
-        date: null,
-        fromTime: '09:00',
-        toTime: '17:00',
-      },
-    ]);
-  };
+  if (!canEdit) return;
+  setSupportCalls(prev => [
+    ...prev,
+    {
+      id: Date.now(),
+      date: new Date(), 
+      fromTime: '09:00',
+      toTime: '17:00',
+    },
+  ]);
+};
 
   const handleRemoveCall = (id) => {
     if (!canEdit) return;
@@ -103,7 +144,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   };
 
   const handleUpdate = async () => {
-    if (!ticket.v_ticketuuid || !canEdit) return;
+    if (!ticket.v_ticketuuid || !canEdit || !hasChanges) return;
     await updateTicket({
       ticketuuid: ticket.v_ticketuuid,
       formData: { title, description, timezone: ticket.v_usertimezone, location: ticket.v_officelocation },
@@ -145,8 +186,8 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   };
 
     return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden relative">
+<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 p-4">
+  <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-[95vw] h-[95vh] flex flex-col overflow-hidden relative">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ticket</span>
@@ -180,9 +221,9 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                   <Button
                     className="bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700 text-white shadow-sm px-5 shrink-0"
                     onClick={handleUpdate}
-                    disabled={loading}
+                    disabled={loading || !hasChanges}
                   >
-                    {loading ? 'Updating...' : 'Update'}
+                    {loading ? 'Updating...' : (hasChanges ? 'Update' : 'Update')}
                   </Button>
                 )}
               </div>
@@ -353,11 +394,11 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
         <div
           className={cn(
             'absolute top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl transition-all duration-300 overflow-hidden z-30',
-            panelOpen ? 'w-80' : 'w-0'
+            panelOpen ? 'w-80 md:w-1/2' : 'w-0'
           )}
         >
           {panelOpen && (
-            <div className="w-80 h-full flex flex-col">
+            <div className="w-80 md:w-full h-full flex flex-col">
               <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
                   {TABS.find(t => t.id === activeTab)?.label}
@@ -373,7 +414,9 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
           )}
         </div>
 
-        {panelOpen && <div className="absolute inset-y-0 left-0 right-80 bg-transparent z-20" onClick={closePanel} />}
+        {panelOpen && <div 
+            className="absolute inset-y-0 left-0 right-80 md:right-1/2 bg-transparent z-20"
+        onClick={closePanel} />}
       </div>
     </div>
   );

@@ -31,9 +31,7 @@ export default function ComNotes({ ticket, ticketUuid }) {
 
   const getDisplayName = (note) => {
     if (note.v_createdbyname) return note.v_createdbyname;
-
     if (note.v_createdby === currentUserId) return currentUserName;
-
     return note.v_createdby || 'Unknown';
   };
 
@@ -50,22 +48,36 @@ export default function ComNotes({ ticket, ticketUuid }) {
             <p className="text-sm">No notes yet</p>
           </div>
         ) : (
-          notes.map((note) => (
-            <div
-              key={note.v_noteuuid}
-              className="bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-gray-200 dark:border-gray-700 p-3"
-            >
-              <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap break-words">
-                {note.v_note}
-              </p>
-              <div className="flex items-center justify-between mt-2 text-xs text-gray-500 dark:text-gray-400">
-                <span>{getDisplayName(note)}</span>
-                {note.v_createdat && (
-                  <span>{format(new Date(note.v_createdat), 'MMM dd, yyyy • hh:mm a')}</span>
-                )}
+          notes.map((note) => {
+            const isCurrentUser = note.v_createdby === currentUserId;
+            return (
+              <div
+                key={note.v_noteuuid}
+                className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`
+                    max-w-[80%] rounded-xl p-3 
+                    ${isCurrentUser 
+                      ? 'bg-purple-100 dark:bg-purple-900/30 text-gray-900 dark:text-gray-100' 
+                      : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700'
+                    }
+                  `}
+                >
+                  <p className="text-sm whitespace-pre-wrap break-words">{note.v_note}</p>
+                  <div className={`flex items-center gap-2 mt-2 text-xs ${
+                    isCurrentUser ? 'justify-end text-purple-700 dark:text-purple-300' : 'justify-between text-gray-500 dark:text-gray-400'
+                  }`}>
+                    {!isCurrentUser && <span>{getDisplayName(note)}</span>}
+                    {note.v_createdat && (
+                      <span>{format(new Date(note.v_createdat), 'MMM dd, yyyy • hh:mm a')}</span>
+                    )}
+                    {isCurrentUser && <span>{getDisplayName(note)}</span>}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
