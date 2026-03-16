@@ -32,6 +32,17 @@ export default function ComCard({ ticket = {}, fields = [], onClick }) {
     }
   };
 
+  const formatFieldValue = (key, value) => {
+    if (key === 'v_createdat' && value) {
+      try {
+        return new Date(value).toLocaleString();
+      } catch {
+        return String(value);
+      }
+    }
+    return String(value);
+  };
+
   return (
     <div
       className={`bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-200 overflow-hidden ${
@@ -65,7 +76,7 @@ export default function ComCard({ ticket = {}, fields = [], onClick }) {
                 {field.label}
               </span>
               <span className="text-sm text-gray-700 dark:text-gray-300 break-words" title={String(value)}>
-                {String(value)}
+                {formatFieldValue(field.key, value)}
               </span>
             </div>
           );
