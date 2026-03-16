@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/router';
-import {Home,Ticket,LifeBuoy,Users,Settings,Sun,Moon,ChevronLeft,ChevronRight,LogOut} from 'lucide-react';
+import { Home, Ticket, LifeBuoy, Users, Settings, Sun, Moon, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
 import Image from 'next/image';
 import { useMsal } from "@azure/msal-react";
 import { useTheme } from "next-themes";
@@ -12,25 +12,21 @@ const SIDEBAR_EXPANDED = 'w-64';
 
 export default function SideNavbar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const [showLogout, setShowLogout] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [isMobile,    setIsMobile]    = useState(false);
+  const [showLogout,  setShowLogout]  = useState(false);
 
-  const { instance } = useMsal();
-  const { tokenInfo } = useAuth();
-  const { setTheme, resolvedTheme } = useTheme(); 
-  const router = useRouter();
-
-  useEffect(() => setMounted(true), []);
+  const { instance }            = useMsal();
+  const { tokenInfo }           = useAuth();
+  const { setTheme, resolvedTheme } = useTheme();
+  const router                  = useRouter();
 
   useEffect(() => {
     const checkMobile = () => {
-      if (typeof window === 'undefined') return; 
+      if (typeof window === 'undefined') return;
       const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
       setIsMobile(mobile);
       if (mobile) setIsCollapsed(false);
     };
-    
     checkMobile();
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
@@ -43,37 +39,37 @@ export default function SideNavbar() {
   }, [router.events]);
 
   const account = tokenInfo?.account;
-  
+
   const currentRole = useMemo(() => {
     const roles = account?.roles ?? [];
-    if (roles.includes('SuperAdmin')) return 'super-admin';
+    if (roles.includes('SuperAdmin'))  return 'super-admin';
     if (roles.includes('SystemAdmin')) return 'system-admin';
-    if (roles.includes('Manager')) return 'manager';
+    if (roles.includes('Manager'))     return 'manager';
     return 'user';
   }, [account]);
 
+  const isPrivileged = ['manager', 'system-admin', 'super-admin'].includes(currentRole);
+
   const menuItems = useMemo(() => {
     const items = [
-      { icon: Home, label: 'Home', path: `/${currentRole}/home` },
-      { icon: Ticket, label: 'Ticket', path: `/${currentRole}/ticket` },
-      { icon: LifeBuoy, label: 'Support', path: `/${currentRole}/support` },
+      { icon: Home,     label: 'Home',    path: '/home'     },
+      { icon: Ticket,   label: 'Ticket',  path: '/ticket'   },
+      { icon: LifeBuoy, label: 'Support', path: '/support'  },
     ];
-    
-    if (['manager', 'system-admin', 'super-admin'].includes(currentRole)) {
-      items.push({ icon: Users, label: 'Manage', path: `/${currentRole}/manage` });
+    if (isPrivileged) {
+      items.push({ icon: Users, label: 'Manage', path: '/manage' });
     }
-    
-    items.push({ icon: Settings, label: 'Settings', path: `/${currentRole}/settings` });
+    items.push({ icon: Settings, label: 'Settings', path: '/settings' });
     return items;
-  }, [currentRole]);
+  }, [isPrivileged]);
 
-  const initials = useMemo(() => 
+  const initials = useMemo(() =>
     account?.name
       ?.split(' ')
       .map(n => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2) ?? 'U' 
+      .slice(0, 2) ?? 'U'
   , [account]);
 
   const isDarkMode = resolvedTheme === 'dark';
@@ -95,9 +91,6 @@ export default function SideNavbar() {
     setIsCollapsed(prev => !prev);
   }, []);
 
-  if (!mounted) return null;
-
-  // Mobile View
   if (isMobile) {
     return (
       <>
@@ -176,12 +169,11 @@ export default function SideNavbar() {
     );
   }
 
-  // Desktop View
   return (
     <>
       <aside className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 dark:bg-black dark:border-gray-800 transition-all duration-300 z-50 flex flex-col overflow-hidden
         ${isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED}`}>
-        
+
         <div className="h-14 flex items-center px-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
           <div className="flex items-center flex-1 min-w-0">
             <div className="relative w-6 h-6 flex-shrink-0">

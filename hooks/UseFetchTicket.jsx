@@ -1,11 +1,15 @@
 import { useState, useEffect } from "react";
 
-export function useFetchTicket({ ticketuuid = '', entrauserid = null } = {}) {
+export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenantid = null, refreshKey = 0, enabled = true } = {}) {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const fetchTickets = async () => {
       try {
         setLoading(true);
@@ -14,6 +18,7 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null } = {}) {
         const params = new URLSearchParams();
         if (ticketuuid) params.append("ticketuuid", ticketuuid);
         if (entrauserid) params.append("entrauserid", entrauserid);
+        if (entratenantid) params.append("entratenantid", entratenantid);
 
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets?${params.toString()}`,
@@ -26,7 +31,6 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null } = {}) {
         if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
 
         const data = await res.json();
-        console.log('Fetched Data man:', data);
         setTickets(data || []);
       } catch (err) {
         setError(err.message || "Failed to fetch tickets");
@@ -36,7 +40,7 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null } = {}) {
     };
 
     fetchTickets();
-  }, [ticketuuid, entrauserid]);
+  }, [ticketuuid, entrauserid, entratenantid, refreshKey, enabled]);
 
   return { tickets, loading, error };
 }
