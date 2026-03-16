@@ -1,4 +1,10 @@
-import { RefreshCw } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import useFetchAllCompanyUsers from "@/hooks/UseFetchAllCompanyUsers";
+import { Switch } from '@/components/ui/switch';
+import CompanyFilter from "@/components/manage/MyCompanyFilter";
 
 const TABLE_HEADERS = [
   "Manager Name",
@@ -8,67 +14,112 @@ const TABLE_HEADERS = [
   "Total Ticket",
   "Open Ticket",
   "Status",
-  "Action",
+  "Demote",
 ];
 
+const LIMIT = 10;
+
 export default function MyCompanyTab() {
-  const rows = [];
+  const {
+    data,
+    loading,
+    error,
+    page,
+    total,
+    totalPages,
+    hasNext,
+    hasPrev,
+    fetchData,
+  } = useFetchAllCompanyUsers(1, LIMIT);
+
+  const handleFilter = (newFilters) => {
+    fetchData(1, newFilters);
+  };
+
+  const roles       = [...new Set(data.map((r) => r.v_role).filter(Boolean))];
+  const departments = [...new Set(data.map((r) => r.v_department).filter(Boolean))];
+  const statuses    = [...new Set(data.map((r) => r.v_status).filter(Boolean))];
+  const managers    = [...new Set(data.map((r) => r.v_managername).filter(Boolean))];
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
-      
+
+      <CompanyFilter
+        onFilter={handleFilter}
+        managers={managers}
+        roles={roles}
+        departments={departments}
+        statuses={statuses}
+      />
+
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <span className="text-sm font-medium text-gray-900 dark:text-white"></span>
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {total} total records
+        </span>
         <button
-          onClick={() => {}}
-          className="p-1.5 rounded-lg text-green-500 font-bold hover:text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/30 transition-colors cursor-pointer"
+          onClick={() => fetchData(page)}
+          disabled={loading}
+          className="p-1.5 rounded-lg text-green-500 font-bold hover:text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/30 transition-colors cursor-pointer disabled:opacity-50"
         >
-          <RefreshCw className="w-5 h-5" />
+          <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
+      {error && (
+        <div className="px-4 py-3 text-sm border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-start gap-2 text-red-500 dark:text-red-400">
+            <span className="font-medium">Error:</span>
+            <span>{error}</span>
+          </div>
+        </div>
+      )}
+
       <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
-        {rows.length === 0 ? (
+        {loading ? (
+          <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            Loading...
+          </div>
+        ) : data.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             No records found.
           </div>
         ) : (
-          rows.map((row, i) => (
+          data.map((row, i) => (
             <div key={i} className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{row.userName}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{row.managerName}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{row.v_username}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{row.v_managername}</p>
                 </div>
                 <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  row.status === "Active"
+                  row.v_status === "Active"
                     ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                     : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                 }`}>
-                  {row.status}
+                  {row.v_status}
                 </span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Role</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{row.role}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{row.v_role}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Department</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{row.department}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{row.v_department}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Total Ticket</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{row.totalTicket}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{row.v_totalticket}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Open Ticket</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{row.openTicket}</p>
+                  <p className="text-gray-900 dark:text-white font-medium">{row.v_openticket}</p>
                 </div>
               </div>
-              <button className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium transition-colors">
-                View
-              </button>
+              <div className="flex items-center justify-start gap-4 text-xs text-gray-500 dark:text-gray-400">
+                Demote <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
+              </div>
             </div>
           ))
         )}
@@ -81,7 +132,7 @@ export default function MyCompanyTab() {
               {TABLE_HEADERS.map((header) => (
                 <th
                   key={header}
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                  className="px-4 py-3 font-bold text-left text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                 >
                   {header}
                 </th>
@@ -89,37 +140,42 @@ export default function MyCompanyTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {rows.length === 0 ? (
+            {loading ? (
+              [...Array(LIMIT)].map((_, i) => (
+                <tr key={i}>
+                  {TABLE_HEADERS.map((h) => (
+                    <td key={h} className="px-4 py-3">
+                      <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-24" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : data.length === 0 ? (
               <tr>
-                <td
-                  colSpan={TABLE_HEADERS.length}
-                  className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
-                >
+                <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                   No records found.
                 </td>
               </tr>
             ) : (
-              rows.map((row, i) => (
+              data.map((row, i) => (
                 <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.managerName}</td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.userName}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.role}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.department}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.totalTicket}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.openTicket}</td>
+                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_managername}</td>
+                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_role}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_department}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
+                  <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      row.status === "Active"
+                      row.v_status === "Active"
                         ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                         : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                     }`}>
-                      {row.status}
+                      {row.v_status}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <button className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium transition-colors">
-                      View
-                    </button>
+                    <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
                   </td>
                 </tr>
               ))
@@ -127,6 +183,54 @@ export default function MyCompanyTab() {
           </tbody>
         </table>
       </div>
+
+      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          Page {page} of {totalPages}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => fetchData(page - 1)}
+            disabled={!hasPrev || loading}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          {[...Array(totalPages)].map((_, i) => {
+            const pageNum = i + 1;
+            if (pageNum === 1 || pageNum === totalPages || Math.abs(pageNum - page) <= 1) {
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => fetchData(pageNum)}
+                  disabled={loading}
+                  className={`w-8 h-8 text-xs rounded-lg transition-colors ${
+                    pageNum === page
+                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            }
+            if (Math.abs(pageNum - page) === 2) {
+              return <span key={pageNum} className="text-xs text-gray-400 px-1">...</span>;
+            }
+            return null;
+          })}
+
+          <button
+            onClick={() => fetchData(page + 1)}
+            disabled={!hasNext || loading}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }
