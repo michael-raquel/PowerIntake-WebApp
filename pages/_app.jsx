@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider } from "next-themes";
+import { Toaster } from "sonner"; 
 
 const SideNavbar = dynamic(() => import("@/components/SideNavbar"), { ssr: false });
 
@@ -39,6 +40,7 @@ export default function App({ Component, pageProps }) {
               </div>
             </main>
           </div>
+           <Toaster />
         </AuthProvider>
       </MsalProvider>
     </ThemeProvider>

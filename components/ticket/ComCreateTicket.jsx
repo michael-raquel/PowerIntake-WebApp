@@ -14,42 +14,79 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useCreateTicket } from "@/hooks/useCreateTicket";
 import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
+import { toast } from "sonner";
 
-const TIMEZONES = [
-  { label: 'UTC-08:00 Pacific Time (US & Canada)',  value: 'America/Los_Angeles' },
-  { label: 'UTC-07:00 Mountain Time (US & Canada)', value: 'America/Denver'      },
-  { label: 'UTC-06:00 Central Time (US & Canada)',  value: 'America/Chicago'     },
-  { label: 'UTC-05:00 Eastern Time (US & Canada)',  value: 'America/New_York'    },
-  { label: 'UTC-04:00 Atlantic Time (Canada)',      value: 'America/Halifax'     },
-  { label: 'UTC-03:00 Brasilia Time',               value: 'America/Sao_Paulo'   },
-  { label: 'UTC+00:00 Greenwich Mean Time (UK)',    value: 'Europe/London'       },
-  { label: 'UTC+01:00 Central European Time',       value: 'Europe/Paris'        },
-  { label: 'UTC+02:00 Eastern European Time',       value: 'Europe/Helsinki'     },
-  { label: 'UTC+03:00 Moscow Standard Time',        value: 'Europe/Moscow'       },
-  { label: 'UTC+04:00 Gulf Standard Time (UAE)',    value: 'Asia/Dubai'          },
-  { label: 'UTC+05:30 India Standard Time',         value: 'Asia/Kolkata'        },
-  { label: 'UTC+07:00 Indochina Time (Bangkok)',    value: 'Asia/Bangkok'        },
-  { label: 'UTC+08:00 China Standard Time',         value: 'Asia/Shanghai'       },
-  { label: 'UTC+08:00 Philippine Time',             value: 'Asia/Manila'         },
-  { label: 'UTC+09:00 Japan Standard Time',         value: 'Asia/Tokyo'          },
-  { label: 'UTC+10:00 Australian Eastern Time',     value: 'Australia/Sydney'    },
-  { label: 'UTC+12:00 New Zealand Standard Time',   value: 'Pacific/Auckland'    },
-];
+const getOffsetString = (tz) => {
+  try {
+    const date = new Date();
+    const formatter = new Intl.DateTimeFormat('en', {
+      timeZone: tz,
+      timeZoneName: 'longOffset',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+    });
+    const parts = formatter.formatToParts(date);
+    const offsetPart = parts.find(p => p.type === 'timeZoneName');
+    if (offsetPart) {
+      return offsetPart.value.replace('GMT', '').trim();
+    }
+  } catch (e) {
+  }
+  return '';
+};
+
+const ALL_TIMEZONES = Intl.supportedValuesOf('timeZone').map(tz => {
+  const offset = getOffsetString(tz);
+  return {
+    label: offset ? `${tz} (UTC${offset})` : tz,
+    value: tz,
+  };
+});
 
 const LOCATIONS = ['Remote', 'Hybrid', 'Office'];
 const ACCEPTED_TYPES = new Set(['image/png', 'image/jpeg', 'application/pdf', 'text/plain']);
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
-const DEFAULT_FORM = { title: '', description: '', timezone: '', location: '' };
+
+const getRoundedCurrentTime = () => {
+  const now = new Date();
+  const minutes = now.getMinutes();
+  const roundedMinutes = minutes < 15 ? 0 : minutes < 45 ? 30 : 0;
+  const roundedHour = minutes >= 45 ? now.getHours() + 1 : now.getHours();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate(), roundedHour % 24, roundedMinutes);
+};
+
+const today = new Date();
+const startTime = getRoundedCurrentTime();
+const endTime = new Date(startTime.getTime() + 2 * 60 * 60 * 1000);
+
+const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const validTimezone = detectedTimezone;
+
+const DEFAULT_FORM = {
+  title: '',
+  description: '',
+  timezone: validTimezone,
+  location: 'Remote',
+};
+
+const DEFAULT_SUPPORT_CALL = {
+  id: 1,
+  date: today,
+  fromTime: `${startTime.getHours().toString().padStart(2, '0')}:${startTime.getMinutes().toString().padStart(2, '0')}`,
+  toTime: `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`,
+  timezone: DEFAULT_FORM.timezone,
+  location: DEFAULT_FORM.location,
+};
 
 const USER_FIELDS = [
-  ['COMPANY',  'companyName'],
   ['CREATED',  'createdDateTime', v => v ? format(new Date(v), 'MMM dd, yyyy') : null],
   ['USER',     'displayName'],
   ['MOBILE',   'mobilePhone'],
   ['TITLE',    'jobTitle'],
   ['DEPT',     'department'],
   ['EMAIL',    'mail', null, 'col-span-2'],
-  ['BUSINESS', 'businessPhones', v => v?.[0]],
+  ['BUSINESS PHONE', 'businessPhones', v => v?.[0]],
 ];
 
 export default function ComCreateTicket({ onClose }) {
@@ -58,7 +95,7 @@ export default function ComCreateTicket({ onClose }) {
   const { createTicket, loading: submitting } = useCreateTicket({ account, onSuccess: onClose });
 
   const [formData, setFormData] = useState(DEFAULT_FORM);
-  const [supportCalls, setSupportCalls] = useState([{ id: 1, date: undefined, fromTime: '09:00', toTime: '17:00', timezone: '', location: '' }]);
+  const [supportCalls, setSupportCalls] = useState([DEFAULT_SUPPORT_CALL]);
   const [attachments, setAttachments] = useState([]);
   const [dragOver, setDragOver] = useState(false);
 
@@ -81,13 +118,18 @@ export default function ComCreateTicket({ onClose }) {
   }, []);
 
   const handleAddCall = useCallback(() => {
-    setSupportCalls(prev => [...prev, { 
-      id: Date.now(), 
-      date: undefined, 
-      fromTime: '09:00', 
-      toTime: '17:00', 
-      timezone: formData.timezone, 
-      location: formData.location 
+    const newStart = getRoundedCurrentTime();
+    const newEnd = new Date(newStart.getTime() + 2 * 60 * 60 * 1000);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    setSupportCalls(prev => [...prev, {
+      id: Date.now(),
+      date: tomorrow,
+      fromTime: `${newStart.getHours().toString().padStart(2, '0')}:${newStart.getMinutes().toString().padStart(2, '0')}`,
+      toTime: `${newEnd.getHours().toString().padStart(2, '0')}:${newEnd.getMinutes().toString().padStart(2, '0')}`,
+      timezone: formData.timezone,
+      location: formData.location,
     }]);
   }, [formData.timezone, formData.location]);
 
@@ -121,13 +163,17 @@ export default function ComCreateTicket({ onClose }) {
         fieldRefs.current[`call-${call.id}-date`]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         return;
       }
+      if (call.fromTime && call.toTime && call.fromTime >= call.toTime) {
+        toast.error('Start time must be earlier than end time for each support call.');
+        return;
+      }
     }
     await createTicket({ formData, supportCalls, attachments });
   }, [formData, supportCalls, attachments, createTicket]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black py-6 px-4 transition-colors">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gray-50 dark:bg-black py-6 transition-colors">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Submit Incident</h1>
@@ -186,14 +232,14 @@ export default function ComCreateTicket({ onClose }) {
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0">
-                            <Calendar 
-                              mode="single" 
-                              selected={call.date} 
+                            <Calendar
+                              mode="single"
+                              selected={call.date}
                               onSelect={d => handleCallChange(call.id, 'date', d)}
-                              disabled={d => d < new Date()} 
-                              captionLayout="dropdown" 
-                              defaultMonth={call.date} 
-                              initialFocus 
+                              disabled={d => d < new Date()}
+                              captionLayout="dropdown"
+                              defaultMonth={call.date}
+                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
@@ -206,12 +252,12 @@ export default function ComCreateTicket({ onClose }) {
                             <Fragment key={key}>
                               {i === 1 && <span className="text-sm text-gray-500 font-medium whitespace-nowrap">to</span>}
                               <div className="relative flex-1 min-w-0">
-                                <Input 
-                                  type="time" 
-                                  value={call[key]} 
-                                  onChange={e => handleCallChange(call.id, key, e.target.value)} 
-                                  step="900" 
-                                  className="pl-8 text-sm w-full" 
+                                <Input
+                                  type="time"
+                                  value={call[key]}
+                                  onChange={e => handleCallChange(call.id, key, e.target.value)}
+                                  step="900"
+                                  className="pl-8 text-sm w-full"
                                 />
                                 <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
                               </div>
@@ -227,8 +273,8 @@ export default function ComCreateTicket({ onClose }) {
                             <Clock className="mr-2 h-4 w-4 shrink-0" />
                             <SelectValue placeholder="Select timezone" />
                           </SelectTrigger>
-                          <SelectContent>
-                            {TIMEZONES.map(({ label, value }) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
+                          <SelectContent className="max-h-80">
+                            {ALL_TIMEZONES.map(({ label, value }) => <SelectItem key={value} value={value}>{label}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </div>
@@ -268,13 +314,13 @@ export default function ComCreateTicket({ onClose }) {
                   <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
                 </p>
                 <p className="text-xs text-gray-500 mt-1">PNG, JPG, PDF, or LOG (max. 10MB)</p>
-                <input 
-                  ref={fileInputRef} 
-                  type="file" 
-                  multiple 
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
                   accept=".png,.jpg,.jpeg,.pdf,.log,.txt"
-                  onChange={(e) => { processFiles(e.target.files); e.target.value = ''; }} 
-                  className="hidden" 
+                  onChange={(e) => { processFiles(e.target.files); e.target.value = ''; }}
+                  className="hidden"
                 />
               </div>
               {attachments.map(file => (
@@ -323,7 +369,7 @@ export default function ComCreateTicket({ onClose }) {
             <div className="flex justify-end gap-3">
               <Button variant="outline" onClick={() => {
                 setFormData(DEFAULT_FORM);
-                setSupportCalls([{ id: 1, date: undefined, fromTime: '09:00', toTime: '17:00', timezone: '', location: '' }]);
+                setSupportCalls([DEFAULT_SUPPORT_CALL]);
                 setAttachments([]);
               }} disabled={submitting}>Clear</Button>
               <Button onClick={handleSubmit} disabled={submitting}>{submitting ? 'Submitting...' : 'Submit Request'}</Button>
