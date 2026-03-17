@@ -86,14 +86,14 @@ export default function MyCompanyTab() {
         </button>
       </div>
 
-      {error && (
+      {/* {error && (
         <div className="px-4 py-3 text-sm border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-start gap-2 text-red-500 dark:text-red-400">
             <span className="font-medium">Error:</span>
             <span>{error}</span>
           </div>
         </div>
-      )}
+      )} */}
 
      <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
         {loading ? (
