@@ -2,6 +2,7 @@
 
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useFetchMyTeam from "@/hooks/UseFetchMyTeamUsers";
+import useSyncUsers from "@/hooks/UseSyncUsers";
 import MyTeamFilter from "@/components/manage/MyTeamFilter";
 
 const TABLE_HEADERS = [
@@ -27,6 +28,13 @@ export default function MyTeamTab() {
     fetchData,
   } = useFetchMyTeam(1, LIMIT);
 
+  const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
+
+  const handleSync = async () => {
+    await syncUsers();
+    fetchData(page);
+  };
+
   const handleFilter = (newFilters) => {
     fetchData(1, newFilters);
   };
@@ -42,15 +50,28 @@ export default function MyTeamTab() {
       />
 
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          {total} total records
-        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {total} total records
+          </span>
+          {syncing && (
+            <span className="text-xs text-blue-500 dark:text-blue-400">Syncing users...</span>
+          )}
+          {syncError && (
+            <span className="text-xs text-red-500 dark:text-red-400">Sync failed: {syncError}</span>
+          )}
+          {syncResult && !syncing && (
+            <span className="text-xs text-green-500 dark:text-green-400">
+              {syncResult.message} New users: {syncResult.synced ?? 0}
+            </span>
+          )}
+        </div>
         <button
-          onClick={() => fetchData(page)}
-          disabled={loading}
-          className="p-1.5 rounded-lg text-green-500 font-bold hover:text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/30 transition-colors cursor-pointer disabled:opacity-50"
+          onClick={handleSync}
+          disabled={loading || syncing}
+          className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
         >
-          <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
         </button>
       </div>
 
@@ -63,7 +84,7 @@ export default function MyTeamTab() {
         </div>
       )}
 
-      <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+     <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
         {loading ? (
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             Loading...
@@ -73,44 +94,57 @@ export default function MyTeamTab() {
             No records found.
           </div>
         ) : (
-          data.map((row, i) => (
-            <div key={i} className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{row.v_username}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{row.v_jobtitle}</p>
+          <div className="grid grid-cols-1 gap-3 p-4">
+            {data.map((row, i) => (
+              <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+                
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400 font-semibold text-sm">
+                      {row.v_username?.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_username}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{row.v_jobtitle || "N/A"}</p>
+                    </div>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                    row.v_status === "true"
+                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                  }`}>
+                    {row.v_status === "true" ? "Active" : "Inactive"}
+                  </span>
                 </div>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  row.v_status === "Active"
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                }`}>
-                  {row.v_status}
-                </span>
+
+                <div className="border-t border-gray-100 dark:border-gray-700" />
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
+                  </div>
+                </div>
+
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">Total Ticket</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{row.v_totalticket}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">Open Ticket</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{row.v_openticket}</p>
-                </div>
-              </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
+            <tr className="border-b border-gray-200 text-center dark:border-gray-800">
               {TABLE_HEADERS.map((header) => (
                 <th
                   key={header}
-                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                  className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                 >
                   {header}
                 </th>
@@ -136,18 +170,18 @@ export default function MyTeamTab() {
               </tr>
             ) : (
               data.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_jobtitle}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_jobtitle || "N/A"}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      row.v_status === "Active"
+                      row.v_status === "true"
                         ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                         : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                     }`}>
-                      {row.v_status}
+                      {row.v_status === "true" ? "Active" : "Inactive"}
                     </span>
                   </td>
                 </tr>

@@ -6,6 +6,11 @@
     }
   ],
   "navigationFallback": {
-    "rewrite": "/index.html"
+    "rewrite": "/index.html",
+    "exclude": [
+      "/sw.js",
+      "/manifest.json",
+      "/icons/*"
+    ]
   }
 }

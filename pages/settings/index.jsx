@@ -144,19 +144,15 @@ export default function SettingsPage() {
   if (!settingsLoaded) return <div className="p-8">Loading settings...</div>;
  
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto p-8">
-        <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            disabled={isSaving || submitting}
-          >
-            Reset
-          </Button>
-        </div>
- 
+    <div className="p-6 rounded-lg">
+      <div className="mb-4 px-2 bg-gradient-to-l from-pink-500 to-violet-800 rounded-lg py-4">
+        <h2 className="font-bold text-sm sm:text-lg text-white">Settings</h2>
+        <p className="text-xs sm:text-sm text-gray-200 mt-1">
+          Manage notifications, assist tools, and theme preferences
+        </p>
+      </div>
+
+      <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
         <div className="space-y-8">
           <NotificationsSection
             localSettings={localSettings}
@@ -176,6 +172,15 @@ export default function SettingsPage() {
             loadingToggles={loadingToggles}
             isLoading={loading}
           />
+          <div className="flex justify-end">
+            <Button
+              onClick={handleReset}
+              variant="outline"
+              disabled={isSaving || submitting}
+            >
+              Reset
+            </Button>
+          </div>
         </div>
       </div>
     </div>

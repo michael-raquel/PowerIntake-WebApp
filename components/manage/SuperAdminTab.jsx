@@ -1,68 +1,154 @@
-import { RefreshCw } from "lucide-react";
+"use client";
+
+import { useState } from "react";
+import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import useFetchSuperAdminUsers from "@/hooks/UseFetchSystemAdminUsers";
+import useSyncUsers from "@/hooks/UseSyncUsers";
+import { Switch } from "@/components/ui/switch";
+import SuperAdminFilter from "@/components/manage/SuperAdminFilter";
 
 const TABLE_HEADERS = [
   "User Name",
-  "User Role",
+  "Role",
   "Total Ticket",
   "Open Ticket",
   "Status",
-  "Action",
+  "Admin",
 ];
 
+const LIMIT = 10;
+
 export default function SuperAdminTab() {
-  const rows = [];
+  const {
+    data,
+    loading,
+    error,
+    page,
+    total,
+    totalPages,
+    hasNext,
+    hasPrev,
+    fetchData,
+  } = useFetchSuperAdminUsers(1, LIMIT);
+
+  const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
+
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSync = async () => {
+    await syncUsers();
+    fetchData(page);
+  };
+
+  const handleFilter = (newFilters) => {
+    setSearchQuery(newFilters.search ?? "");
+    fetchData(1, newFilters);
+  };
+
+  const roles    = [...new Set(data.map((r) => r.v_role).filter(Boolean))];
+  const statuses = [...new Set(data.map((r) => r.v_status).filter(Boolean))];
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
 
+      <SuperAdminFilter
+        onFilter={handleFilter}
+        roles={roles}
+        statuses={statuses}
+      />
+
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <span className="text-sm font-medium text-gray-900 dark:text-white"></span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {total} total records
+          </span>
+          {syncing && (
+            <span className="text-xs text-blue-500 dark:text-blue-400">Syncing users...</span>
+          )}
+          {syncError && (
+            <span className="text-xs text-red-500 dark:text-red-400">Sync failed: {syncError}</span>
+          )}
+          {syncResult && !syncing && (
+            <span className="text-xs text-green-500 dark:text-green-400">
+              {syncResult.message} New users: {syncResult.synced ?? 0}
+            </span>
+          )}
+        </div>
         <button
-          onClick={() => {}}
-          className="p-1.5 rounded-lg text-green-500 font-bold hover:text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:text-green-300 dark:hover:bg-green-900/30 transition-colors cursor-pointer"
+          onClick={handleSync}
+          disabled={loading || syncing}
+          className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
         >
-          <RefreshCw className="w-5 h-5" />
+          <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
         </button>
       </div>
 
-      <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
-        {rows.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            No records found.
+      {error && (
+        <div className="px-4 py-3 text-sm border-b border-gray-200 dark:border-gray-800">
+          <div className="flex items-start gap-2 text-red-500 dark:text-red-400">
+            <span className="font-medium">Error:</span>
+            <span>{error}</span>
           </div>
-        ) : (
-          rows.map((row, i) => (
-            <div key={i} className="p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{row.userName}</p>
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                  row.status === "Active"
-                    ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                }`}>
-                  {row.status}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">User Role</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{row.userRole}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">Total Ticket</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{row.totalTicket}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 dark:text-gray-400">Open Ticket</p>
-                  <p className="text-gray-900 dark:text-white font-medium">{row.openTicket}</p>
-                </div>
-              </div>
-              <button className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium transition-colors">
-                View
-              </button>
+        </div>
+      )}
+
+    <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+          {loading ? (
+            <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              Loading...
             </div>
-          ))
-        )}
+          ) : data.length === 0 ? (
+            <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+              No records found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3 p-4">
+              {data.map((row, i) => (
+                <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400 font-semibold text-sm">
+                        {row.v_username?.charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_username}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                      row.v_status === "true"
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                    }`}>
+                      {row.v_status === "true" ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+
+                  <div className="border-t border-gray-100 dark:border-gray-700" />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                      <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                      <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Admin Access</span>
+                    <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
       </div>
 
       <div className="hidden md:block overflow-x-auto">
@@ -72,7 +158,7 @@ export default function SuperAdminTab() {
               {TABLE_HEADERS.map((header) => (
                 <th
                   key={header}
-                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                  className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                 >
                   {header}
                 </th>
@@ -80,32 +166,40 @@ export default function SuperAdminTab() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {rows.length === 0 ? (
+            {loading ? (
+              [...Array(LIMIT)].map((_, i) => (
+                <tr key={i}>
+                  {TABLE_HEADERS.map((h) => (
+                    <td key={h} className="px-4 py-3">
+                      <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-24" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            ) : data.length === 0 ? (
               <tr>
                 <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                   No records found.
                 </td>
               </tr>
             ) : (
-              rows.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.userName}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.userRole}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.totalTicket}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.openTicket}</td>
+              data.map((row, i) => (
+                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
+                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      row.status === "Active"
+                      row.v_status === "true"
                         ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                         : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                     }`}>
-                      {row.status}
+                      {row.v_status === "true" ? "Active" : "Inactive"}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <button className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 text-xs font-medium transition-colors">
-                      View
-                    </button>
+                    <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
                   </td>
                 </tr>
               ))
@@ -113,6 +207,54 @@ export default function SuperAdminTab() {
           </tbody>
         </table>
       </div>
+
+      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          Page {page} of {totalPages}
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => fetchData(page - 1)}
+            disabled={!hasPrev || loading}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+
+          {[...Array(totalPages)].map((_, i) => {
+            const pageNum = i + 1;
+            if (pageNum === 1 || pageNum === totalPages || Math.abs(pageNum - page) <= 1) {
+              return (
+                <button
+                  key={pageNum}
+                  onClick={() => fetchData(pageNum)}
+                  disabled={loading}
+                  className={`w-8 h-8 text-xs rounded-lg transition-colors ${
+                    pageNum === page
+                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {pageNum}
+                </button>
+              );
+            }
+            if (Math.abs(pageNum - page) === 2) {
+              return <span key={pageNum} className="text-xs text-gray-400 px-1">...</span>;
+            }
+            return null;
+          })}
+
+          <button
+            onClick={() => fetchData(page + 1)}
+            disabled={!hasNext || loading}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }
