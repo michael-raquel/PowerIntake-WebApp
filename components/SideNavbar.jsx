@@ -14,8 +14,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { useMsal } from "@azure/msal-react";
-import { useTheme } from "next-themes";
 import { useAuth } from "@/context/AuthContext";
+import { useAppTheme } from "@/context/ThemeContext";
 
 const MOBILE_BREAKPOINT = 768;
 const SIDEBAR_COLLAPSED = "w-[70px]";
@@ -28,7 +28,7 @@ export default function SideNavbar() {
 
   const { instance } = useMsal();
   const { tokenInfo } = useAuth();
-  const { setTheme, resolvedTheme } = useTheme();
+  const { isDarkMode, toggleTheme } = useAppTheme();
   const router = useRouter();
 
   useEffect(() => {
@@ -87,8 +87,6 @@ export default function SideNavbar() {
     [account],
   );
 
-  const isDarkMode = resolvedTheme === "dark";
-
   const handleNavigate = useCallback(
     (path) => {
       router.push(path);
@@ -100,10 +98,6 @@ export default function SideNavbar() {
   const handleLogout = useCallback(() => {
     instance.logoutRedirect({ postLogoutRedirectUri: "/" });
   }, [instance]);
-
-  const toggleTheme = useCallback(() => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  }, [resolvedTheme, setTheme]);
 
   const toggleCollapse = useCallback(() => {
     setIsCollapsed((prev) => !prev);

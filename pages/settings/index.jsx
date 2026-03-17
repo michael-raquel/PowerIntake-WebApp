@@ -1,9 +1,9 @@
 'use client';
  
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
-import { useTheme } from 'next-themes';
 import { useAuth } from '@/context/AuthContext';
+import { useAppTheme } from '@/context/ThemeContext';
 import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateUserSettings } from '@/hooks/UseUpdateUserSettings';
 import { Button } from '@/components/ui/button';
@@ -12,14 +12,12 @@ import { NotificationsSection, AssistSection, DarkModeSection } from '@/componen
 export default function SettingsPage() {
   const { accounts } = useMsal();
   const { account } = useAuth();
-  const { setTheme, resolvedTheme } = useTheme();
+  const { isDarkMode, toggleTheme } = useAppTheme();
   const [localSettings,   setLocalSettings]   = useState({});
   const [initialSettings, setInitialSettings] = useState({});
   const [isSaving,        setIsSaving]        = useState(false);
   const [loadingToggles,  setLoadingToggles]  = useState({});
   const [settingsLoaded,  setSettingsLoaded]  = useState(false);
-
-  const prevThemeRef = useRef(null);
  
   const entrauserid = useMemo(() => 
     account?.localAccountId || accounts?.[0]?.localAccountId || '', 
@@ -54,29 +52,15 @@ export default function SettingsPage() {
       setLocalSettings(newSettings);
       setInitialSettings(newSettings);
       setSettingsLoaded(true);
-      setTheme(newSettings.darkmode ? 'dark' : 'light');
     }
-  }, [userSettings, setTheme, entrauserid, settingsLoaded]);
- 
+  }, [userSettings, entrauserid, settingsLoaded]);
+
+  // Sync local darkmode state with global theme context
   useEffect(() => {
-    if (!settingsLoaded || !localSettings.usersettingsuuid) return;
-
-    const isDark = resolvedTheme === 'dark';
-
-    if (prevThemeRef.current === resolvedTheme) return;
-    prevThemeRef.current = resolvedTheme;
-
-    if (localSettings.darkmode !== isDark) {
-      const updatedSettings = { ...localSettings, darkmode: isDark };
-      setLocalSettings(updatedSettings);
-      updateUserSettings({
-        ...updatedSettings,
-        modifiedby: accounts?.[0]?.username || null,
-      })
-        .then(() => setInitialSettings(updatedSettings))
-        .catch(() => {});
+    if (settingsLoaded && localSettings.darkmode !== isDarkMode) {
+      setLocalSettings(prev => ({ ...prev, darkmode: isDarkMode }));
     }
-  }, [resolvedTheme, settingsLoaded, localSettings, accounts, updateUserSettings]);
+  }, [isDarkMode, settingsLoaded]);
 
   const handleToggle = async (setting, value) => {
     setLoadingToggles((prev) => ({ ...prev, [setting]: true }));
@@ -95,25 +79,7 @@ export default function SettingsPage() {
     }
   };
   const handleDarkModeToggle = async (value) => {
-    setLoadingToggles((prev) => ({ ...prev, darkmode: true }));
-    const updatedSettings = { ...localSettings, darkmode: value };
-    setLocalSettings(updatedSettings);
-
-    prevThemeRef.current = value ? 'dark' : 'light';
-    setTheme(value ? 'dark' : 'light');
-
-    try {
-      await updateUserSettings({
-        ...updatedSettings,
-        modifiedby: accounts?.[0]?.username || null,
-      });
-      setInitialSettings(updatedSettings);
-    } catch {
-      setLocalSettings(localSettings);
-      setTheme(localSettings.darkmode ? 'dark' : 'light');
-    } finally {
-      setLoadingToggles((prev) => ({ ...prev, darkmode: false }));
-    }
+    await toggleTheme();
   };
  
   const handleReset = async () => {
@@ -130,18 +96,18 @@ export default function SettingsPage() {
       };
       setLocalSettings(resetSettings);
       setInitialSettings(resetSettings);
-      prevThemeRef.current = 'dark';
-      setTheme('dark');
       await updateUserSettings(resetSettings);
+      if (!isDarkMode) {
+        await toggleTheme();
+      }
     } catch {
     } finally {
       setIsSaving(false);
     }
   };
  
-  if (loading)        return <div className="p-8">Loading settings...</div>;
-  if (error)          return <div className="p-8 text-red-500">Error: {error}</div>;
-  if (!settingsLoaded) return <div className="p-8">Loading settings...</div>;
+  const isReady = settingsLoaded && !loading && !error;
+  const showLoading = loading || !settingsLoaded;
  
   return (
     <div className="p-6 rounded-lg">
@@ -154,6 +120,16 @@ export default function SettingsPage() {
 
       <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
         <div className="space-y-8">
+          {error && (
+            <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
+              Error: {error}
+            </div>
+          )}
+          {showLoading && !error && (
+            <div className="text-sm text-gray-600 dark:text-gray-300">
+              Loading settings...
+            </div>
+          )}
           <NotificationsSection
             localSettings={localSettings}
             onToggle={handleToggle}
@@ -176,7 +152,7 @@ export default function SettingsPage() {
             <Button
               onClick={handleReset}
               variant="outline"
-              disabled={isSaving || submitting}
+              disabled={!isReady || isSaving || submitting}
             >
               Reset
             </Button>
