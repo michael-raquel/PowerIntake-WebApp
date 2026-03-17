@@ -74,7 +74,7 @@ export default function MyTeamTab() {
           <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
         </button>
       </div>
-
+{/* 
       {error && (
         <div className="px-4 py-3 text-sm border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-start gap-2 text-red-500 dark:text-red-400">
@@ -82,7 +82,7 @@ export default function MyTeamTab() {
             <span>{error}</span>
           </div>
         </div>
-      )}
+      )} */}
 
      <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
         {loading ? (
@@ -98,7 +98,6 @@ export default function MyTeamTab() {
             {data.map((row, i) => (
               <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
                 
-                {/* Header */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400 font-semibold text-sm">
