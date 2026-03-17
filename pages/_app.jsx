@@ -6,7 +6,8 @@ import { msalConfig } from "@/lib/msalConfig";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
 import { AuthProvider } from "@/context/AuthContext";
-import { ThemeProvider } from "next-themes";
+import { ThemeProvider as NextThemeProvider } from "next-themes";
+import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from "sonner";
 
 const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
@@ -40,7 +41,7 @@ function AppContent({ Component, pageProps }) {
   }, []);
 
   return (
-    <ThemeProvider
+    <NextThemeProvider
       attribute="class"
       defaultTheme="system"
       enableSystem
@@ -48,30 +49,32 @@ function AppContent({ Component, pageProps }) {
     >
       <MsalProvider instance={msalInstance}>
         <AuthProvider>
-          <div
-            suppressHydrationWarning
-            className="flex h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300"
-          >
-            {showSidebar && <SideNavbar />}
-            <main
-              className={`flex-1 overflow-y-auto ${showSidebar ? "md:ml-0" : ""}`}
+          <ThemeProvider>
+            <div
+              suppressHydrationWarning
+              className="flex h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300"
             >
-              {showSidebar && <div className="md:hidden h-14" />}
-              <div className="min-h-full pb-16 md:pb-0">
-                {isPublicPage ? (
-                  <Component {...pageProps} />
-                ) : (
-                  <AuthGuard requiredRoles={requiredRoles}>
+              {showSidebar && <SideNavbar />}
+              <main
+                className={`flex-1 overflow-y-auto ${showSidebar ? "md:ml-0" : ""}`}
+              >
+                {showSidebar && <div className="md:hidden h-14" />}
+                <div className="min-h-full pb-16 md:pb-0">
+                  {isPublicPage ? (
                     <Component {...pageProps} />
-                  </AuthGuard>
-                )}
-              </div>
-            </main>
-          </div>
-          <Toaster />
+                  ) : (
+                    <AuthGuard requiredRoles={requiredRoles}>
+                      <Component {...pageProps} />
+                    </AuthGuard>
+                  )}
+                </div>
+              </main>
+            </div>
+            <Toaster />
+          </ThemeProvider>
         </AuthProvider>
       </MsalProvider>
-    </ThemeProvider>
+    </NextThemeProvider>
   );
 }
 
