@@ -116,7 +116,7 @@ export default function MyCompanyTab() {
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_username}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{row.v_role || "No Role"}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{row.v_role || "User"}</p>
                     </div>
                   </div>
                   <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -199,9 +199,9 @@ export default function MyCompanyTab() {
             ) : (
               data.map((row, i) => (
                 <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_managername}</td>
+                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_managername || "N/A"}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_department || "N/A"}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>

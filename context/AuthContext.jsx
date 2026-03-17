@@ -32,8 +32,6 @@ export function AuthProvider({ children }) {
             roles: response.account.idTokenClaims?.roles ?? [],
           },
         });
-        // const mytenantid = response.account.tenantId;
-        // console.log("My tenant:", mytenantid);
       })
       .catch((err) => console.error("Silent token acquisition failed:", err));
   }, [account, instance]);
