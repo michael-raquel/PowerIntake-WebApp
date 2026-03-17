@@ -17,8 +17,6 @@ export function AuthProvider({ children }) {
       .acquireTokenSilent({ ...loginRequest, account })
       .then((response) => {
         setAccessToken(response.accessToken);
-        console.log("[Auth] Access Token:", response.accessToken);
-        console.log("[Auth] ID Token:", response.idToken);
         setTokenInfo({
           accessToken: response.accessToken,
           idToken: response.idToken,
