@@ -20,7 +20,7 @@ export default function Home() {
 
   useEffect(() => {
     if (isAuthenticated && accounts[0]) {
-      // const role = getUserRole(accounts[0]);s
+      // const role = getUserRole(accounts[0]);st
       router.push(`/home`);
     }
   }, [isAuthenticated, accounts, router]);
