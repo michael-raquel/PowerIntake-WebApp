@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/context/AuthContext";
 
-export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 12) {
-  const { tokenInfo }    = useAuth();
+export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
@@ -12,24 +10,17 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
-    const entratenantid = tokenInfo?.account?.tenantId;
-
-    if (!entratenantid) {
-      return;
-    }
-
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ page: currentPage, limit, entratenantid });
+      const params = new URLSearchParams({ page: currentPage, limit });
 
       if (filters.search)     params.append("search",     filters.search);
-      if (filters.manager)    params.append("manager",    filters.manager);
-      if (filters.role)       params.append("role",       filters.role);
-      if (filters.department) params.append("department", filters.department);
+      if (filters.tenantname) params.append("tenantname", filters.tenantname);
       if (filters.status)     params.append("status",     filters.status);
 
-      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/mycompany?${params}`;
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myclients?${params}`;
+      console.log('[useFetchMyClients] Fetching:', url);
 
       const res = await fetch(url);
       if (!res.ok) {
@@ -43,17 +34,16 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
       setTotalPages(json.totalPages);
       setPage(currentPage);
     } catch (err) {
+      console.error('[useFetchMyClients] Error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [limit, tokenInfo?.account?.tenantId]);
+  }, [limit]);
 
   useEffect(() => {
-    if (tokenInfo?.account?.tenantId) { 
-      fetchData(1);
-    }
-  }, [fetchData, tokenInfo?.account?.tenantId]); 
+    fetchData(1);
+  }, [fetchData]);
 
   return {
     data,

@@ -6,19 +6,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-export default function MyTeamFilter({ onFilter, statuses = [] }) {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+export default function ClientsFilter({
+  onFilter,
+  tenantnames = [],
+  statuses    = [],
+}) {
+  const [search,     setSearch]     = useState("");
+  const [tenantname, setTenantname] = useState("");
+  const [status,     setStatus]     = useState("");
 
-  const activeFilterCount = [status].filter(Boolean).length;
+  const activeFilterCount = [tenantname, status].filter(Boolean).length;
 
   const emit = (overrides = {}) => {
-    onFilter({ search, status, ...overrides });
+    onFilter({
+      search,
+      tenantname,
+      status,
+      ...overrides,
+    });
   };
 
   const handleSearch = (e) => {
     setSearch(e.target.value);
     emit({ search: e.target.value });
+  };
+
+  const handleTenantname = (val) => {
+    const v = val === "__all__" ? "" : val;
+    setTenantname(v);
+    emit({ tenantname: v });
   };
 
   const handleStatus = (val) => {
@@ -27,14 +43,14 @@ export default function MyTeamFilter({ onFilter, statuses = [] }) {
     emit({ status: v });
   };
 
-  const clearStatus = () => {
-    setStatus("");
-    emit({ status: "" });
+  const clearOne = (key) => {
+    if (key === "tenantname") { setTenantname(""); emit({ tenantname: "" }); }
+    if (key === "status")     { setStatus("");     emit({ status: "" }); }
   };
 
   const clearAll = () => {
-    setStatus("");
-    emit({ status: "" });
+    setSearch(""); setTenantname(""); setStatus("");
+    onFilter({ search: "", tenantname: "", status: "" });
   };
 
   return (
@@ -79,7 +95,7 @@ export default function MyTeamFilter({ onFilter, statuses = [] }) {
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-64 p-4" align="end">
+        <PopoverContent className="w-72 p-4" align="end">
           <div className="space-y-4">
 
             <div className="flex items-center justify-between">
@@ -96,9 +112,31 @@ export default function MyTeamFilter({ onFilter, statuses = [] }) {
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Client Name</label>
+                {tenantname && (
+                  <button onClick={() => clearOne("tenantname")}>
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <Select value={tenantname || "__all__"} onValueChange={handleTenantname}>
+                <SelectTrigger className="h-9 text-sm w-full">
+                  <SelectValue placeholder="All Clients" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All Clients</SelectItem>
+                  {tenantnames.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
                 {status && (
-                  <button onClick={clearStatus}>
+                  <button onClick={() => clearOne("status")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
@@ -110,7 +148,9 @@ export default function MyTeamFilter({ onFilter, statuses = [] }) {
                 <SelectContent>
                   <SelectItem value="__all__">All Statuses</SelectItem>
                   {statuses.map((s) => (
-                    <SelectItem key={s} value={s}>{s == "true" ? "Active" : "Inactive"}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {s === "true" ? "Active" : "Inactive"}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
