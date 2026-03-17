@@ -67,25 +67,32 @@ export default function ComFilters({
   };
 
   return (
-    <div className="flex flex-row items-center gap-2 w-full">
-      <div className="relative flex-1 min-w-[150px]">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-4 h-4" />
+    <div className="flex flex-row items-center gap-1 sm:gap-2 w-full">
+      <div className="relative flex-1 min-w-[100px] sm:min-w-[150px]">
+        <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
         <Input
           value={searchValue}
           onChange={(e) => onSearch?.(e.target.value)}
-          placeholder="Search username or ID"
-          className="pl-9 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500"
+          placeholder="Search..."
+          className="pl-7 sm:pl-9 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 text-xs sm:text-sm h-8 sm:h-10"
         />
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
         <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="relative gap-2 dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300">
-              <SlidersHorizontal className="w-4 h-4" />
-              <span>Filters</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="relative gap-1 sm:gap-2 dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300 px-2 sm:px-3 h-8 sm:h-10"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="text-xs sm:text-sm whitespace-nowrap">Filters</span>
               {activeFilterCount > 0 && (
-                <Badge variant="secondary" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center dark:bg-gray-700 dark:text-gray-200">
+                <Badge 
+                  variant="secondary" 
+                  className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[8px] sm:text-xs dark:bg-gray-700 dark:text-gray-200"
+                >
                   {activeFilterCount}
                 </Badge>
               )}
@@ -124,7 +131,7 @@ export default function ComFilters({
                           value={currentValue}
                           onChange={(e) => handleInputChange(filter, e)}
                           placeholder={`Search ${filter.toLowerCase()}...`}
-                          className="pl-7 w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200"
+                          className="pl-7 w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 text-xs h-8"
                         />
                       </div>
                     </div>
@@ -147,18 +154,18 @@ export default function ComFilters({
                       onValueChange={(value) => handleFilterChange(filter, value)}
                       disabled={!options.length}
                     >
-                      <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:focus:ring-gray-700">
+                      <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:focus:ring-gray-700 h-8 text-xs">
                         <SelectValue placeholder={options.length ? `Select ${filter}` : 'No options'} />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-gray-900 dark:border-gray-800">
                         {options.length ? (
                           options.map((opt) => (
-                            <SelectItem key={`${filter}-${opt}`} value={opt} className="dark:text-gray-200 dark:focus:bg-gray-800 dark:focus:text-gray-100">
+                            <SelectItem key={`${filter}-${opt}`} value={opt} className="dark:text-gray-200 dark:focus:bg-gray-800 dark:focus:text-gray-100 text-xs">
                               {opt}
                             </SelectItem>
                           ))
                         ) : (
-                          <SelectItem value="no-options" disabled className="dark:text-gray-500">
+                          <SelectItem value="no-options" disabled className="dark:text-gray-500 text-xs">
                             No options available
                           </SelectItem>
                         )}
@@ -173,10 +180,11 @@ export default function ComFilters({
 
         <Button
           onClick={onCreateTicket}
-          className="gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white"
+          size="sm"
+          className="gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10"
         >
-          <Plus className="w-4 h-4" />
-          New
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <span className="text-xs sm:text-sm whitespace-nowrap">New</span>
         </Button>
       </div>
     </div>
