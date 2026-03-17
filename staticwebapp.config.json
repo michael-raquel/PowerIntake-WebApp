@@ -7,10 +7,6 @@
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": [
-      "/sw.js",
-      "/manifest.json",
-      "/icons/*"
-    ]
+    "exclude": ["/sw.js", "/manifest.json", "/icons/*"]
   }
 }
