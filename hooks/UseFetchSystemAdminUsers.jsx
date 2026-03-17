@@ -20,6 +20,8 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
       if (filters.status) params.append("status", filters.status);
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/superadmin?${params}`;
+      
+      console.log("This is the API base URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
 
       const res = await fetch(url);
       if (!res.ok) {
