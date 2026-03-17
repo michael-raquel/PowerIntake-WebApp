@@ -21,13 +21,13 @@ export default function Manage() {
     ? activeTab
     : tabs[0]?.id ?? "company";
 
-  if (loading) return (
-    <div className="p-6 space-y-4">
-      <div className="h-6 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-32" />
-      <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-56" />
-      <div className="h-10 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-full" />
-    </div>
-  );
+  // if (loading) return (
+  //   <div className="p-6 space-y-4">
+  //     <div className="h-6 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-32" />
+  //     <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-56" />
+  //     <div className="h-10 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-full" />
+  //   </div>
+  // );
 
   return (
     <div className="p-6 rounded-lg">

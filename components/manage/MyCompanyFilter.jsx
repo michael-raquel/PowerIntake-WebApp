@@ -21,8 +21,6 @@ export default function CompanyFilter({
 
   const activeFilterCount = [manager, role, department, status].filter(Boolean).length;
 
-  // ── Call onFilter directly with merged current + new values ──────────────
-  // No useCallback — avoids stale closure on any field
   const emit = (overrides = {}) => {
     onFilter({
       search,
@@ -167,7 +165,7 @@ export default function CompanyFilter({
                 <SelectContent>
                   <SelectItem value="__all__">All Roles</SelectItem>
                   {roles.map((r) => (
-                    <SelectItem key={r} value={r}>{r}</SelectItem>
+                    <SelectItem key={r} value={r}>{r == "SuperAdmin" ? "Super Admin" : r}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -210,7 +208,7 @@ export default function CompanyFilter({
                 <SelectContent>
                   <SelectItem value="__all__">All Statuses</SelectItem>
                   {statuses.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>{s === "true" ? "Active" : "Inactive"}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

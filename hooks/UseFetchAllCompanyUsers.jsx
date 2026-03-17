@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 12) {
+  const { tokenInfo }    = useAuth();
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
@@ -10,10 +12,16 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
   const [totalPages, setTotalPages] = useState(1);
 
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
+    const entratenantid = tokenInfo?.account?.tenantId;
+
+    if (!entratenantid) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ page: currentPage, limit });
+      const params = new URLSearchParams({ page: currentPage, limit, entratenantid });
 
       if (filters.search)     params.append("search",     filters.search);
       if (filters.manager)    params.append("manager",    filters.manager);
@@ -22,7 +30,6 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
       if (filters.status)     params.append("status",     filters.status);
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/mycompany?${params}`;
-      console.log('[useFetchAllCompanyUsers] Fetching:', url);
 
       const res = await fetch(url);
       if (!res.ok) {
@@ -36,16 +43,17 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
       setTotalPages(json.totalPages);
       setPage(currentPage);
     } catch (err) {
-      console.error('[useFetchAllCompanyUsers] Error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [limit]);
+  }, [limit, tokenInfo?.account?.tenantId]);
 
   useEffect(() => {
-    fetchData(1);
-  }, [fetchData]);
+    if (tokenInfo?.account?.tenantId) { 
+      fetchData(1);
+    }
+  }, [fetchData, tokenInfo?.account?.tenantId]); 
 
   return {
     data,
