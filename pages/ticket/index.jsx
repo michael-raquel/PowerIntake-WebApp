@@ -91,7 +91,7 @@ export default function TicketPage() {
     <div className="p-6 rounded-lg">
       <div className="mb-4 px-2 bg-gradient-to-l from-pink-500 to-violet-800 rounded-lg py-4">
         <div className="flex items-center gap-2">
-          <h2 className="font-black text-xl sm:text-2xl text-white">Tickets</h2>
+          <h2 className="font-black text-xl sm:text-2xl text-white">Ticketsese</h2>
           <div className="w-1 h-6 bg-white/40 rounded-full"></div>
         </div>
         <p className="text-xs sm:text-sm text-white/70 mt-1.5 pl-1">
