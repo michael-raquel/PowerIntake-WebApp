@@ -6,7 +6,7 @@ export default function useManagerCheck() {
   const [isManager, setIsManager] = useState(false);
   const [loading,   setLoading]   = useState(false);
   const [error,     setError]     = useState(null);
-//aura
+
   useEffect(() => {
     const entrauserid = tokenInfo?.account?.localAccountId;
     if (!entrauserid) return;

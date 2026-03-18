@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
-export function useUpdateUserSettings() {
+export function useCreateUserSettings() {
 	const { instance, accounts } = useMsal();
 	const [submitting, setSubmitting] = useState(false);
 	const [error, setError] = useState(null);
@@ -18,18 +18,18 @@ export function useUpdateUserSettings() {
 		return token?.accessToken ?? null;
 	}, [accounts, instance]);
 
-	const updateUserSettings = useCallback(
+	const createUserSettings = useCallback(
 		async ({
-			usersettingsuuid,
+			entrauserid,
 			outlook,
 			teams,
 			powersuiteai,
 			spartaassist,
 			darkmode,
-			modifiedby,
+			createdby,
 		}) => {
-			if (!usersettingsuuid) {
-				throw new Error("usersettingsuuid is required");
+			if (!entrauserid) {
+				throw new Error("entrauserid is required");
 			}
 
 			try {
@@ -41,19 +41,19 @@ export function useUpdateUserSettings() {
 				const res = await fetch(
 					`${process.env.NEXT_PUBLIC_API_BASE_URL}/usersettings`,
 					{
-						method: "PUT",
+						method: "POST",
 						headers: {
 							"Content-Type": "application/json",
 							...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
 						},
 						body: JSON.stringify({
-							usersettingsuuid,
-							outlook: (outlook ?? false).toString(),
-							teams: (teams ?? false).toString(),
-							powersuiteai: (powersuiteai ?? false).toString(),
-							spartaassist: (spartaassist ?? false).toString(),
-							darkmode: (darkmode ?? false).toString(),
-							modifiedby: modifiedby ?? null,
+							entrauserid,
+							outlook: outlook ?? false,
+							teams: teams ?? false,
+							powersuiteai: powersuiteai ?? false,
+							spartaassist: spartaassist ?? false,
+							darkmode: darkmode ?? false,
+							createdby: createdby ?? null,
 						}),
 					}
 				);
@@ -67,7 +67,7 @@ export function useUpdateUserSettings() {
 
 				return await res.json();
 			} catch (err) {
-				setError(err.message || "Failed to update user settings");
+				setError(err.message || "Failed to create user settings");
 				throw err;
 			} finally {
 				setSubmitting(false);
@@ -76,5 +76,5 @@ export function useUpdateUserSettings() {
 		[getAccessToken]
 	);
 
-	return { updateUserSettings, submitting, error };
+	return { createUserSettings, submitting, error };
 }
