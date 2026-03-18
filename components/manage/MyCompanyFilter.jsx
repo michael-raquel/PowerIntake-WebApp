@@ -1,0 +1,223 @@
+import { useState } from "react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+
+export default function CompanyFilter({
+  onFilter,
+  managers    = [],
+  roles       = [],
+  departments = [],
+  statuses    = [],
+}) {
+  const [search,     setSearch]     = useState("");
+  const [manager,    setManager]    = useState("");
+  const [role,       setRole]       = useState("");
+  const [department, setDepartment] = useState("");
+  const [status,     setStatus]     = useState("");
+
+  const activeFilterCount = [manager, role, department, status].filter(Boolean).length;
+
+  const emit = (overrides = {}) => {
+    onFilter({
+      search,
+      manager,
+      role,
+      department,
+      status,
+      ...overrides,
+    });
+  };
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    emit({ search: e.target.value });
+  };
+
+  const handleManager = (e) => {
+    setManager(e.target.value);
+    emit({ manager: e.target.value });
+  };
+
+  const handleRole = (val) => {
+    const v = val === "__all__" ? "" : val;
+    setRole(v);
+    emit({ role: v });
+  };
+
+  const handleDepartment = (val) => {
+    const v = val === "__all__" ? "" : val;
+    setDepartment(v);
+    emit({ department: v });
+  };
+
+  const handleStatus = (val) => {
+    const v = val === "__all__" ? "" : val;
+    setStatus(v);
+    emit({ status: v });
+  };
+
+  const clearOne = (key) => {
+    if (key === "manager")    { setManager("");    emit({ manager: "" }); }
+    if (key === "role")       { setRole("");       emit({ role: "" }); }
+    if (key === "department") { setDepartment(""); emit({ department: "" }); }
+    if (key === "status")     { setStatus("");     emit({ status: "" }); }
+  };
+
+  const clearAll = () => {
+    setSearch(""); setManager(""); setRole(""); setDepartment(""); setStatus("");
+    onFilter({ search: "", manager: "", role: "", department: "", status: "" });
+  };
+
+  return (
+    <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Input
+          value={search}
+          onChange={handleSearch}
+          placeholder="Search user name..."
+          className="pl-9 pr-8"
+        />
+        {search && (
+          <button
+            onClick={() => { setSearch(""); emit({ search: "" }); }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            className={`relative gap-2 ${
+              activeFilterCount > 0
+                ? "border-violet-500 bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-500 dark:hover:bg-violet-900/30"
+                : ""
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            <span>Filters</span>
+            {activeFilterCount > 0 && (
+              <Badge className="h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-violet-600 hover:bg-violet-600 text-white dark:bg-violet-500">
+                {activeFilterCount}
+              </Badge>
+            )}
+          </Button>
+        </PopoverTrigger>
+
+        <PopoverContent className="w-72 p-4" align="end">
+          <div className="space-y-4">
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-gray-900 dark:text-white">Filters</span>
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={clearAll}
+                  className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
+                >
+                  Clear all
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Manager</label>
+                {manager && (
+                  <button onClick={() => clearOne("manager")}>
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                <Input
+                  value={manager}
+                  onChange={handleManager}
+                  placeholder="Search manager..."
+                  className="pl-8 h-9 text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Role</label>
+                {role && (
+                  <button onClick={() => clearOne("role")}>
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <Select value={role || "__all__"} onValueChange={handleRole} className=" ">
+                <SelectTrigger className="h-9 text-sm w-full">
+                  <SelectValue placeholder="All Roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All Roles</SelectItem>
+                  {roles.map((r) => (
+                    <SelectItem key={r} value={r}>{r == "SuperAdmin" ? "Super Admin" : r}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Department</label>
+                {department && (
+                  <button onClick={() => clearOne("department")}>
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <Select value={department || "__all__"} onValueChange={handleDepartment}>
+                <SelectTrigger className="h-9 text-sm w-full">
+                  <SelectValue placeholder="All Departments" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All Departments</SelectItem>
+                  {departments.map((d) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
+                {status && (
+                  <button onClick={() => clearOne("status")}>
+                    <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
+                  </button>
+                )}
+              </div>
+              <Select value={status || "__all__"} onValueChange={handleStatus}>
+                <SelectTrigger className="h-9 text-sm w-full">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All Statuses</SelectItem>
+                  {statuses.map((s) => (
+                    <SelectItem key={s} value={s}>{s === "true" ? "Active" : "Inactive"}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+          </div>
+        </PopoverContent>
+      </Popover>
+
+    </div>
+  );
+}
