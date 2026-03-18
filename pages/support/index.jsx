@@ -1,23 +1,25 @@
 "use client";
 
-import {
-  Mail,
-  MessageSquare,
-  PhoneCall,
-  BookOpen,
-  Info,
-} from "lucide-react";
+import { useState } from "react";
+import { Mail, MessageSquare, PhoneCall, BookOpen, Info } from "lucide-react";
 import ComCard, {
   supportCards,
   learnMoreCards,
 } from "@/components/support/ComCard";
+import ComSupportForm from "@/components/support/ComSupportForm";
+import ComFeedbackForm from "@/components/support/ComFeedbackForm";
 
 const supportIcons = [Mail, MessageSquare, PhoneCall];
 const learnMoreIcons = [BookOpen, Info];
 
 export default function SupportRoute() {
+  const [supportOpen, setSupportOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+
   return (
     <div className="p-6 rounded-lg">
+      <ComSupportForm open={supportOpen} onClose={() => setSupportOpen(false)} />
+      <ComFeedbackForm open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
       <div className="mb-6 px-2 bg-gradient-to-l from-pink-500 to-violet-800 rounded-lg py-4">
         <h2 className="font-bold text-sm sm:text-lg text-white">
           Power Intake Help Center
@@ -58,6 +60,10 @@ export default function SupportRoute() {
                     card.cta ? (
                       <button
                         type="button"
+                        onClick={() => {
+                          if (card.title === "Email Support") setSupportOpen(true);
+                          if (card.title === "Give Feedback") setFeedbackOpen(true);
+                        }}
                         className="inline-flex items-center justify-center rounded-full bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600"
                       >
                         {card.cta}
