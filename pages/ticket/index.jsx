@@ -90,7 +90,7 @@ export default function TicketPage() {
   return (
     <div className="p-6 rounded-lg">
       <div className="mb-4 px-2 bg-gradient-to-l from-pink-500 to-violet-800 rounded-lg py-4">
-        <h2 className="font-bold text-sm sm:text-lg text-white">Ticketesese</h2>
+        <h2 className="font-bold text-sm sm:text-lg text-white">Tickets</h2>
         <p className="text-xs sm:text-sm text-gray-200 mt-1">
           Create and manage your tickets
         </p>
