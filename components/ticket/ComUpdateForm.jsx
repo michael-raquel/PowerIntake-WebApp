@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { useAuth } from '@/context/AuthContext';
 import { useUpdateTicket } from '@/hooks/UseUpdateTicket';
+import { toast } from "sonner";
 import ComNotes from './tabs/ComNotes';
 import ComUserInformation from './tabs/ComUserInformtaion';
 import ComClosureDate from './tabs/ComClosureDate';
@@ -69,12 +70,6 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     return {
       title: ticket.v_title || '',
       description: ticket.v_description || '',
-      attachments: Array.isArray(ticket.v_attachments)
-        ? ticket.v_attachments.map(a => ({
-          name: a.v_attachment,
-          createdAt: a.v_createdat,
-        }))
-        : [],
       supportCalls: Array.isArray(ticket.v_supportcalls)
         ? ticket.v_supportcalls.map(call => ({
           date: call.v_date ? new Date(call.v_date).toISOString() : null,
@@ -89,12 +84,6 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     if (!original) return false;
     if (title !== original.title) return true;
     if (description !== original.description) return true;
-    if (attachments.length !== original.attachments.length) return true;
-    for (let i = 0; i < attachments.length; i++) {
-      const a = attachments[i];
-      const oa = original.attachments[i];
-      if (a.name !== oa.name || a.createdAt !== oa.createdAt) return true;
-    }
     if (supportCalls.length !== original.supportCalls.length) return true;
     for (let i = 0; i < supportCalls.length; i++) {
       const c = supportCalls[i];
@@ -105,7 +94,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
       if (c.toTime !== oc.toTime) return true;
     }
     return false;
-  }, [title, description, attachments, supportCalls, original]);
+  }, [title, description, supportCalls, original]);
 
   if (!ticket) return null;
 
@@ -114,10 +103,52 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const isEditableStatus = ticket.v_status === 'Submitted';
   const canEdit = isOwner && isEditableStatus;
 
-  const handleAddCall = () => {
-    if (!canEdit) return;
-    setSupportCalls(prev => [...prev, { id: Date.now(), date: new Date(), fromTime: '09:00', toTime: '17:00' }]);
+  const getSelectedDates = () => {
+    return supportCalls.map(call => call.date ? new Date(call.date).toDateString() : null).filter(Boolean);
   };
+
+  const handleAddCall = () => {
+  if (!canEdit) return;
+  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const selectedDates = getSelectedDates();
+  const todayStr = today.toDateString();
+  
+  let newDate;
+  if (selectedDates.includes(todayStr)) {
+    newDate = new Date(today);
+    newDate.setDate(newDate.getDate() + 1);
+    while (selectedDates.includes(newDate.toDateString())) {
+      newDate.setDate(newDate.getDate() + 1);
+    }
+  } else {
+    newDate = today;
+  }
+  
+  const now = new Date();
+  let startHour = now.getHours();
+  let endHour = startHour + 2;
+  
+  if (endHour >= 24) {
+    endHour = 23;
+  }
+  
+  const startTime = `${startHour.toString().padStart(2, '0')}:00`;
+  const endTime = `${endHour.toString().padStart(2, '0')}:00`;
+  
+  setSupportCalls(prev => [...prev, { 
+    id: Date.now(), 
+    date: newDate, 
+    fromTime: startTime,
+    toTime: endTime
+  }]);
+  
+  toast.success("Support call added", {
+    description: `Scheduled for ${format(newDate, 'MMM d, yyyy')} at ${startTime} - ${endTime}`
+  });
+};
 
   const handleRemoveCall = (id) => {
     if (!canEdit) return;
@@ -126,7 +157,43 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const handleCallChange = (id, field, value) => {
     if (!canEdit) return;
-    setSupportCalls(prev => prev.map(call => (call.id === id ? { ...call, [field]: value } : call)));
+    
+    setSupportCalls(prev => {
+      const callIndex = prev.findIndex(call => call.id === id);
+      if (callIndex === -1) return prev;
+      
+      const updatedCall = { ...prev[callIndex], [field]: value };
+      
+      if (field === 'date' && value) {
+        const dateStr = new Date(value).toDateString();
+        const hasDuplicate = prev.some((call, idx) => 
+          idx !== callIndex && call.date && new Date(call.date).toDateString() === dateStr
+        );
+        
+        if (hasDuplicate) {
+          toast.error("Date already selected", {
+            description: "You can only have one support call per day"
+          });
+          return prev;
+        }
+      }
+      
+      if (field === 'fromTime' || field === 'toTime') {
+        const fromTime = field === 'fromTime' ? value : updatedCall.fromTime;
+        const toTime = field === 'toTime' ? value : updatedCall.toTime;
+        
+        if (fromTime && toTime && fromTime >= toTime) {
+          toast.error("Invalid time range", {
+            description: "End time must be after start time"
+          });
+          return prev;
+        }
+      }
+      
+      const newCalls = [...prev];
+      newCalls[callIndex] = updatedCall;
+      return newCalls;
+    });
   };
 
   const handleUpdate = async () => {
@@ -135,7 +202,6 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
       ticketuuid: ticket.v_ticketuuid,
       formData: { title, description, timezone: ticket.v_usertimezone, location: ticket.v_officelocation },
       supportCalls: supportCalls.map(c => ({ date: c.date, fromTime: c.fromTime, toTime: c.toTime })),
-      attachments,
     });
     onUpdated?.(ticket.v_ticketuuid);
     onClose?.();
@@ -161,11 +227,22 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
       case 'notes': return <ComNotes ticket={ticket} ticketUuid={ticket.v_ticketuuid} canEdit={isEditableStatus} />;
       case 'user': return <ComUserInformation ticket={ticket} />;
       case 'closure': return <ComClosureDate ticket={ticket} />;
-      case 'attachments': return <ComAttachment attachments={attachments} onChange={setAttachments} canEdit={canEdit} />;
+      case 'attachments': return (
+        <ComAttachment 
+          ticketuuid={ticket.v_ticketuuid}
+          attachments={attachments} 
+          onChange={setAttachments} 
+          canEdit={isEditableStatus}
+          createdby={ticket.v_entrauserid}
+          modifiedby={account?.localAccountId}
+        />
+      );
       case 'timeline': return <ComTimelineView ticket={ticket} />;
       default: return null;
     }
   };
+
+  const selectedDates = getSelectedDates();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70 p-4">
@@ -285,9 +362,23 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                                 <span className="truncate">{call.date ? format(call.date, "PPP") : "Select date"}</span>
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0">
-                              <Calendar mode="single" selected={call.date} onSelect={date => handleCallChange(call.id, 'date', date)}
-                                disabled={date => date < new Date()} initialFocus />
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar 
+                                mode="single" 
+                                selected={call.date} 
+                                onSelect={(date) => {
+                                  if (date) {
+                                    handleCallChange(call.id, 'date', date);
+                                  }
+                                }}
+                                disabled={(date) => {
+                                  const today = new Date();
+                                  today.setHours(0, 0, 0, 0);
+                                  const dateStr = date.toDateString();
+                                  return date < today || selectedDates.includes(dateStr);
+                                }}
+                                initialFocus 
+                              />
                             </PopoverContent>
                           </Popover>
                         ) : (
@@ -297,8 +388,12 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                       <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Start</p>
                         {canEdit ? (
-                          <Input type="time" value={call.fromTime} onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
-                            className="h-8 text-sm w-full" />
+                          <Input 
+                            type="time" 
+                            value={call.fromTime} 
+                            onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
+                            className="h-8 text-sm w-full" 
+                          />
                         ) : (
                           <p className="text-sm text-gray-900 dark:text-white">{call.fromTime}</p>
                         )}
@@ -306,8 +401,12 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                       <div>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">End</p>
                         {canEdit ? (
-                          <Input type="time" value={call.toTime} onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
-                            className="h-8 text-sm w-full" />
+                          <Input 
+                            type="time" 
+                            value={call.toTime} 
+                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
+                            className="h-8 text-sm w-full" 
+                          />
                         ) : (
                           <p className="text-sm text-gray-900 dark:text-white">{call.toTime}</p>
                         )}

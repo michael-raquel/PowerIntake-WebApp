@@ -10,19 +10,16 @@ export function useUpdateTicket({ account, onSuccess } = {}) {
       ticketuuid,
       formData,
       supportCalls = null,
-      attachments = null,
     }) => {
       setLoading(true);
       setError(null);
 
       const hasSupportCalls = Array.isArray(supportCalls) && supportCalls.length > 0;
-      const hasAttachments  = Array.isArray(attachments) && attachments.length > 0;
 
       const body = {
         ticketuuid,
         title:       formData.title,
         description: formData.description,
-
         usertimezone:   formData.timezone ?? null,
         officelocation: formData.location ? formData.location.toLowerCase() : null,
         date:           hasSupportCalls
@@ -34,10 +31,6 @@ export function useUpdateTicket({ account, onSuccess } = {}) {
         endtime: hasSupportCalls
           ? supportCalls.map(c => c.toTime)
           : null,
-        attachments: hasAttachments
-          ? attachments.map(f => f.blobName || f.name)
-          : null,
-
         modifiedby: account?.name,
       };
 
@@ -52,7 +45,6 @@ export function useUpdateTicket({ account, onSuccess } = {}) {
         );
 
         const data = await res.json();
-        console.log("Update ticket response:", data);
         if (!res.ok) throw new Error(data.error || "Failed to update ticket");
 
         const updatedTicketuuid = data.ticket_update || data.ticketuuid || ticketuuid;
