@@ -21,13 +21,13 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/superadmin?${params}`;
       
-      console.log("This is the API base URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
-
       const res = await fetch(url);
       if (!res.ok) {
         const body = await res.text();
         throw new Error(`${res.status} ${res.statusText} — ${body}`);
       }
+      
+      console.log("This is the API base URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
 
       const json = await res.json();
       setData(json.data);
