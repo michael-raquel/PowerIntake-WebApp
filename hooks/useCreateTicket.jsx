@@ -19,7 +19,7 @@ export function useCreateTicket({ account, onSuccess } = {}) {
       endtime:        supportCalls.map(c => c.toTime),
       usertimezone:   formData.timezone,
       officelocation: formData.location.toLowerCase(),
-      attachments:    attachments.map(f => f.name),
+      attachments:    attachments.map(f => f.url),
       createdby:      account?.name,
     };
 

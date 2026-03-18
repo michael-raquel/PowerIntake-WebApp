@@ -15,6 +15,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useCreateTicket } from "@/hooks/useCreateTicket";
 import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
 import { toast } from "sonner";
+import useUploadImage from '@/hooks/UseUploadImage';
 
 const getOffsetString = (tz) => {
   try {
@@ -98,9 +99,16 @@ export default function ComCreateTicket({ onClose }) {
   const [supportCalls, setSupportCalls] = useState([DEFAULT_SUPPORT_CALL]);
   const [attachments, setAttachments] = useState([]);
   const [dragOver, setDragOver] = useState(false);
+  const { uploadImage, loading: uploadLoading } = useUploadImage();
 
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
+
+  const getSelectedDates = useCallback(() => {
+    return supportCalls.map(call => 
+      call.date ? new Date(call.date).toDateString() : null
+    ).filter(Boolean);
+  }, [supportCalls]);
 
   const handleInputChange = useCallback(({ target: { name, value } }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -118,20 +126,33 @@ export default function ComCreateTicket({ onClose }) {
   }, []);
 
   const handleAddCall = useCallback(() => {
+    const selectedDates = supportCalls.map(call => 
+      call.date ? new Date(call.date).toDateString() : null
+    ).filter(Boolean);
+    
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + 1);
+    nextDate.setHours(0, 0, 0, 0);
+    
+    while (selectedDates.includes(nextDate.toDateString())) {
+      nextDate.setDate(nextDate.getDate() + 1);
+    }
     const newStart = getRoundedCurrentTime();
     const newEnd = new Date(newStart.getTime() + 2 * 60 * 60 * 1000);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
 
     setSupportCalls(prev => [...prev, {
       id: Date.now(),
-      date: tomorrow,
+      date: new Date(nextDate), 
       fromTime: `${newStart.getHours().toString().padStart(2, '0')}:${newStart.getMinutes().toString().padStart(2, '0')}`,
       toTime: `${newEnd.getHours().toString().padStart(2, '0')}:${newEnd.getMinutes().toString().padStart(2, '0')}`,
       timezone: formData.timezone,
       location: formData.location,
     }]);
-  }, [formData.timezone, formData.location]);
+    
+    toast.success("Support call added", {
+      description: `Scheduled for ${format(nextDate, 'MMM d, yyyy')}`
+    });
+  }, [supportCalls, formData.timezone, formData.location]);
 
   const handleRemoveCall = useCallback((id) => {
     setSupportCalls(prev => prev.filter(c => c.id !== id));
@@ -168,8 +189,31 @@ export default function ComCreateTicket({ onClose }) {
         return;
       }
     }
-    await createTicket({ formData, supportCalls, attachments });
-  }, [formData, supportCalls, attachments, createTicket]);
+
+    try {
+      const uploadedAttachments = await Promise.all(
+        attachments.map(async (file) => {
+          const result = await uploadImage(file);
+          return {
+            name: result.url,
+            blobName: result.blobName,
+            url: result.url,
+          };
+        })
+      );
+
+      await createTicket({ 
+        formData, 
+        supportCalls, 
+        attachments: uploadedAttachments 
+      });
+      
+      onClose?.();
+    } catch (err) {
+      console.error('Submission failed:', err);
+      toast.error(err.message || 'Failed to submit ticket');
+    }
+  }, [formData, supportCalls, attachments, createTicket, uploadImage, onClose]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black py-6 transition-colors">
@@ -236,7 +280,13 @@ export default function ComCreateTicket({ onClose }) {
                               mode="single"
                               selected={call.date}
                               onSelect={d => handleCallChange(call.id, 'date', d)}
-                              disabled={d => d < new Date()}
+                              disabled={(date) => {
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const dateStr = date.toDateString();
+                                const selectedDates = getSelectedDates();
+                                return date < today || selectedDates.includes(dateStr);
+                              }}
                               captionLayout="dropdown"
                               defaultMonth={call.date}
                               initialFocus
