@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 
 export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenantid = null, refreshKey = 0, enabled = true } = {}) {
@@ -45,4 +44,3 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenan
 
   return { tickets, loading, error };
 }
-

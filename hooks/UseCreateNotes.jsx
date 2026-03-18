@@ -1,44 +1,60 @@
 import { useState, useCallback } from "react";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export function useCreateNote() {
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+	const { instance, accounts } = useMsal();
+	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState(null);
 
-  const createNote = useCallback(async ({ ticketuuid, note, createdby }) => {
-    if (!ticketuuid || !note) return null;
+	const getAccessToken = useCallback(async () => {
+		if (!accounts?.[0]) return null;
 
-    try {
-      setSubmitting(true);
-      setError(null);
+		const token = await instance.acquireTokenSilent({
+			...apiRequest,
+			account: accounts[0],
+		});
 
-      const body = {
-        ticketuuid,
-        note,
-        createdby,
-      };
+		return token?.accessToken ?? null;
+	}, [accounts, instance]);
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets/notes`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        },
-      );
+	const createNote = useCallback(
+		async ({ ticketuuid, note, createdby }) => {
+			if (!ticketuuid || !note?.trim()) {
+				throw new Error("ticketuuid and note are required");
+			}
 
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error((data && data.error) || "Failed to create note");
-      }
+			try {
+				setSubmitting(true);
+				setError(null);
 
-      return data;
-    } catch (err) {
-      setError(err.message || "Failed to create note");
-      throw err;
-    } finally {
-      setSubmitting(false);
-    }
-  }, []);
+				const accessToken = await getAccessToken();
 
-  return { createNote, submitting, error };
+				const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/notes`, {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+					},
+					body: JSON.stringify({
+						ticketuuid,
+						note: note.trim(),
+						createdby: createdby ?? null,
+					}),
+				});
+
+				if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+
+				return await res.json();
+			} catch (err) {
+				setError(err.message || "Failed to create note");
+				throw err;
+			} finally {
+				setSubmitting(false);
+			}
+		},
+		[getAccessToken]
+	);
+
+	return { createNote, submitting, error };
 }
