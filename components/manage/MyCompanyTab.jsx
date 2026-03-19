@@ -155,7 +155,7 @@ export default function MyCompanyTab() {
                 </div>
 
                 <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Admin Access</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">Admin</span>
                   <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
                 </div>
 

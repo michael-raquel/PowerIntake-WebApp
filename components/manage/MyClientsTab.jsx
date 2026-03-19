@@ -1,31 +1,21 @@
 "use client";
 
-import { RefreshCw, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react";
+import { RefreshCw, ChevronLeft, ChevronRight, Copy, Check, Search, X } from "lucide-react";
 import useFetchMyClients from "@/hooks/UseFetchMyClientUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
-import ClientsFilter from "@/components/manage/MyClientsFilter";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
 
-const TABLE_HEADERS = [
-  "Tenant ID",
-  "Client Name",
-  "User Name",
-  "Total Ticket",
-  "Open Ticket",
-  "Status",
-];
-
+const TABLE_HEADERS = ["Tenant ID", "Client Name", "Total Tickets", "Open Tickets"];
 const LIMIT = 10;
 
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
-
   const handleCopy = async () => {
     await navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
-
   return (
     <button
       onClick={handleCopy}
@@ -41,50 +31,58 @@ function CopyButton({ value }) {
 }
 
 export default function MyClientsTab() {
-
   const {
-    data,
-    loading,
-    error,
-    page,
-    total,
-    totalPages,
-    hasNext,
-    hasPrev,
-    fetchData,
+    data, loading, error,
+    page, total, totalPages,
+    hasNext, hasPrev, fetchData,
   } = useFetchMyClients(1, LIMIT);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [search, setSearch] = useState("");
 
   const handleSync = async () => {
     await syncUsers();
     fetchData(page);
   };
 
-  const handleFilter = (newFilters) => {
-    setSearchQuery(newFilters.search ?? "");
-    fetchData(1, newFilters);
+  const handleSearch = (e) => {
+    const val = e.target.value;
+    setSearch(val);
+    fetchData(1, { tenantname: val });
   };
 
-  const tenantnames = [...new Set(data.map((r) => r.v_tenantname).filter(Boolean))];
-  const statuses    = [...new Set(data.map((r) => r.v_status).filter(Boolean))];
+  const clearSearch = () => {
+    setSearch("");
+    fetchData(1, { tenantname: "" });
+  };
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
 
-      <ClientsFilter
-        onFilter={handleFilter}
-        tenantnames={tenantnames}
-        statuses={statuses}
-      />
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            value={search}
+            onChange={handleSearch}
+            placeholder="Search client name..."
+            className="pl-9 pr-8"
+          />
+          {search && (
+            <button
+              onClick={clearSearch}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
 
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
         <div className="flex flex-col gap-0.5">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {total} total records
-          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{total} total records</span>
           {syncing && (
             <span className="text-xs text-blue-500 dark:text-blue-400">Syncing users...</span>
           )}
@@ -105,63 +103,39 @@ export default function MyClientsTab() {
           <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
         </button>
       </div>
-{/* 
-      {error && (
-        <div className="px-4 py-3 text-sm border-b border-gray-200 dark:border-gray-800">
-          <div className="flex items-start gap-2 text-red-500 dark:text-red-400">
-            <span className="font-medium">Error:</span>
-            <span>{error}</span>
-          </div>
-        </div>
-      )} */}
 
       <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
         {loading ? (
-          <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            Loading...
-          </div>
+          <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">Loading...</div>
         ) : data.length === 0 ? (
-          <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            No records found.
-          </div>
+          <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No records found.</div>
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
             {data.map((row, i) => (
               <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400 font-semibold text-sm">
-                      {row.v_tenantname?.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_tenantname}</p>
-                      <div className="flex items-center gap-1">
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{row.v_tenantid}</p>
-                        <CopyButton value={row.v_tenantid} />
-                      </div>
+                <div className="flex items-center gap-3 ">
+                  <div className="w-9 h-9 rounded-md bg-violet-600 dark:bg-violet-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
+                    {row.v_tenantname?.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-violet-700 dark:text-violet-300 tracking-wide">
+                      {row.v_tenantname}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{row.v_tenantid}</p>
+                      <CopyButton value={row.v_tenantid} />
                     </div>
                   </div>
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                    row.v_status === "true"
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                  }`}>
-                    {row.v_status === "true" ? "Active" : "Inactive"}
-                  </span>
                 </div>
                 <div className="border-t border-gray-100 dark:border-gray-700" />
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">User Name</p>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_username}</p>
-                </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                     <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                     <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
                   </div>
                 </div>
               </div>
@@ -175,10 +149,7 @@ export default function MyClientsTab() {
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
               {TABLE_HEADERS.map((header) => (
-                <th
-                  key={header}
-                  className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
-                >
+                <th key={header} className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                   {header}
                 </th>
               ))}
@@ -190,7 +161,7 @@ export default function MyClientsTab() {
                 <tr key={i}>
                   {TABLE_HEADERS.map((h) => (
                     <td key={h} className="px-4 py-3">
-                      <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-24" />
+                      <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-24 mx-auto" />
                     </td>
                   ))}
                 </tr>
@@ -206,25 +177,13 @@ export default function MyClientsTab() {
                 <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="text-gray-600 dark:text-gray-300 truncate max-w-[120px] block">
-                        {row.v_tenantid}
-                      </span>
+                      <span className="text-gray-600 dark:text-gray-300 truncate max-w-[120px] block">{row.v_tenantid}</span>
                       <CopyButton value={row.v_tenantid} />
                     </div>
                   </td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket ?? 0}</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      row.v_status === "true"
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                    }`}>
-                      {row.v_status === "true" ? "Active" : "Inactive"}
-                    </span>
-                  </td>
                 </tr>
               ))
             )}

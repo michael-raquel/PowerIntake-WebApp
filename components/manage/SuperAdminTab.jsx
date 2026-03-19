@@ -8,12 +8,13 @@ import { Switch } from "@/components/ui/switch";
 import SuperAdminFilter from "@/components/manage/SuperAdminFilter";
 
 const TABLE_HEADERS = [
+  "Client Name",
   "User Name",
   "Role",
   "Total Ticket",
   "Open Ticket",
   "Status",
-  "Admin",
+  "Super Admin",
 ];
 
 const LIMIT = 10;
@@ -41,7 +42,7 @@ export default function SuperAdminTab() {
   };
 
   const handleFilter = (newFilters) => {
-    setSearchQuery(newFilters.search ?? "");
+    setSearchQuery(newFilters.clientname ?? "");
     fetchData(1, newFilters);
   };
 
@@ -53,6 +54,7 @@ export default function SuperAdminTab() {
 
       <SuperAdminFilter
         onFilter={handleFilter}
+        clientName={searchQuery}
         roles={roles}
         statuses={statuses}
       />
@@ -102,52 +104,64 @@ export default function SuperAdminTab() {
               No records found.
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 p-4">
-              {data.map((row, i) => (
-                <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+           <div className="grid grid-cols-1 gap-3 p-4">
+                {data.map((row, i) => (
+                  <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
 
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400 font-semibold text-sm">
-                        {row.v_username?.charAt(0).toUpperCase()}
+                    <div className="flex items-center gap-2 px-3 py-2.5 bg-violet-50 dark:bg-violet-900/20 border-b border-violet-100 dark:border-violet-800/40">
+                      <div className="w-6 h-6 rounded-md bg-violet-600 dark:bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                        {row.v_tenantname?.charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_username}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}
-                        </p>
+                      <span className="text-sm font-semibold text-violet-600 dark:text-violet-300 tracking-wide">
+                        {row.v_tenantname}
+                      </span>
+                    </div>
+
+                    <div className="p-4 space-y-3">
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400 font-semibold text-sm">
+                            {row.v_username?.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_username}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              {row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}
+                            </p>
+                          </div>
+                        </div>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          row.v_status === "true"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        }`}>
+                          {row.v_status === "true" ? "Active" : "Inactive"}
+                        </span>
                       </div>
+
+                      <div className="border-t border-gray-100 dark:border-gray-700" />
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                          <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
+                        </div>
+                        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                          <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Super Admin</span>
+                        <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
+                      </div>
+
                     </div>
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      row.v_status === "true"
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                    }`}>
-                      {row.v_status === "true" ? "Active" : "Inactive"}
-                    </span>
                   </div>
-
-                  <div className="border-t border-gray-100 dark:border-gray-700" />
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
-                      <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
-                    </div>
-                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
-                      <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-2">
-                    <span className="text-xs text-gray-500 dark:text-gray-400">Admin Access</span>
-                    <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
-                  </div>
-
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
           )}
       </div>
 
@@ -185,6 +199,7 @@ export default function SuperAdminTab() {
             ) : (
               data.map((row, i) => (
                 <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
+                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>

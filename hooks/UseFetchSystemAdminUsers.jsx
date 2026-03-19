@@ -15,9 +15,10 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     try {
       const params = new URLSearchParams({ page: currentPage, limit });
 
-      if (filters.search) params.append("search", filters.search);
-      if (filters.role)   params.append("role",   filters.role);
-      if (filters.status) params.append("status", filters.status);
+      if (filters.search)     params.append("search",     filters.search);
+      if (filters.clientname) params.append("clientname", filters.clientname);
+      if (filters.role)       params.append("role",       filters.role);
+      if (filters.status)     params.append("status",     filters.status);
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/superadmin?${params}`;
       

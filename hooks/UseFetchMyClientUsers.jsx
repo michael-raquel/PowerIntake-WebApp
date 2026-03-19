@@ -15,12 +15,9 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
     try {
       const params = new URLSearchParams({ page: currentPage, limit });
 
-      if (filters.search)     params.append("search",     filters.search);
       if (filters.tenantname) params.append("tenantname", filters.tenantname);
-      if (filters.status)     params.append("status",     filters.status);
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myclients?${params}`;
-      console.log('[useFetchMyClients] Fetching:', url);
 
       const res = await fetch(url);
       if (!res.ok) {
@@ -34,7 +31,6 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
       setTotalPages(json.totalPages);
       setPage(currentPage);
     } catch (err) {
-      console.error('[useFetchMyClients] Error:', err);
       setError(err.message);
     } finally {
       setLoading(false);

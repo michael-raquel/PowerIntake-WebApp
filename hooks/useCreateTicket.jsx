@@ -20,7 +20,7 @@ export function useCreateTicket({ account, onSuccess } = {}) {
       usertimezone:   formData.timezone,
       officelocation: formData.location.toLowerCase(),
       attachments:    attachments.map(f => f.url),
-      createdby:      account?.name,
+      createdby:      account?.localAccountId,
     };
 
     try {
