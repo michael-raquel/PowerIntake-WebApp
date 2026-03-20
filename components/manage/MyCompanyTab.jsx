@@ -4,6 +4,8 @@ import { useState } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useFetchAllCompanyUsers from "@/hooks/UseFetchAllCompanyUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
+import useCreatePromoteAdmin from "@/hooks/UseCreatePromoteAdmin";
+import useDeleteDemoteAdmin from "@/hooks/UseDeleteDemoteAdmin";
 import { Switch } from '@/components/ui/switch';
 import CompanyFilter from "@/components/manage/MyCompanyFilter";
 
@@ -34,6 +36,21 @@ export default function MyCompanyTab() {
   } = useFetchAllCompanyUsers(1, LIMIT);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
+  const {
+    promoteAdmin,
+    loading: promoting,
+    fetchingGroupId,
+    groupId,
+  } = useCreatePromoteAdmin();
+  const {
+    demoteAdmin,
+    loading: demoting,
+    appRoleLoading: demoteGroupLoading,
+    groupId: demoteGroupId,
+  } = useDeleteDemoteAdmin({
+    roleValue: "Admin",
+    roleDisplayName: "Admin",
+  });
 
   const handleSync = async () => {
     await syncUsers();
@@ -42,6 +59,21 @@ export default function MyCompanyTab() {
 
   const handleFilter = (newFilters) => {
     fetchData(1, newFilters);
+  };
+
+  const handleAdminToggle = async (row, checked) => {
+    try {
+      if (checked) {
+        if (fetchingGroupId || !groupId) return;
+        await promoteAdmin(row?.v_entrauserid);
+      } else {
+        if (demoteGroupLoading || !demoteGroupId) return;
+        await demoteAdmin(row?.v_entrauserid);
+      }
+    } catch (err) {
+    } finally {
+      fetchData(page);
+    }
   };
 
   const roles       = [...new Set(data.map((r) => r.v_role).filter(Boolean))];
@@ -156,7 +188,12 @@ export default function MyCompanyTab() {
 
                 <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-2">
                   <span className="text-xs text-gray-500 dark:text-gray-400">Admin</span>
-                  <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
+                  <Switch
+                    className="data-[state=checked]:bg-blue-500 cursor-pointer"
+                    checked={row.v_role === "Admin"}
+                    onCheckedChange={(checked) => handleAdminToggle(row, checked)}
+                    disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
+                  />
                 </div>
 
               </div>
@@ -215,7 +252,12 @@ export default function MyCompanyTab() {
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
+                    <Switch
+                      className="data-[state=checked]:bg-blue-500 cursor-pointer"
+                      checked={row.v_role === "Admin"}
+                      onCheckedChange={(checked) => handleAdminToggle(row, checked)}
+                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
+                    />
                   </td>
                 </tr>
               ))

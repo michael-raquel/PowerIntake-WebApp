@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
-export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 12) {
+export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 12, refetch) {
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
@@ -8,10 +8,14 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
   const [limit]                     = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const lastArgsRef = useRef({ page: initialPage, filters: {} });
 
-  const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
+  const fetchData = useCallback(async (currentPage = initialPage, filters = {}) => {
     setLoading(true);
     setError(null);
+
+    lastArgsRef.current = { page: currentPage, filters };
+
     try {
       const params = new URLSearchParams({ page: currentPage, limit });
 
@@ -21,14 +25,12 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
       if (filters.status)     params.append("status",     filters.status);
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/superadmin?${params}`;
-      
+
       const res = await fetch(url);
       if (!res.ok) {
         const body = await res.text();
         throw new Error(`${res.status} ${res.statusText} — ${body}`);
       }
-      
-      console.log("This is the API base URL:", process.env.NEXT_PUBLIC_API_BASE_URL);
 
       const json = await res.json();
       setData(json.data);
@@ -40,11 +42,11 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     } finally {
       setLoading(false);
     }
-  }, [limit]);
+  }, [initialPage, limit]);
 
   useEffect(() => {
-    fetchData(1);
-  }, [fetchData]);
+    fetchData(initialPage);
+  }, [fetchData, initialPage]);
 
   return {
     data,
@@ -57,5 +59,6 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     hasNext: page < totalPages,
     hasPrev: page > 1,
     fetchData,
+    refetch,
   };
 }
