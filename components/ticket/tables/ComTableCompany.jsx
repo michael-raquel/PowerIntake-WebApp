@@ -33,46 +33,47 @@ export default function ComTableCompany({
   const prevTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
 
-  const filteredTickets = useMemo(
-    () =>
-      tickets.filter(t => {
-        const search = searchValue.toLowerCase().trim();
+ const filteredTickets = useMemo(
+  () =>
+    tickets.filter(t => {
+      const search = searchValue.toLowerCase().trim();
+      const matchesSearch =
+        !search ||
+        t.v_ticketnumber?.toLowerCase().includes(search) ||
+        t.v_department?.toLowerCase().includes(search) ||
+        t.v_username?.toLowerCase().includes(search) ||
+        t.v_title?.toLowerCase().includes(search) ||
+        t.v_ticketcategory?.toLowerCase().includes(search);
 
-        const matchesSearch =
-          !search ||
-          t.v_ticketnumber?.toLowerCase().includes(search) ||
-          t.v_department?.toLowerCase().includes(search) ||
-          t.v_username?.toLowerCase().includes(search) ||
-          t.v_title?.toLowerCase().includes(search) ||
-          t.v_ticketcategory?.toLowerCase().includes(search);
+      const matchesDepartment = !filters.Department || t.v_department === filters.Department;
+      const matchesSource     = !filters.Source     || t.v_source === filters.Source;
+      const matchesPriority   = !filters.Priority   || t.v_priority === filters.Priority;
+      const matchesCategory   = !filters.Category   || t.v_ticketcategory === filters.Category;
+      const matchesStatus     = !filters.Status     || t.v_status === filters.Status;
 
-        const matchesDepartment = !filters.Department || t.v_department === filters.Department;
-        const matchesPriority = !filters.Priority || t.v_priority === filters.Priority;
-        const matchesCategory = !filters.Category || t.v_ticketcategory === filters.Category;
-        const matchesStatus = !filters.Status || t.v_status === filters.Status;
-
-        return matchesSearch && matchesDepartment && matchesPriority && matchesCategory && matchesStatus;
-      }),
-    [tickets, searchValue, filters.Department, filters.Priority, filters.Category, filters.Status]
-  );
+      return matchesSearch && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus;
+    }),
+  [tickets, searchValue, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status]
+);
 
   const paginated = useMemo(
     () => filteredTickets.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage),
     [filteredTickets, currentPage, recordsPerPage]
   );
 
-  useEffect(() => {
-    const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(tickets);
-    if (ticketsChanged) {
-      prevTicketsRef.current = tickets;
-      onFilterOptionsChange?.({
-        Department: [...new Set(tickets.map(t => t.v_department).filter(Boolean))],
-        Priority: [...new Set(tickets.map(t => t.v_priority).filter(Boolean))],
-        Category: [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))],
-        Status: [...new Set(tickets.map(t => t.v_status).filter(Boolean))],
-      });
-    }
-  }, [tickets, onFilterOptionsChange]);
+ useEffect(() => {
+  const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(tickets);
+  if (ticketsChanged) {
+    prevTicketsRef.current = tickets;
+    onFilterOptionsChange?.({
+      Department: [...new Set(tickets.map(t => t.v_department).filter(Boolean))],
+      Source:     [...new Set(tickets.map(t => t.v_source).filter(Boolean))],
+      Priority:   [...new Set(tickets.map(t => t.v_priority).filter(Boolean))],
+      Category:   [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))],
+      Status:     [...new Set(tickets.map(t => t.v_status).filter(Boolean))],
+    });
+  }
+}, [tickets, onFilterOptionsChange]);
 
   useEffect(() => {
     if (prevFilteredLengthRef.current !== filteredTickets.length) {
@@ -116,7 +117,7 @@ export default function ComTableCompany({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              {['TICKET ID', 'DEPARTMENT', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
+              {['Source','TICKET ID', 'DEPARTMENT', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY','CREATED AT', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
                 <th
                   key={header}
                   className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
@@ -133,6 +134,9 @@ export default function ComTableCompany({
                 onClick={() => setSelectedTicket(t)}
                 className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
               >
+                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
+                  {t.v_source}
+                </td>
                 <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
                   {t.v_ticketnumber}
                 </td>
@@ -153,9 +157,12 @@ export default function ComTableCompany({
                     {t.v_priority}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_target}
-                </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
+                  </td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                   {t.v_status}
                 </td>

@@ -42,7 +42,6 @@ const PRIORITY_COLORS = {
 export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const { account } = useAuth();
   const { updateTicket, loading } = useUpdateTicket({ account });
-
   const [activeTab, setActiveTab] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [title, setTitle] = useState(ticket?.v_title || '');
@@ -100,7 +99,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const currentUserId = account?.localAccountId;
   const isOwner = ticket.v_entrauserid === currentUserId;
-  const isEditableStatus = ticket.v_status === 'Submitted';
+  const isEditableStatus = ticket.v_status === 'New';
   const canEdit = isOwner && isEditableStatus;
 
   const getSelectedDates = () => {
@@ -312,8 +311,12 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
             <div className="space-y-3">
               <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400">Ticket Details</h3>
               <div className="grid grid-cols-2 md:flex md:flex-wrap md:gap-3">
+                   <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-700 md:flex-1 md:min-w-[180px]">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Source</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{ticket.v_source || '—'}</p>
+                </div>
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-700 md:flex-1 md:min-w-[180px]">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Type</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Category</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{ticket.v_ticketcategory || '—'}</p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-4 py-2 border border-gray-200 dark:border-gray-700 md:flex-1 md:min-w-[180px]">

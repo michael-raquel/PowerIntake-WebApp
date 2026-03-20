@@ -5,12 +5,15 @@ import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 
 const cardFields = [
-  { key: 'v_tenantname',     label: 'Client'   },
-  { key: 'v_username',       label: 'User'     },
-  { key: 'v_title',          label: 'Title'    },
-  { key: 'v_ticketcategory', label: 'Category' },
-  { key: 'v_target',         label: 'Target'  },
-  { key: 'v_status',         label: 'Status'   },
+  { key: 'v_tenantname',     label: 'Client'     },
+  { key: 'v_department',     label: 'Department' },
+  { key: 'v_username',       label: 'User'       },
+  { key: 'v_title',          label: 'Title'      },
+  { key: 'v_ticketcategory', label: 'Category'   },
+  { key: 'v_source',         label: 'Source'     },
+  { key: 'v_createdat',      label: 'Created At' },
+  { key: 'v_target',         label: 'Target'     },
+  { key: 'v_status',         label: 'Status'     },
 ];
 
 export default function ComTableClients({
@@ -25,37 +28,34 @@ export default function ComTableClients({
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const { tickets, loading, error } = useFetchTicket({
-    refreshKey,
-  });
+  const { tickets, loading, error } = useFetchTicket({ refreshKey });
 
   const prevTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
 
   const filteredTickets = useMemo(
-    () =>
-      tickets.filter(t => {
-        const search = searchValue.toLowerCase().trim();
+  () =>
+    tickets.filter(t => {
+      const search = searchValue.toLowerCase().trim();
+      const matchesSearch =
+        !search ||
+        t.v_ticketnumber?.toLowerCase().includes(search) ||
+        t.v_tenantname?.toLowerCase().includes(search) ||
+        t.v_username?.toLowerCase().includes(search) ||
+        t.v_title?.toLowerCase().includes(search) ||
+        t.v_ticketcategory?.toLowerCase().includes(search);
 
-        const matchesSearch =
-          !search ||
-          t.v_ticketnumber?.toLowerCase().includes(search) ||
-          t.v_tenantname?.toLowerCase().includes(search) ||
-          t.v_username?.toLowerCase().includes(search) ||
-          t.v_title?.toLowerCase().includes(search) ||
-          t.v_ticketcategory?.toLowerCase().includes(search);
+      const matchesClient     = !filters.Client     || t.v_tenantname?.toLowerCase().includes(filters.Client.toLowerCase().trim());
+      const matchesDepartment = !filters.Department || t.v_department === filters.Department;
+      const matchesSource     = !filters.Source     || t.v_source === filters.Source;
+      const matchesPriority   = !filters.Priority   || t.v_priority === filters.Priority;
+      const matchesCategory   = !filters.Category   || t.v_ticketcategory === filters.Category;
+      const matchesStatus     = !filters.Status     || t.v_status === filters.Status;
 
-        const matchesClient = !filters.Client ||
-          (t.v_tenantname && t.v_tenantname.toLowerCase().includes(filters.Client.toLowerCase().trim()));
-
-        const matchesPriority = !filters.Priority || t.v_priority === filters.Priority;
-        const matchesCategory = !filters.Category || t.v_ticketcategory === filters.Category;
-        const matchesStatus = !filters.Status || t.v_status === filters.Status;
-
-        return matchesSearch && matchesClient && matchesPriority && matchesCategory && matchesStatus;
-      }),
-    [tickets, searchValue, filters.Client, filters.Priority, filters.Category, filters.Status]
-  );
+      return matchesSearch && matchesClient && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus;
+    }),
+  [tickets, searchValue, filters.Client, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status]
+);
 
   const paginated = useMemo(
     () => filteredTickets.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage),
@@ -63,17 +63,19 @@ export default function ComTableClients({
   );
 
   useEffect(() => {
-    const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(tickets);
-    if (ticketsChanged) {
-      prevTicketsRef.current = tickets;
-      onFilterOptionsChange?.({
-        Client: [...new Set(tickets.map(t => t.v_tenantname).filter(Boolean))],
-        Priority: [...new Set(tickets.map(t => t.v_priority).filter(Boolean))],
-        Category: [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))],
-        Status: [...new Set(tickets.map(t => t.v_status).filter(Boolean))],
-      });
-    }
-  }, [tickets, onFilterOptionsChange]);
+  const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(tickets);
+  if (ticketsChanged) {
+    prevTicketsRef.current = tickets;
+    onFilterOptionsChange?.({
+      Client:     [...new Set(tickets.map(t => t.v_tenantname).filter(Boolean))],
+      Department: [...new Set(tickets.map(t => t.v_department).filter(Boolean))],
+      Source:     [...new Set(tickets.map(t => t.v_source).filter(Boolean))],
+      Priority:   [...new Set(tickets.map(t => t.v_priority).filter(Boolean))],
+      Category:   [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))],
+      Status:     [...new Set(tickets.map(t => t.v_status).filter(Boolean))],
+    });
+  }
+}, [tickets, onFilterOptionsChange]);
 
   useEffect(() => {
     if (prevFilteredLengthRef.current !== filteredTickets.length) {
@@ -82,21 +84,21 @@ export default function ComTableClients({
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
 
-  if (loading) return <div className="text-center py-6 text-gray-500 dark:text-gray-400">Loading...</div>;
-  if (error) return <div className="text-center py-6 text-red-500 dark:text-red-400">{error}</div>;
-
   const getPriorityClass = (priority) => {
     switch (priority?.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+      case 'high':   return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
       case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
+      case 'low':    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+      default:       return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
     }
   };
 
+  if (loading) return <div className="text-center py-6 text-gray-500 dark:text-gray-400">Loading...</div>;
+  if (error)   return <div className="text-center py-6 text-red-500 dark:text-red-400">{error}</div>;
+
   return (
     <>
-      {/* Mobile View */}
+      {/* Mobile */}
       <div className="sm:hidden space-y-3 p-3">
         {paginated.map(ticket => (
           <ComCard
@@ -112,15 +114,28 @@ export default function ComTableClients({
         )}
       </div>
 
-      {/* Desktop Table */}
+      {/* Desktop*/}
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800 text-center">
-              {['TICKET ID', 'CLIENT NAME', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
+            <tr className="border-b border-gray-200 dark:border-gray-800">
+              {[
+                'SOURCE',
+                'TICKET ID',
+                'CLIENT NAME',
+                'DEPARTMENT',
+                'USER NAME',
+                'TITLE',
+                'CATEGORY',
+                'PRIORITY',
+                'CREATED AT',
+                'TARGET',
+                'STATUS',
+                'TECHNICIAN',
+              ].map(header => (
                 <th
                   key={header}
-                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 text-center dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                  className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                 >
                   {header}
                 </th>
@@ -128,43 +143,60 @@ export default function ComTableClients({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {paginated.map(t => (
-              <tr
-                key={t.v_ticketuuid}
-                onClick={() => setSelectedTicket(t)}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-              >
-                <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
-                  {t.v_ticketnumber}
-                </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_tenantname}
-                </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_username}
-                </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
-                  {t.v_title}
-                </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
-                  {t.v_ticketcategory}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
-                    {t.v_priority}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_target}
-                </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_status}
-                </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_technicianname}
+            {paginated.length === 0 ? (
+              <tr>
+                <td colSpan={12} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  No tickets found.
                 </td>
               </tr>
-            ))}
+            ) : (
+              paginated.map(t => (
+                <tr
+                  key={t.v_ticketuuid}
+                  onClick={() => setSelectedTicket(t)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors text-center"
+                >
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_source || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
+                    {t.v_ticketnumber}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_tenantname || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_department || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_username || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
+                    {t.v_title}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
+                    {t.v_ticketcategory}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
+                      {t.v_priority || '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_status}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_technicianname || '—'}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
