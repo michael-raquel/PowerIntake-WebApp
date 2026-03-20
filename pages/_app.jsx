@@ -42,10 +42,14 @@ function AppContent({ Component, pageProps }) {
     }
   }, []);
 
-  // Initialize Microsoft Clarity once on client
-  useEffect(() => {
+useEffect(() => {
     if (typeof window !== "undefined") {
-      Clarity.init("vwqtaudmv7");
+      const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
+      if (clarityId) {
+        Clarity.init(clarityId);
+      } else {
+        console.warn("Clarity ID is missing (NEXT_PUBLIC_CLARITY_PROJECT_ID)");
+      }
     }
   }, []);
 
