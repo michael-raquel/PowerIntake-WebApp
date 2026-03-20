@@ -60,7 +60,7 @@ export default function SettingsPage() {
     if (settingsLoaded && localSettings.darkmode !== isDarkMode) {
       setLocalSettings(prev => ({ ...prev, darkmode: isDarkMode }));
     }
-  }, [isDarkMode, settingsLoaded]);
+  }, [isDarkMode, settingsLoaded, localSettings.darkmode]);
 
   const handleToggle = async (setting, value) => {
     setLoadingToggles((prev) => ({ ...prev, [setting]: true }));
