@@ -2,6 +2,7 @@ import { format, differenceInCalendarDays } from 'date-fns';
 
 export default function ComClosureDate({ ticket }) {
   const created = ticket?.v_createdat ? new Date(ticket.v_createdat) : null;
+  const target = ticket?.v_target ? new Date(ticket.v_target) : null;
   const modified = ticket?.v_modifiedat ? new Date(ticket.v_modifiedat) : null;
   const closed = ticket?.v_closuredate ? new Date(ticket.v_closuredate) : null;
   const note = ticket?.v_closurenote || '—';
@@ -25,6 +26,18 @@ export default function ComClosureDate({ ticket }) {
           </div>
           <p className="text-sm font-semibold text-gray-900 dark:text-white">
             {formatDate(created)}
+          </p>
+        </div>
+
+          <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800 transition-all">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-6 w-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+              <span className="text-xs text-green-600 dark:text-green-400">🎯</span>
+            </div>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Target Date</p>
+          </div>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            {formatDate(target)}
           </p>
         </div>
 

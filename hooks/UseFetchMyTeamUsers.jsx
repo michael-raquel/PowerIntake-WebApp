@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export default function useFetchMyTeam(initialPage = 1, initialLimit = 12) {
   const { tokenInfo }              = useAuth();
+  const { instance, accounts }     = useMsal();
   const [data,       setData]      = useState([]);
   const [loading,    setLoading]   = useState(false);
   const [error,      setError]     = useState(null);
@@ -13,12 +16,25 @@ export default function useFetchMyTeam(initialPage = 1, initialLimit = 12) {
 
   const entrauserid = tokenInfo?.account?.localAccountId;
 
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
+
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
+
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
+
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
     if (!entrauserid) return;
 
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
+
       const params = new URLSearchParams({
         entrauserid,
         page:  currentPage,
@@ -30,7 +46,14 @@ export default function useFetchMyTeam(initialPage = 1, initialLimit = 12) {
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myteam?${params}`;
 
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
       if (!res.ok) {
         const body = await res.text();
         throw new Error(`${res.status} ${res.statusText} — ${body}`);
@@ -46,7 +69,7 @@ export default function useFetchMyTeam(initialPage = 1, initialLimit = 12) {
     } finally {
       setLoading(false);
     }
-  }, [entrauserid, limit]);
+  }, [entrauserid, limit, getAccessToken]);
 
   useEffect(() => {
     fetchData(1);

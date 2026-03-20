@@ -203,12 +203,10 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black p-4 md:p-6">
+    <div className="min-h-screen bg-gray-50 dark:bg-black p-4 md:p-6 pb-0 md:pb-0">
       <div className="w-full space-y-6 sm:space-y-8">
-        <div
-          className="relative w-full overflow-hidden rounded-2xl"
-          style={{ paddingBottom: "max(110px, 20%)" }}
-        >
+
+        <div className="relative w-full overflow-hidden rounded-2xl" style={{ paddingBottom: 'max(110px, 17%)' }}>
           <div
             className="absolute inset-0 flex transition-transform duration-500 ease-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
@@ -384,54 +382,35 @@ export default function HomePage() {
             )}
           </div>
         </div>
-        <footer className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-800">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            {/* Left — Company info */}
-            <div className="space-y-2.5">
-              <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
-                Sparta Services, LLC
-              </p>
-              <div className="space-y-1.5">
-                <div className="flex items-start gap-2 text-sm text-gray-500 dark:text-gray-400">
-                  <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
-                  <span>14205 SE 36th St Ste 100, Bellevue, WA 98006</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                  <Phone className="h-4 w-4 shrink-0" />
-                  <a
-                    href="tel:4255228050"
-                    className="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                  >
-                    425.522.8050
-                  </a>
-                </div>
-              </div>
-            </div>
 
-            <p className="text-xs text-gray-400 dark:text-gray-600 text-center hidden md:block">
-              &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights
-              reserved.
+        <footer className="border-t border-gray-200 dark:border-gray-800">
+          <div className="px-6 py-3 flex flex-col sm:flex-row items-center sm:justify-between gap-4 relative">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
+              Sparta Services, LLC
             </p>
-
-            <div className="flex flex-wrap items-start gap-x-6 gap-y-2">
-              {footerLinks.map((link) => (
+            <p className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap hidden sm:block absolute left-1/2 -translate-x-1/2">
+              &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
+            </p>
+            <div className="flex flex-nowrap justify-center sm:justify-end sm:flex-wrap gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-2 w-full sm:w-auto">
+              {footerLinks.map(link => (
                 <a
                   key={link.label}
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1"
+                  className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 shrink-0"
+                  style={{ fontSize: 'clamp(11px, 3vw, 14px)' }}
                 >
-                  {link.label} <ExternalLink className="h-3 w-3 opacity-60" />
+                  {link.label}
+                  <ExternalLink
+                    style={{ width: 'clamp(10px, 2.5vw, 12px)', height: 'clamp(10px, 2.5vw, 12px)' }}
+                    className="opacity-60 flex-shrink-0"
+                  />
                 </a>
               ))}
             </div>
-          </div>
-
-          <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800/60 flex justify-center md:hidden">
-            <p className="text-xs text-gray-400 dark:text-gray-600 text-center">
-              &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights
-              reserved.
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 sm:hidden text-center">
+              &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
             </p>
           </div>
         </footer>

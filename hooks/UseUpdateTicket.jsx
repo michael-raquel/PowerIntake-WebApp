@@ -1,9 +1,23 @@
 import { useState, useCallback } from "react";
 import { format } from "date-fns";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export function useUpdateTicket({ account, onSuccess } = {}) {
+  const { instance, accounts } = useMsal();
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
+
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
+
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
+
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
 
   const updateTicket = useCallback(
     async ({
@@ -18,8 +32,8 @@ export function useUpdateTicket({ account, onSuccess } = {}) {
 
       const body = {
         ticketuuid,
-        title:       formData.title,
-        description: formData.description,
+        title:          formData.title,
+        description:    formData.description,
         usertimezone:   formData.timezone ?? null,
         officelocation: formData.location ? formData.location.toLowerCase() : null,
         date:           hasSupportCalls
@@ -35,11 +49,16 @@ export function useUpdateTicket({ account, onSuccess } = {}) {
       };
 
       try {
+        const accessToken = await getAccessToken();
+
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets`,
           {
             method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+            },
             body: JSON.stringify(body),
           }
         );
@@ -57,7 +76,7 @@ export function useUpdateTicket({ account, onSuccess } = {}) {
         setLoading(false);
       }
     },
-    [account, onSuccess]
+    [account, onSuccess, getAccessToken]
   );
 
   return { updateTicket, loading, error };

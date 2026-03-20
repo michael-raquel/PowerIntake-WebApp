@@ -17,6 +17,8 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     lastArgsRef.current = { page: currentPage, filters };
 
     try {
+      const accessToken = await getAccessToken();
+
       const params = new URLSearchParams({ page: currentPage, limit });
 
       if (filters.search)     params.append("search",     filters.search);
