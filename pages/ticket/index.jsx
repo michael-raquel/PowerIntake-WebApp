@@ -113,10 +113,10 @@ export default function TicketPage() {
             <p className="text-xs text-white/60 mt-0.5">Create and manage your tickets</p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-0.5">
+        {/* <div className="flex flex-col items-end gap-0.5">
           <span className="text-2xl font-black text-white/90">{totalRecords}</span>
           <span className="text-[10px] text-white/50 uppercase tracking-widest">Total</span>
-        </div>
+        </div> */}
       </div>
     </div>
   );
@@ -141,9 +141,9 @@ export default function TicketPage() {
   );
 
   const renderPagination = totalRecords > 0 && (
-    <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+    <div className="flex-shrink-0 flex items-center justify-between px-4 pt-3 pb-0 border-t border-gray-200 dark:border-gray-800">
       <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-        Showing {Math.min(currentPage * effectiveRecordsPerPage, totalRecords)} of {totalRecords}
+        {totalRecords} Records
       </span>
       <div className="flex items-center gap-1">
         <button
