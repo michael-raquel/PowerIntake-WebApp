@@ -1,42 +1,69 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export default function useUpdateAttachments() {
+  const { instance, accounts } = useMsal();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const updateAttachments = useCallback(async ({ ticketuuid, attachments, modifiedby }) => {
-    setLoading(true);
-    setError(null);
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
 
-    try {
-      if (!ticketuuid) throw new Error('Ticket UUID is required');
-      if (!modifiedby) throw new Error('Modified by is required');
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/attachments`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ticketuuid,
-          attachments: attachments || [],
-          modifiedby,
-        }),
-      });
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
 
-      const data = await res.json();
+  const updateAttachments = useCallback(
+    async ({ ticketuuid, attachments, modifiedby }) => {
+      setLoading(true);
+      setError(null);
 
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to update attachments');
+      try {
+        if (!ticketuuid) throw new Error("Ticket UUID is required");
+        if (!modifiedby) throw new Error("Modified by is required");
+
+        const accessToken = await getAccessToken();
+
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/attachments`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken
+                ? { Authorization: `Bearer ${accessToken}` }
+                : {}),
+            },
+            body: JSON.stringify({
+              ticketuuid,
+              attachments: attachments || [],
+              modifiedby,
+            }),
+          },
+        );
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to update attachments");
+        }
+
+        return data;
+      } catch (err) {
+        console.error("Update attachments error:", err);
+        setError(err.message);
+        throw err;
+      } finally {
+        setLoading(false);
       }
-
-      return data; 
-    } catch (err) {
-      console.error('Update attachments error:', err);
-      setError(err.message);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [getAccessToken],
+  );
 
   return { updateAttachments, loading, error };
 }

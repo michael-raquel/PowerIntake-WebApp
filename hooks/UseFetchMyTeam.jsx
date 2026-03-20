@@ -1,9 +1,27 @@
 import { useState, useEffect, useCallback } from "react";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
-export function useFetchMyTeamUsers({ managerentrauserid = null, status = null, refreshKey = 0 } = {}) {
+export function useFetchMyTeamUsers({
+  managerentrauserid = null,
+  status = null,
+  refreshKey = 0,
+} = {}) {
+  const { instance, accounts } = useMsal();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
+
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
+
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
 
   const fetchData = useCallback(async () => {
     if (!managerentrauserid) {
@@ -18,7 +36,13 @@ export function useFetchMyTeamUsers({ managerentrauserid = null, status = null, 
       if (status) params.append("status", status);
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets/manager?${params}`;
-      const res = await fetch(url);
+      const accessToken = await getAccessToken();
+
+      const res = await fetch(url, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
       if (!res.ok) {
         const body = await res.text();
         throw new Error(`${res.status} ${res.statusText} — ${body}`);
@@ -30,7 +54,7 @@ export function useFetchMyTeamUsers({ managerentrauserid = null, status = null, 
     } finally {
       setLoading(false);
     }
-  }, [managerentrauserid, status]);
+  }, [getAccessToken, managerentrauserid, status]);
 
   useEffect(() => {
     fetchData();

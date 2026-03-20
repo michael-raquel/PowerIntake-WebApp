@@ -44,7 +44,7 @@ export function useFetchNote(ticketuuid = null, noteuuid = null) {
             "Content-Type": "application/json",
             ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
           },
-        }
+        },
       );
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
