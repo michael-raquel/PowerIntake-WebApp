@@ -9,6 +9,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider as NextThemeProvider } from "next-themes";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from "sonner";
+import Clarity from '@microsoft/clarity';
+
 
 const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
   ssr: false,
@@ -39,6 +41,14 @@ function AppContent({ Component, pageProps }) {
         .catch((err) => console.error("[SW] Registration failed:", err));
     }
   }, []);
+
+  // Initialize Microsoft Clarity once on client
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      Clarity.init("vwqtaudmv7");
+    }
+  }, []);
+
 
   return (
     <NextThemeProvider
