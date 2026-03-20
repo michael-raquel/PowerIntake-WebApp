@@ -18,8 +18,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/context/ThemeContext";
 
 const MOBILE_BREAKPOINT = 768;
-const SIDEBAR_COLLAPSED = "w-[70px]";
-const SIDEBAR_EXPANDED = "w-64";
 
 export default function SideNavbar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -33,7 +31,6 @@ export default function SideNavbar() {
 
   useEffect(() => {
     const checkMobile = () => {
-      if (typeof window === "undefined") return;
       const mobile = window.innerWidth <= MOBILE_BREAKPOINT;
       setIsMobile(mobile);
       if (mobile) setIsCollapsed(false);
@@ -44,9 +41,9 @@ export default function SideNavbar() {
   }, []);
 
   useEffect(() => {
-    const handleRouteChange = () => setShowLogout(false);
-    router.events.on("routeChangeStart", handleRouteChange);
-    return () => router.events.off("routeChangeStart", handleRouteChange);
+    const hide = () => setShowLogout(false);
+    router.events.on("routeChangeStart", hide);
+    return () => router.events.off("routeChangeStart", hide);
   }, [router.events]);
 
   const account = tokenInfo?.account;
@@ -59,9 +56,7 @@ export default function SideNavbar() {
     return "user";
   }, [account]);
 
-  const isPrivileged = ["manager", "system-admin", "super-admin"].includes(
-    currentRole,
-  );
+  const isPrivileged = ["manager", "system-admin", "super-admin"].includes(currentRole);
 
   const menuItems = useMemo(() => {
     const items = [
@@ -69,9 +64,7 @@ export default function SideNavbar() {
       { icon: Ticket, label: "Ticket", path: "/ticket" },
       { icon: LifeBuoy, label: "Support", path: "/support" },
     ];
-    if (isPrivileged) {
-      items.push({ icon: Users, label: "Manage", path: "/manage" });
-    }
+    if (isPrivileged) items.push({ icon: Users, label: "Manage", path: "/manage" });
     items.push({ icon: Settings, label: "Settings", path: "/settings" });
     return items;
   }, [isPrivileged]);
@@ -84,7 +77,7 @@ export default function SideNavbar() {
         .join("")
         .toUpperCase()
         .slice(0, 2) ?? "U",
-    [account],
+    [account]
   );
 
   const handleNavigate = useCallback(
@@ -92,78 +85,70 @@ export default function SideNavbar() {
       router.push(path);
       setShowLogout(false);
     },
-    [router],
+    [router]
   );
 
   const handleLogout = useCallback(() => {
     instance.logoutRedirect({ postLogoutRedirectUri: "/" });
   }, [instance]);
 
-  const toggleCollapse = useCallback(() => {
-    setIsCollapsed((prev) => !prev);
-  }, []);
-
+  // ─── Mobile
   if (isMobile) {
     return (
       <>
-        <div className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 dark:bg-black dark:border-gray-800 flex items-center justify-between px-4 z-30 transition-colors duration-300">
-          <div className="flex items-center">
-            <div className="relative w-6 h-6 mr-2">
-              <Image
-                src="/icons/powerintakelogo.png"
-                alt="Logo"
-                fill
-                className="object-contain"
-              />
+        <div className="fixed top-0 left-0 right-0 h-14 bg-white dark:bg-[#111] border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between px-4 z-30">
+          <div className="flex items-center gap-2">
+            <div className="relative w-6 h-6">
+              <Image src="/icons/powerintakelogo.png" alt="Logo" fill className="object-contain" />
             </div>
-            <span className="font-semibold text-gray-900 dark:text-white">
-              Power Intake
-            </span>
+            <span className="font-semibold text-gray-900 dark:text-white">Power Intake</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={toggleTheme}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors duration-300"
-              aria-label={`Switch to ${isDarkMode ? "light" : "dark"} mode`}
+              aria-label="Toggle theme"
+              className="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-300 focus:outline-none"
+              style={{ backgroundColor: isDarkMode ? "#6366f1" : "#d1d5db" }}
             >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4" />
-              ) : (
-                <Moon className="w-4 h-4" />
-              )}
+              <span
+                className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                  isDarkMode ? "translate-x-[22px]" : "translate-x-[2px]"
+                }`}
+              >
+                {isDarkMode
+                  ? <Moon className="w-3 h-3 text-indigo-500" />
+                  : <Sun className="w-3 h-3 text-yellow-500" />}
+              </span>
             </button>
 
             <div className="relative">
               <button
-                onClick={() => setShowLogout(!showLogout)}
-                className="w-8 h-8 rounded-full overflow-hidden"
+                onClick={() => setShowLogout((p) => !p)}
+                className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center text-sm font-semibold"
               >
-                <div className="w-full h-full bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-white flex items-center justify-center text-sm font-medium">
-                  {initials}
-                </div>
+                {initials}
               </button>
 
               {showLogout && (
                 <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowLogout(false)} />
                   <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowLogout(false)}
-                  />
-                  <div className="absolute right-0 top-10 w-64 bg-white rounded-lg shadow-lg border border-gray-200 dark:bg-black dark:border-gray-800 z-50">
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-800">
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {account?.name}
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                        {account?.username}
-                      </p>
+                    className="absolute right-0 top-10 w-56 bg-white dark:bg-[#242526] border border-gray-100 dark:border-white/[0.08] rounded-2xl z-50 overflow-hidden"
+                    style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.10)" }}
+                  >
+                    <div className="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-white/[0.06]">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{account?.name}</p>
+                      <p className="text-xs text-gray-400 truncate mt-0.5">{account?.username}</p>
                     </div>
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 dark:text-red-400"
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                     >
-                      <LogOut className="w-4 h-4" /> Logout
+                      <div className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                        <LogOut className="w-3.5 h-3.5" />
+                      </div>
+                      Log out
                     </button>
                   </div>
                 </>
@@ -172,7 +157,7 @@ export default function SideNavbar() {
           </div>
         </div>
 
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 dark:bg-black dark:border-gray-800 z-30">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#111] border-t border-gray-100 dark:border-white/[0.06] z-30">
           <div className="flex justify-around h-16">
             {menuItems.map(({ icon: Icon, label, path }) => {
               const isActive = router.pathname === path;
@@ -183,7 +168,7 @@ export default function SideNavbar() {
                   className={`flex flex-col items-center justify-center flex-1 transition-colors ${
                     isActive
                       ? "text-gray-900 dark:text-white"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                      : "text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -193,48 +178,57 @@ export default function SideNavbar() {
             })}
           </div>
         </nav>
+
         <div className="h-14" />
         <div className="h-16" />
       </>
     );
   }
 
+  // ─── Desktop
+  const sidebarWidth = isCollapsed ? "w-[70px]" : "w-64";
+
   return (
     <>
       <aside
-        className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 dark:bg-black dark:border-gray-800 transition-all duration-300 z-50 flex flex-col overflow-hidden
-        ${isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED}`}
+        className={`fixed top-0 left-0 h-screen bg-white dark:bg-[#111] border-r border-gray-100 dark:border-white/[0.06] flex flex-col z-50 transition-[width] duration-300 ease-in-out ${sidebarWidth}`}
       >
-        <div className="h-14 flex items-center px-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
-          <div className="flex items-center flex-1 min-w-0">
-            <div className="relative w-6 h-6 flex-shrink-0">
-              <Image
-                src="/icons/powerintakelogo.png"
-                alt="Logo"
-                fill
-                className="object-contain"
-              />
+        <div className="h-14 flex items-center px-4 border-b border-gray-100 dark:border-white/[0.06] flex-shrink-0 overflow-hidden">
+          {isCollapsed ? (
+            <div className="flex items-center justify-center w-full gap-1.5">
+              <div className="relative w-6 h-6 flex-shrink-0">
+                <Image src="/icons/powerintakelogo.png" alt="Logo" fill className="object-contain" />
+              </div>
+              <button
+                onClick={() => setIsCollapsed(false)}
+                className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] text-gray-500 dark:text-gray-400 transition-colors flex-shrink-0"
+                aria-label="Expand sidebar"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
             </div>
-            {!isCollapsed && (
-              <span className="ml-3 font-semibold text-gray-900 dark:text-white truncate">
-                Power Intake
-              </span>
-            )}
-          </div>
-          <button
-            onClick={toggleCollapse}
-            className="ml-2 p-1.5 hover:bg-gray-100 dark:hover:bg-gray-900 rounded-lg flex-shrink-0"
-            aria-label={isCollapsed ? "Expand" : "Collapse"}
-          >
-            {isCollapsed ? (
-              <ChevronRight className="w-4 h-4" />
-            ) : (
-              <ChevronLeft className="w-4 h-4" />
-            )}
-          </button>
+          ) : (
+            <>
+              <div className="flex items-center flex-1 min-w-0">
+                <div className="relative w-6 h-6 flex-shrink-0">
+                  <Image src="/icons/powerintakelogo.png" alt="Logo" fill className="object-contain" />
+                </div>
+                <span className="ml-3 font-semibold text-gray-900 dark:text-white truncate">
+                  Power Intake
+                </span>
+              </div>
+              <button
+                onClick={() => setIsCollapsed(true)}
+                className="ml-2 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] flex-shrink-0 text-gray-500 dark:text-gray-400 transition-colors"
+                aria-label="Collapse sidebar"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </>
+          )}
         </div>
 
-        <nav className="flex-1 p-3 overflow-y-auto">
+        <nav className="flex-1 p-3 overflow-y-auto overflow-x-hidden">
           <ul className="space-y-1">
             {menuItems.map(({ icon: Icon, label, path }) => {
               const isActive = router.pathname === path;
@@ -242,23 +236,17 @@ export default function SideNavbar() {
                 <li key={path}>
                   <button
                     onClick={() => handleNavigate(path)}
-                    className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-colors
-                      ${
-                        isActive
-                          ? "bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-white"
-                          : "text-gray-600 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-gray-900"
-                      }
-                      ${isCollapsed ? "justify-center" : ""}`}
                     title={isCollapsed ? label : undefined}
+                    className={`w-full flex items-center px-3 py-2.5 rounded-lg transition-colors ${
+                      isCollapsed ? "justify-center" : ""
+                    } ${
+                      isActive
+                        ? "bg-gray-100 text-gray-900 dark:bg-white/[0.08] dark:text-white"
+                        : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04]"
+                    }`}
                   >
-                    <Icon
-                      className={`w-5 h-5 flex-shrink-0 ${!isCollapsed ? "mr-3" : ""}`}
-                    />
-                    {!isCollapsed && (
-                      <span className="text-sm font-medium truncate">
-                        {label}
-                      </span>
-                    )}
+                    <Icon className={`w-5 h-5 flex-shrink-0 ${!isCollapsed ? "mr-3" : ""}`} />
+                    {!isCollapsed && <span className="text-sm font-medium truncate">{label}</span>}
                   </button>
                 </li>
               );
@@ -266,77 +254,73 @@ export default function SideNavbar() {
           </ul>
         </nav>
 
-        <div className="border-t border-gray-200 dark:border-gray-800 p-3 space-y-2">
-          <button
-            onClick={toggleTheme}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800
-              ${isCollapsed ? "justify-center" : ""}`}
-            title={
-              isCollapsed
-                ? isDarkMode
-                  ? "Light mode"
-                  : "Dark mode"
-                : undefined
-            }
-          >
-            {isDarkMode ? (
-              <Sun className="w-5 h-5" />
-            ) : (
-              <Moon className="w-5 h-5" />
-            )}
+        <div className="border-t border-gray-100 dark:border-white/[0.06] p-3 space-y-2">
+          <div className={`flex items-center px-3 py-2.5 rounded-lg overflow-hidden ${isCollapsed ? "justify-center" : "gap-3"}`}>
+            <button
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+              className="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors duration-300 focus:outline-none"
+              style={{ backgroundColor: isDarkMode ? "#6366f1" : "#d1d5db" }}
+            >
+              <span
+                className={`inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300 ${
+                  isDarkMode ? "translate-x-[22px]" : "translate-x-[2px]"
+                }`}
+              >
+                {isDarkMode
+                  ? <Moon className="w-3 h-3 text-indigo-500" />
+                  : <Sun className="w-3 h-3 text-yellow-500" />}
+              </span>
+            </button>
+
             {!isCollapsed && (
-              <div className="flex-1 text-left">
-                <p className="text-sm font-medium">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-tight">
                   {isDarkMode ? "Light mode" : "Dark mode"}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Switch appearance
-                </p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">Switch appearance</p>
               </div>
             )}
-          </button>
+          </div>
 
           <div className="relative">
             <button
-              onClick={() => setShowLogout(!showLogout)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900
-                ${isCollapsed ? "justify-center" : ""}`}
+              onClick={() => setShowLogout((p) => !p)}
               title={isCollapsed ? account?.name : undefined}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors overflow-hidden ${
+                isCollapsed ? "justify-center" : ""
+              }`}
             >
-              <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-white flex items-center justify-center text-sm font-medium flex-shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
                 {initials}
               </div>
               {!isCollapsed && (
                 <div className="flex-1 text-left min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {account?.name}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    {account?.username}
-                  </p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{account?.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{account?.username}</p>
                 </div>
               )}
             </button>
 
             {showLogout && (
               <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowLogout(false)} />
                 <div
-                  className="fixed inset-0 z-40"
-                  onClick={() => setShowLogout(false)}
-                />
-                <div
-                  className={`absolute bg-white rounded-lg shadow-lg border border-gray-200 dark:bg-black dark:border-gray-800 z-50
-                  ${
+                  className={`absolute bg-white dark:bg-[#242526] border border-gray-100 dark:border-white/[0.08] rounded-2xl z-50 overflow-hidden ${
                     isCollapsed
-                      ? "left-full top-1/2 -translate-y-1/2 ml-2 w-40"
-                      : "bottom-full left-0 mb-2 w-48"
+                      ? "left-full top-1/2 -translate-y-1/2 ml-3 w-36"
+                      : "bottom-full left-0 mb-2 w-full"
                   }`}
+                  style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.10)" }}
                 >
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 dark:text-red-400"
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                   >
-                    <LogOut className="w-4 h-4" /> Logout
+                    <div className="w-7 h-7 rounded-full bg-red-100 dark:bg-red-500/15 flex items-center justify-center flex-shrink-0">
+                      <LogOut className="w-3.5 h-3.5" />
+                    </div>
+                    Log out
                   </button>
                 </div>
               </>
@@ -345,9 +329,7 @@ export default function SideNavbar() {
         </div>
       </aside>
 
-      <div
-        className={`flex-shrink-0 transition-all duration-300 ${isCollapsed ? SIDEBAR_COLLAPSED : SIDEBAR_EXPANDED}`}
-      />
+      <div className={`flex-shrink-0 transition-[width] duration-300 ease-in-out ${sidebarWidth}`} />
     </>
   );
 }
