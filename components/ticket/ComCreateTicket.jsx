@@ -382,56 +382,54 @@ export default function ComCreateTicket({ onClose }) {
               </div>
             </div>
 
-          <div className="bg-white dark:bg-gray-900 min-h-[300px] rounded-lg border border-gray-200 dark:border-gray-800 p-6 sticky bottom-6">
-            <h2 className="text-lg font-medium mb-4">Attachments</h2>
-            <div
+            <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
+              <h2 className="text-lg font-medium mb-4">Attachments</h2>
+              <div
                 onClick={() => fileInputRef.current?.click()}
                 onDrop={handleDrop}
                 onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 className={cn(
-                    "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-                    dragOver ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "hover:border-blue-400"
+                  "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                  dragOver ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "hover:border-blue-400"
                 )}
-            >
+              >
                 <Upload className="mx-auto w-8 h-8 text-gray-400 mb-2" />
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                    <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
+                  <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
                 </p>
                 <p className="text-xs text-gray-500 mt-1">PNG, JPG, PDF, or LOG (max. 10MB)</p>
                 <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept=".png,.jpg,.jpeg,.pdf,.log,.txt"
-                    onChange={(e) => { processFiles(e.target.files); e.target.value = ''; }}
-                    className="hidden"
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept=".png,.jpg,.jpeg,.pdf,.log,.txt"
+                  onChange={(e) => { processFiles(e.target.files); e.target.value = ''; }}
+                  className="hidden"
                 />
-            </div>
-            {attachments.map(file => (
+              </div>
+              {attachments.map(file => (
                 <div key={file.name} className="flex items-center justify-between px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-md border text-sm mt-3 first:mt-0">
-                    <div className="flex items-center gap-2 truncate">
-                        <FileText className="w-4 h-4 text-blue-500 shrink-0" />
-                        <span className="truncate text-gray-700 dark:text-gray-300">{file.name}</span>
-                        <span className="text-xs text-gray-400 shrink-0">({(file.size / 1024).toFixed(1)} KB)</span>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => setAttachments(p => p.filter(f => f.name !== file.name))} className="h-6 w-6 shrink-0 ml-2">
-                        <X className="w-3 h-3" />
-                    </Button>
+                  <div className="flex items-center gap-2 truncate">
+                    <FileText className="w-4 h-4 text-blue-500 shrink-0" />
+                    <span className="truncate text-gray-700 dark:text-gray-300">{file.name}</span>
+                    <span className="text-xs text-gray-400 shrink-0">({(file.size / 1024).toFixed(1)} KB)</span>
+                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => setAttachments(p => p.filter(f => f.name !== file.name))} className="h-6 w-6 shrink-0 ml-2">
+                    <X className="w-3 h-3" />
+                  </Button>
                 </div>
-            ))}
-            <div className="flex justify-end gap-3 mt-6">
+              ))}
+              <div className="flex justify-end gap-3 mt-6">
                 <Button variant="outline" onClick={() => {
-                    setFormData(DEFAULT_FORM);
-                    setSupportCalls([DEFAULT_SUPPORT_CALL]);
-                    setAttachments([]);
-                    setErrors({});
+                  setFormData(DEFAULT_FORM);
+                  setSupportCalls([DEFAULT_SUPPORT_CALL]);
+                  setAttachments([]);
+                  setErrors({});                                                             
                 }} disabled={submitting}>Clear</Button>
-                <Button onClick={handleSubmit} disabled={submitting}>
-                    {submitting ? 'Submitting...' : 'Submit Request'}
-                </Button>
+                <Button onClick={handleSubmit} disabled={submitting}>{submitting ? 'Submitting...' : 'Submit Request'}</Button>
             </div>
-        </div>
+            </div>
 
             <div className="block lg:hidden bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6 sticky top-6 max-h-[calc(100vh-3rem)] overflow-y-auto h-fit">
               <h2 className="text-lg font-medium mb-4">User Information</h2>
