@@ -61,6 +61,27 @@ const SkeletonCard = () => (
   </div>
 );
 
+// NEW: move Tabs out of HomePage
+const Tabs = ({ active, onChange, tabs }) => {
+  return (
+    <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800">
+      {tabs.map(tab => (
+        <button
+          key={tab.value}
+          onClick={() => onChange(tab.value)}
+          className={`px-4 py-2 text-sm font-medium rounded-t-md ${
+            active === tab.value
+              ? 'border-b-2 border-violet-600 text-violet-600'
+              : 'text-gray-500 hover:text-gray-800'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+};
+
 export default function HomePage() {
   const { account, tokenInfo } = useAuth();
   const router = useRouter();
@@ -129,21 +150,14 @@ export default function HomePage() {
     () => (isManager ? tabs : tabs.filter(t => t.value !== 'my-team')),
     [isManager]
   );
-  //for inprogress
-  //assigned, new,  information provided, escalate to onsite, client responded, reschedule Scheduling Required, Working Issue Now, Client Responded, Waiting, Rescheduled, Information provided, assigned and waiting approval
 
-  //for completion rate and my tickets card
-  //get count of canceled, technician rejected and merge, 
-  //group cancelled tickets 
-  //total count of completed ticket 
-  //hover of cards of status 
-  useEffect(() => {
-    if (!visibleTabs.some(t => t.value === activeTab)) {
-      setActiveTab('my-ticket');
-    }
-  }, [visibleTabs, activeTab]);
+  // NEW: derive a safe active tab instead of setting state in an effect
+  const safeActiveTab = useMemo(
+    () => (visibleTabs.some(t => t.value === activeTab) ? activeTab : 'my-ticket'),
+    [visibleTabs, activeTab]
+  );
 
-  const isTeamView = activeTab === 'my-team' && isManager;
+  const isTeamView = safeActiveTab === 'my-team' && isManager;
   const tickets = isTeamView ? teamTickets : myTickets;
   const loading = isTeamView ? loadingTeamTickets : loadingMyTickets;
   const error = isTeamView ? errorTeamTickets : errorMyTickets;
@@ -189,25 +203,6 @@ export default function HomePage() {
 
   const completionRate = Math.round((Completed / (totalTickets - cancelledTicket)) * 100);
 
-
-  const Tabs = ({ active, onChange, tabs }) => {
-    return (
-      <div className="flex gap-2 border-b border-gray-200 dark:border-gray-800">
-        {tabs.map(tab => (
-          <button
-            key={tab.value}
-            onClick={() => onChange(tab.value)}
-            className={`px-4 py-2 text-sm font-medium rounded-t-md ${active === tab.value
-                ? 'border-b-2 border-violet-600 text-violet-600'
-                : 'text-gray-500 hover:text-gray-800'
-              }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-    );
-  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black p-4 md:p-6 pb-0 md:pb-0">
@@ -268,7 +263,7 @@ export default function HomePage() {
         </div>
 
 
-        <Tabs active={activeTab} onChange={setActiveTab} tabs={visibleTabs} />
+        <Tabs active={safeActiveTab} onChange={setActiveTab} tabs={visibleTabs} />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard icon="/icons/myticket.svg" label="My Tickets" value={totalTickets} subtext={`+${cancelledTicket} Cancelled`} color="purple" />
