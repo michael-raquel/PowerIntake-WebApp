@@ -7,7 +7,7 @@ import ComCard from './ComCard';
 const cardFields = [
   { key: 'v_title',          label: 'Title'    },
   { key: 'v_ticketcategory', label: 'Category' },
-  { key: 'v_createdat',      label: 'Created'  },
+  { key: 'v_target',         label: 'Target'  },
   { key: 'v_status',         label: 'Status'   },
 ];
 
@@ -113,7 +113,7 @@ export default function ComTableMyTickets({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200 dark:border-gray-800">
-            {['TICKET ID', 'TITLE', 'CATEGORY', 'PRIORITY', 'CREATED', 'STATUS'].map(header => (
+            {['TICKET ID', 'TITLE', 'CATEGORY', 'PRIORITY', 'TARGET', 'STATUS'].map(header => (
               <th
                 key={header}
                 className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
@@ -145,7 +145,7 @@ export default function ComTableMyTickets({
                 </span>
               </td>
               <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                {new Date(t.v_createdat).toLocaleString()}
+                {t.v_target}
               </td>
               <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                 {t.v_status}

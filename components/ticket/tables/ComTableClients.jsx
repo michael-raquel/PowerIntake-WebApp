@@ -9,7 +9,7 @@ const cardFields = [
   { key: 'v_username',       label: 'User'     },
   { key: 'v_title',          label: 'Title'    },
   { key: 'v_ticketcategory', label: 'Category' },
-  { key: 'v_createdat',      label: 'Created'  },
+  { key: 'v_target',         label: 'Target'  },
   { key: 'v_status',         label: 'Status'   },
 ];
 
@@ -116,11 +116,11 @@ export default function ComTableClients({
       <div className="hidden sm:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
-              {['TICKET ID', 'CLIENT NAME', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY', 'CREATED', 'STATUS', 'TECHNICIAN'].map(header => (
+            <tr className="border-b border-gray-200 dark:border-gray-800 text-center">
+              {['TICKET ID', 'CLIENT NAME', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
                 <th
                   key={header}
-                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 text-center dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                 >
                   {header}
                 </th>
@@ -155,7 +155,7 @@ export default function ComTableClients({
                   </span>
                 </td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {new Date(t.v_createdat).toLocaleString()}
+                  {t.v_target}
                 </td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                   {t.v_status}
