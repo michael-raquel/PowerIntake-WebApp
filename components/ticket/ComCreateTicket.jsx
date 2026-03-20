@@ -99,6 +99,7 @@ export default function ComCreateTicket({ onClose }) {
   const [supportCalls, setSupportCalls] = useState([DEFAULT_SUPPORT_CALL]);
   const [attachments, setAttachments] = useState([]);
   const [dragOver, setDragOver] = useState(false);
+  const [errors, setErrors] = useState({});                                                   
   const { uploadImage, loading: uploadLoading } = useUploadImage();
 
   const fileInputRef = useRef(null);
@@ -112,6 +113,7 @@ export default function ComCreateTicket({ onClose }) {
 
   const handleInputChange = useCallback(({ target: { name, value } }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: false }));                                          
   }, []);
 
   const handleSelectChange = useCallback((name, value) => {
@@ -159,7 +161,14 @@ export default function ComCreateTicket({ onClose }) {
   }, []);
 
   const processFiles = useCallback((files) => {
-    const valid = Array.from(files).filter(f => ACCEPTED_TYPES.has(f.type) && f.size <= MAX_FILE_SIZE);
+    const all = Array.from(files);
+    const valid = all.filter(f => ACCEPTED_TYPES.has(f.type) && f.size <= MAX_FILE_SIZE);
+    all.filter(f => !ACCEPTED_TYPES.has(f.type)).forEach(f =>                                
+      toast.error(`"${f.name}" is not supported`, { description: 'Accepted types: PNG, JPG, PDF, TXT.' })
+    );
+    all.filter(f => ACCEPTED_TYPES.has(f.type) && f.size > MAX_FILE_SIZE).forEach(f =>      
+      toast.error(`"${f.name}" exceeds the 10MB limit`)
+    );
     setAttachments(prev => {
       const existing = new Set(prev.map(f => f.name));
       return [...prev, ...valid.filter(f => !existing.has(f.name))];
@@ -173,12 +182,17 @@ export default function ComCreateTicket({ onClose }) {
   }, [processFiles]);
 
   const handleSubmit = useCallback(async () => {
+    const newErrors = {};                                                                      
     for (const key of Object.keys(DEFAULT_FORM)) {
-      if (!formData[key]) {
-        fieldRefs.current[key]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        return;
-      }
+      if (!formData[key]) newErrors[key] = true;
     }
+    if (Object.keys(newErrors).length) {
+      setErrors(newErrors);
+      fieldRefs.current[Object.keys(newErrors)[0]]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    setErrors({});
+
     for (const call of supportCalls) {
       if (!call.date) {
         fieldRefs.current[`call-${call.id}-date`]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -234,13 +248,28 @@ export default function ComCreateTicket({ onClose }) {
                 <div>
                   <Label className="text-xs mb-1 block">Title <span className="text-red-500">*</span></Label>
                   <div ref={el => fieldRefs.current.title = el}>
-                    <Input name="title" value={formData.title} onChange={handleInputChange} placeholder="Brief summary of the issue" />
+                    <Input
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      placeholder="Brief summary of the issue"
+                      className={errors.title ? 'border-red-500 focus-visible:ring-red-500' : ''}  
+                    />
+                    {errors.title && <p className="text-xs text-red-500 mt-1">This field is required.</p>}  
                   </div>
                 </div>
                 <div>
                   <Label className="text-xs mb-1 block">Description <span className="text-red-500">*</span></Label>
                   <div ref={el => fieldRefs.current.description = el}>
-                    <Textarea name="description" value={formData.description} onChange={handleInputChange} rows={4} placeholder="Provide as much detail as possible..." />
+                    <Textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      rows={4}
+                      placeholder="Provide as much detail as possible..."
+                      className={errors.description ? 'border-red-500 focus-visible:ring-red-500' : ''}  
+                    />
+                    {errors.description && <p className="text-xs text-red-500 mt-1">This field is required.</p>} 
                   </div>
                 </div>
               </div>
@@ -421,6 +450,7 @@ export default function ComCreateTicket({ onClose }) {
                 setFormData(DEFAULT_FORM);
                 setSupportCalls([DEFAULT_SUPPORT_CALL]);
                 setAttachments([]);
+                setErrors({});                                                             
               }} disabled={submitting}>Clear</Button>
               <Button onClick={handleSubmit} disabled={submitting}>{submitting ? 'Submitting...' : 'Submit Request'}</Button>
             </div>
