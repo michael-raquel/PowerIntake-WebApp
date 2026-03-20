@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 12) {
   const { tokenInfo }    = useAuth();
+  const { instance, accounts } = useMsal();
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
@@ -10,6 +13,17 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
   const [limit]                     = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
+
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
+
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
 
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
     const entratenantid = tokenInfo?.account?.tenantId;
@@ -21,6 +35,8 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
+
       const params = new URLSearchParams({ page: currentPage, limit, entratenantid });
 
       if (filters.search)     params.append("search",     filters.search);
@@ -31,7 +47,14 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/mycompany?${params}`;
 
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
       if (!res.ok) {
         const body = await res.text();
         throw new Error(`${res.status} ${res.statusText} — ${body}`);
@@ -47,13 +70,13 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
     } finally {
       setLoading(false);
     }
-  }, [limit, tokenInfo?.account?.tenantId]);
+  }, [limit, tokenInfo?.account?.tenantId, getAccessToken]);
 
   useEffect(() => {
-    if (tokenInfo?.account?.tenantId) { 
+    if (tokenInfo?.account?.tenantId) {
       fetchData(1);
     }
-  }, [fetchData, tokenInfo?.account?.tenantId]); 
+  }, [fetchData, tokenInfo?.account?.tenantId]);
 
   return {
     data,

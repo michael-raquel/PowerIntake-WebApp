@@ -1,9 +1,23 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export function useFetchTeamTickets({ managerid = null, refreshKey = 0 } = {}) {
+  const { instance, accounts } = useMsal();
   const [teamTickets, setTeamTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
+
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
+
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
 
   useEffect(() => {
     if (!managerid) {
@@ -16,10 +30,15 @@ export function useFetchTeamTickets({ managerid = null, refreshKey = 0 } = {}) {
         setLoading(true);
         setError(null);
 
+        const accessToken = await getAccessToken();
+
         const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets/manager-team?managerid=${managerid}`;
         const res = await fetch(url, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
         });
 
         if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
@@ -35,7 +54,7 @@ export function useFetchTeamTickets({ managerid = null, refreshKey = 0 } = {}) {
     };
 
     fetchTeamTickets();
-  }, [managerid, refreshKey]);
+  }, [managerid, refreshKey, getAccessToken]);
 
   return { teamTickets, loading, error };
 }

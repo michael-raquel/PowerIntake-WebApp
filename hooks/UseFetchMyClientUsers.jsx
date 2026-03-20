@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
+  const { instance, accounts } = useMsal();
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
@@ -9,20 +12,37 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
+
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
+
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
+
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
     setLoading(true);
     setError(null);
     try {
+      const accessToken = await getAccessToken();
+
       const params = new URLSearchParams({ page: currentPage, limit });
 
-      if (filters.search)     params.append("search",     filters.search);
       if (filters.tenantname) params.append("tenantname", filters.tenantname);
-      if (filters.status)     params.append("status",     filters.status);
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myclients?${params}`;
-      console.log('[useFetchMyClients] Fetching:', url);
 
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
       if (!res.ok) {
         const body = await res.text();
         throw new Error(`${res.status} ${res.statusText} — ${body}`);
@@ -34,12 +54,11 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
       setTotalPages(json.totalPages);
       setPage(currentPage);
     } catch (err) {
-      console.error('[useFetchMyClients] Error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [limit]);
+  }, [limit, getAccessToken]);
 
   useEffect(() => {
     fetchData(1);

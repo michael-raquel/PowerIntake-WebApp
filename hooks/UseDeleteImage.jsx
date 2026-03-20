@@ -1,8 +1,22 @@
 import { useState, useCallback } from 'react';
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export default function useDeleteImage() {
+  const { instance, accounts } = useMsal();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
+
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
+
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
 
   const deleteImage = useCallback(async (blobName) => {
     setLoading(true);
@@ -13,9 +27,14 @@ export default function useDeleteImage() {
         throw new Error('Blob name is required');
       }
 
+      const accessToken = await getAccessToken();
       const encodedBlobName = encodeURIComponent(blobName);
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/images/upload/${encodedBlobName}`, {
         method: 'DELETE',
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
       });
 
       const data = await res.json();
@@ -31,7 +50,7 @@ export default function useDeleteImage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getAccessToken]);
 
   return { deleteImage, loading, error };
 }
