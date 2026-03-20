@@ -1,9 +1,29 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
-export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenantid = null, refreshKey = 0, enabled = true } = {}) {
+export function useFetchTicket({
+  ticketuuid = "",
+  entrauserid = null,
+  entratenantid = null,
+  refreshKey = 0,
+  enabled = true,
+} = {}) {
+  const { instance, accounts } = useMsal();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
+
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
+
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
 
   useEffect(() => {
     if (!enabled) {
@@ -20,12 +40,19 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenan
         if (entrauserid) params.append("entrauserid", entrauserid);
         if (entratenantid) params.append("entratenantid", entratenantid);
 
+        const accessToken = await getAccessToken();
+
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets?${params.toString()}`,
           {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
-          }
+            headers: {
+              "Content-Type": "application/json",
+              ...(accessToken
+                ? { Authorization: `Bearer ${accessToken}` }
+                : {}),
+            },
+          },
         );
 
         if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
@@ -40,7 +67,14 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenan
     };
 
     fetchTickets();
-  }, [ticketuuid, entrauserid, entratenantid, refreshKey, enabled]);
+  }, [
+    getAccessToken,
+    ticketuuid,
+    entrauserid,
+    entratenantid,
+    refreshKey,
+    enabled,
+  ]);
 
   return { tickets, loading, error };
 }

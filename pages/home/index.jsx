@@ -53,6 +53,12 @@ export default function HomePage() {
   const { account, tokenInfo } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    if (tokenInfo) {
+      console.log("HomePage accessToken:", tokenInfo.accessToken);
+      console.log("HomePage idToken:", tokenInfo.idToken);
+    }
+  }, [tokenInfo]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % images.length);
 

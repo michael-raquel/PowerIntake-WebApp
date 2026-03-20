@@ -1,41 +1,64 @@
 import { useState, useEffect, useCallback } from "react";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
-  const [data,       setData]       = useState([]);
-  const [loading,    setLoading]    = useState(false);
-  const [error,      setError]      = useState(null);
-  const [page,       setPage]       = useState(initialPage);
-  const [limit]                     = useState(initialLimit);
-  const [total,      setTotal]      = useState(0);
+  const { instance, accounts } = useMsal();
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(initialPage);
+  const [limit] = useState(initialLimit);
+  const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({ page: currentPage, limit });
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
 
-      if (filters.tenantname) params.append("tenantname", filters.tenantname);
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
 
-      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myclients?${params}`;
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
 
-      const res = await fetch(url);
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`${res.status} ${res.statusText} — ${body}`);
+  const fetchData = useCallback(
+    async (currentPage = 1, filters = {}) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams({ page: currentPage, limit });
+
+        if (filters.tenantname) params.append("tenantname", filters.tenantname);
+
+        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myclients?${params}`;
+
+        const accessToken = await getAccessToken();
+
+        const res = await fetch(url, {
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
+        if (!res.ok) {
+          const body = await res.text();
+          throw new Error(`${res.status} ${res.statusText} — ${body}`);
+        }
+
+        const json = await res.json();
+        setData(json.data);
+        setTotal(json.total);
+        setTotalPages(json.totalPages);
+        setPage(currentPage);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
       }
-
-      const json = await res.json();
-      setData(json.data);
-      setTotal(json.total);
-      setTotalPages(json.totalPages);
-      setPage(currentPage);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [limit]);
+    },
+    [getAccessToken, limit],
+  );
 
   useEffect(() => {
     fetchData(1);
