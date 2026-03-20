@@ -1,23 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { useMsal } from "@azure/msal-react";
-import { apiRequest } from "@/lib/msalConfig";
 
-export function useFetchUserSettings({ useruuid = "", entrauserid = "" } = {}) {
-  const { instance, accounts } = useMsal();
+export function useFetchUserSettings({ useruuid = '', entrauserid = '' } = {}) {
   const [userSettings, setUserSettings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  const getAccessToken = useCallback(async () => {
-    if (!accounts?.[0]) return null;
-
-    const token = await instance.acquireTokenSilent({
-      ...apiRequest,
-      account: accounts[0],
-    });
-
-    return token?.accessToken ?? null;
-  }, [accounts, instance]);
 
   const fetchUserSettings = useCallback(async () => {
     try {
@@ -28,18 +14,13 @@ export function useFetchUserSettings({ useruuid = "", entrauserid = "" } = {}) {
       if (useruuid) params.append("useruuid", useruuid);
       if (entrauserid) params.append("entrauserid", entrauserid);
 
-      const accessToken = await getAccessToken();
-
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_BASE_URL}/usersettings?${params.toString()}`,
         {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-          cache: "no-store",
-        },
+          headers: { "Content-Type": "application/json" },
+          cache: 'no-store'
+        }
       );
 
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
@@ -51,7 +32,7 @@ export function useFetchUserSettings({ useruuid = "", entrauserid = "" } = {}) {
     } finally {
       setLoading(false);
     }
-  }, [entrauserid, getAccessToken, useruuid]);
+  }, [useruuid, entrauserid]);
 
   useEffect(() => {
     fetchUserSettings();
