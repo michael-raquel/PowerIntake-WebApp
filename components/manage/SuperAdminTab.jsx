@@ -4,6 +4,8 @@ import { useState } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useFetchSuperAdminUsers from "@/hooks/UseFetchSystemAdminUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
+import useCreatePromoteSuperAdmin from "@/hooks/UseCreatePromoteSuperAdmin";
+import useDeleteDemoteAdmin from "@/hooks/UseDeleteDemoteAdmin";
 import { Switch } from "@/components/ui/switch";
 import SuperAdminFilter from "@/components/manage/SuperAdminFilter";
 
@@ -11,6 +13,7 @@ const TABLE_HEADERS = [
   "Client Name",
   "User Name",
   "Role",
+  "Department",
   "Total Ticket",
   "Open Ticket",
   "Status",
@@ -33,8 +36,44 @@ export default function SuperAdminTab() {
   } = useFetchSuperAdminUsers(1, LIMIT);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
+  const {
+    promoteSuperAdmin,
+    loading: promoting,
+    fetchingGroupId,
+    groupId,
+  } = useCreatePromoteSuperAdmin();
+  const {
+    demoteAdmin,
+    loading: demoting,
+    appRoleLoading: demoteGroupLoading,
+    groupId: demoteGroupId,
+  } = useDeleteDemoteAdmin({
+    roleValue: "SuperAdmin",
+    roleDisplayName: "Super Admin",
+  });
 
   const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSuperAdminToggle = async (row, checked) => {
+    const payload = {
+      userOid: row?.v_entrauserid,
+      roleValue: "SuperAdmin",
+      checked,
+    };
+
+    try {
+      if (checked) {
+        if (fetchingGroupId || !groupId) return;
+        await promoteSuperAdmin(payload.userOid);
+      } else {
+        if (demoteGroupLoading || !demoteGroupId) return;
+        await demoteAdmin(payload.userOid);
+      }
+    } catch (err) {
+    } finally {
+      fetchData(page);
+    }
+  };
 
   const handleSync = async () => {
     await syncUsers();
@@ -60,10 +99,7 @@ export default function SuperAdminTab() {
       />
 
       <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {total} total records
-          </span>
+
           {syncing && (
             <span className="text-xs text-blue-500 dark:text-blue-400">Syncing users...</span>
           )}
@@ -75,14 +111,15 @@ export default function SuperAdminTab() {
               {syncResult.message} New users: {syncResult.synced ?? 0}
             </span>
           )}
-        </div>
-        <button
+
+          <button
           onClick={handleSync}
           disabled={loading || syncing}
           className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
         >
           <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
         </button>
+
       </div>
 
       {/* {error && (
@@ -155,7 +192,12 @@ export default function SuperAdminTab() {
 
                       <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-2">
                         <span className="text-xs text-gray-500 dark:text-gray-400">Super Admin</span>
-                        <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
+                        <Switch
+                          className="data-[state=checked]:bg-blue-500 cursor-pointer"
+                          checked={row.v_role === "SuperAdmin"}
+                          onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
+                          disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
+                        />
                       </div>
 
                     </div>
@@ -201,7 +243,12 @@ export default function SuperAdminTab() {
                 <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {row.v_department || "N/A"}
+                  </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
@@ -214,7 +261,12 @@ export default function SuperAdminTab() {
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Switch className="data-[state=checked]:bg-blue-500 cursor-pointer" />
+                    <Switch
+                      className="data-[state=checked]:bg-blue-500 cursor-pointer"
+                      checked={row.v_role === "SuperAdmin"}
+                      onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
+                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
+                    />
                   </td>
                 </tr>
               ))
@@ -224,9 +276,9 @@ export default function SuperAdminTab() {
       </div>
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-        <span className="text-xs text-gray-500 dark:text-gray-400">
-          Page {page} of {totalPages}
-        </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {total} total records
+          </span>
         <div className="flex items-center gap-1">
           <button
             onClick={() => fetchData(page - 1)}

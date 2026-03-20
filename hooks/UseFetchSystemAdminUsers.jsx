@@ -1,9 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import { useMsal } from "@azure/msal-react";
-import { apiRequest } from "@/lib/msalConfig";
+import { useState, useEffect, useCallback, useRef } from "react";
 
-export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 12) {
-  const { instance, accounts } = useMsal();
+export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 12, refetch) {
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
@@ -11,21 +8,14 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
   const [limit]                     = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const lastArgsRef = useRef({ page: initialPage, filters: {} });
 
-  const getAccessToken = useCallback(async () => {
-    if (!accounts?.[0]) return null;
-
-    const token = await instance.acquireTokenSilent({
-      ...apiRequest,
-      account: accounts[0],
-    });
-
-    return token?.accessToken ?? null;
-  }, [accounts, instance]);
-
-  const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
+  const fetchData = useCallback(async (currentPage = initialPage, filters = {}) => {
     setLoading(true);
     setError(null);
+
+    lastArgsRef.current = { page: currentPage, filters };
+
     try {
       const accessToken = await getAccessToken();
 
@@ -38,14 +28,7 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/superadmin?${params}`;
 
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-      });
-
+      const res = await fetch(url);
       if (!res.ok) {
         const body = await res.text();
         throw new Error(`${res.status} ${res.statusText} — ${body}`);
@@ -61,11 +44,11 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     } finally {
       setLoading(false);
     }
-  }, [limit, getAccessToken]);
+  }, [initialPage, limit]);
 
   useEffect(() => {
-    fetchData(1);
-  }, [fetchData]);
+    fetchData(initialPage);
+  }, [fetchData, initialPage]);
 
   return {
     data,
@@ -78,5 +61,6 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     hasNext: page < totalPages,
     hasPrev: page > 1,
     fetchData,
+    refetch,
   };
 }
