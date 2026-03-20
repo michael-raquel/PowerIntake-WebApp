@@ -9,10 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 
 const FILTER_CONFIG = {
-  'my-client': ['Client', 'Priority', 'Category', 'Status'],
-  'my-company': ['Department', 'Priority', 'Category', 'Status'],
-  'my-team': ['Priority', 'Category', 'Status'],
-  'my-ticket': ['Priority', 'Category', 'Status'],
+  'my-client': ['Client', 'Department', 'Source', 'Priority', 'Category', 'Status'],
+  'my-company': ['Department', 'Source', 'Priority', 'Category', 'Status'],
+  'my-team': ['Source', 'Priority', 'Category', 'Status'],
+  'my-ticket': ['Source', 'Priority', 'Category', 'Status'],
 };
 
 const PRIORITY_OPTIONS = ['High', 'Medium', 'Low'];
