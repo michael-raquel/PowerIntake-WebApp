@@ -1,9 +1,23 @@
 import { useState, useCallback } from "react";
 import { format } from "date-fns";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export function useCreateTicket({ account, onSuccess } = {}) {
+  const { instance, accounts } = useMsal();
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState(null);
+
+  const getAccessToken = useCallback(async () => {
+    if (!accounts?.[0]) return null;
+
+    const token = await instance.acquireTokenSilent({
+      ...apiRequest,
+      account: accounts[0],
+    });
+
+    return token?.accessToken ?? null;
+  }, [accounts, instance]);
 
   const createTicket = useCallback(async ({ formData, supportCalls, attachments = [] }) => {
     setLoading(true);
@@ -24,10 +38,15 @@ export function useCreateTicket({ account, onSuccess } = {}) {
     };
 
     try {
+      const accessToken = await getAccessToken();
+
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets`, {
         method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify(body),
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -41,7 +60,7 @@ export function useCreateTicket({ account, onSuccess } = {}) {
     } finally {
       setLoading(false);
     }
-  }, [account, onSuccess]);
+  }, [account, onSuccess, getAccessToken]);
 
   return { createTicket, loading, error };
 }

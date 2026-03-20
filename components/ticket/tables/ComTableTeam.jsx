@@ -1,15 +1,15 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
-import { useFetchMyTeamUsers } from '@/hooks/UseFetchMyTeam'; 
-import { useAuth } from '@/context/AuthContext';
-import ComUpdateForm from '../ComUpdateForm';
-import ComCard from './ComCard';
-
+import { useEffect, useState, useRef, useMemo } from "react";
+import { useFetchMyTeamUsers } from "@/hooks/UseFetchMyTeam";
+import { useAuth } from "@/context/AuthContext";
+import ComUpdateForm from "../ComUpdateForm";
+import ComCard from "./ComCard";
+// ...existing code...
 const cardFields = [
-  { key: 'v_username',       label: 'User'     },
-  { key: 'v_title',          label: 'Title'    },
-  { key: 'v_ticketcategory', label: 'Category' },
-  { key: 'v_target',         label: 'Target'  },
-  { key: 'v_status',         label: 'Status'   },
+  { key: "v_username", label: "User" },
+  { key: "v_title", label: "Title" },
+  { key: "v_ticketcategory", label: "Category" },
+  { key: "v_target", label: "Target" },
+  { key: "v_status", label: "Status" },
 ];
 
 export default function ComTableTeam({
@@ -17,7 +17,7 @@ export default function ComTableTeam({
   recordsPerPage,
   onTotalRecordsChange,
   onFilterOptionsChange,
-  searchValue = '',
+  searchValue = "",
   filters = {},
   refreshKey,
   onTicketUpdated,
@@ -25,7 +25,11 @@ export default function ComTableTeam({
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
 
-  const { data: teamTickets, loading, error } = useFetchMyTeamUsers({
+  const {
+    data: teamTickets,
+    loading,
+    error,
+  } = useFetchMyTeamUsers({
     managerentrauserid: tokenInfo?.account?.localAccountId,
     refreshKey,
   });
@@ -35,7 +39,7 @@ export default function ComTableTeam({
 
   const filteredTickets = useMemo(
     () =>
-      teamTickets.filter(t => {
+      teamTickets.filter((t) => {
         const s = searchValue.toLowerCase().trim();
         const matchesSearch =
           !s ||
@@ -44,28 +48,51 @@ export default function ComTableTeam({
           t.v_title?.toLowerCase().includes(s) ||
           t.v_ticketcategory?.toLowerCase().includes(s);
 
-        const matchesPriority = !filters.Priority || t.v_priority === filters.Priority;
-        const matchesCategory = !filters.Category || t.v_ticketcategory === filters.Category;
+        const matchesPriority =
+          !filters.Priority || t.v_priority === filters.Priority;
+        const matchesCategory =
+          !filters.Category || t.v_ticketcategory === filters.Category;
         const matchesStatus = !filters.Status || t.v_status === filters.Status;
 
-        return matchesSearch && matchesPriority && matchesCategory && matchesStatus;
+        return (
+          matchesSearch && matchesPriority && matchesCategory && matchesStatus
+        );
       }),
-    [teamTickets, searchValue, filters.Priority, filters.Category, filters.Status]
+    [
+      teamTickets,
+      searchValue,
+      filters.Priority,
+      filters.Category,
+      filters.Status,
+    ],
   );
 
   const paginated = useMemo(
-    () => filteredTickets.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage),
-    [filteredTickets, currentPage, recordsPerPage]
+    () =>
+      filteredTickets.slice(
+        (currentPage - 1) * recordsPerPage,
+        currentPage * recordsPerPage,
+      ),
+    [filteredTickets, currentPage, recordsPerPage],
   );
 
   useEffect(() => {
-    const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(teamTickets);
+    const ticketsChanged =
+      JSON.stringify(prevTicketsRef.current) !== JSON.stringify(teamTickets);
     if (ticketsChanged) {
       prevTicketsRef.current = teamTickets;
       onFilterOptionsChange?.({
-        Priority: [...new Set(teamTickets.map(t => t.v_priority).filter(Boolean))],
-        Category: [...new Set(teamTickets.map(t => t.v_ticketcategory).filter(Boolean))],
-        Status: [...new Set(teamTickets.map(t => t.v_status).filter(Boolean))],
+        Priority: [
+          ...new Set(teamTickets.map((t) => t.v_priority).filter(Boolean)),
+        ],
+        Category: [
+          ...new Set(
+            teamTickets.map((t) => t.v_ticketcategory).filter(Boolean),
+          ),
+        ],
+        Status: [
+          ...new Set(teamTickets.map((t) => t.v_status).filter(Boolean)),
+        ],
       });
     }
   }, [teamTickets, onFilterOptionsChange]);
@@ -77,15 +104,29 @@ export default function ComTableTeam({
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
 
-  if (loading) return <div className="p-6 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
-  if (error) return <div className="p-6 text-center text-red-500 dark:text-red-400">{error}</div>;
+  if (loading)
+    return (
+      <div className="p-6 text-center text-gray-500 dark:text-gray-400">
+        Loading...
+      </div>
+    );
+  if (error)
+    return (
+      <div className="p-6 text-center text-red-500 dark:text-red-400">
+        {error}
+      </div>
+    );
 
   const getPriorityClass = (priority) => {
     switch (priority?.toLowerCase()) {
-      case 'high': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'low': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
+      case "high":
+        return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      case "medium":
+        return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400";
+      case "low":
+        return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
+      default:
+        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400";
     }
   };
 
@@ -93,7 +134,7 @@ export default function ComTableTeam({
     <>
       {/* Mobile View */}
       <div className="sm:hidden space-y-3 p-3">
-        {paginated.map(ticket => (
+        {paginated.map((ticket) => (
           <ComCard
             key={ticket.v_ticketuuid}
             ticket={ticket}
@@ -103,7 +144,9 @@ export default function ComTableTeam({
           />
         ))}
         {!paginated.length && (
-          <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
+          <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">
+            No tickets found.
+          </p>
         )}
       </div>
 
@@ -112,7 +155,15 @@ export default function ComTableTeam({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              {['TICKET ID', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY', 'TARGET', 'STATUS'].map(header => (
+              {[
+                "TICKET ID",
+                "USER NAME",
+                "TITLE",
+                "CATEGORY",
+                "PRIORITY",
+                "TARGET",
+                "STATUS",
+              ].map((header) => (
                 <th
                   key={header}
                   className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
@@ -123,7 +174,7 @@ export default function ComTableTeam({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {paginated.map(t => (
+            {paginated.map((t) => (
               <tr
                 key={t.v_ticketuuid}
                 onClick={() => setSelectedTicket(t)}
@@ -142,7 +193,9 @@ export default function ComTableTeam({
                   {t.v_ticketcategory}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
+                  <span
+                    className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}
+                  >
                     {t.v_priority}
                   </span>
                 </td>
