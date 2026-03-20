@@ -21,13 +21,22 @@ export default function SupportRoute() {
 
       <div className="flex-1 flex flex-col gap-6">
 
-        <div className="px-2 bg-gradient-to-l from-pink-500 to-violet-800 rounded-lg py-4">
-          <h2 className="font-bold text-sm sm:text-lg text-white">
-            Power Intake Help Center
-          </h2>
-          <p className="text-xs sm:text-sm text-gray-200 mt-1">
-            Improving Accessibility | Fostering Accountability | Exceptional Service
-          </p>
+        <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
+                <Mail className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-black text-xl sm:text-2xl text-white tracking-tight">
+                  Power Intake Help Center
+                </h2>
+                <p className="text-xs text-white/60 mt-0.5">
+                  Improving Accessibility | Fostering Accountability | Exceptional Service
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="space-y-12">

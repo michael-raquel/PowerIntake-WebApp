@@ -7,7 +7,7 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateUserSettings } from '@/hooks/UseUpdateUserSettings';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Settings } from 'lucide-react';
 import { NotificationsSection, AssistSection, DarkModeSection } from '@/components/settings/ComCards';
 
 export default function SettingsPage() {
@@ -112,11 +112,18 @@ export default function SettingsPage() {
     <div className="min-h-screen flex flex-col p-4 md:p-6 pb-0 md:pb-0">
       <div className="flex-1 flex flex-col gap-4">
 
-        <div className="px-2 bg-gradient-to-l from-pink-500 to-violet-800 rounded-lg py-4">
-          <h2 className="font-bold text-sm sm:text-lg text-white">Settings</h2>
-          <p className="text-xs sm:text-sm text-gray-200 mt-1">
-            Manage notifications, assist tools, and theme preferences
-          </p>
+        <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
+                <Settings className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-black text-xl sm:text-2xl text-white tracking-tight">Settings</h2>
+                <p className="text-xs text-white/60 mt-0.5">Manage notifications, assist tools, and theme preferences</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
