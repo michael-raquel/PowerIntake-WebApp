@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
@@ -11,6 +11,8 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
   const [limit]                     = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0 });
+  const lastTotalsKeyRef            = useRef("");
 
   const getAccessToken = useCallback(async () => {
     if (!accounts?.[0]) return null;
@@ -22,6 +24,47 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
 
     return token?.accessToken ?? null;
   }, [accounts, instance]);
+
+  const fetchTotals = useCallback(async (filters, totalCount) => {
+    if (!totalCount) {
+      setTotals({ totalTickets: 0, openTickets: 0 });
+      return;
+    }
+
+    const accessToken = await getAccessToken();
+
+    const params = new URLSearchParams({ page: 1, limit: totalCount });
+
+    if (filters.tenantname) params.append("tenantname", filters.tenantname);
+
+    const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myclients?${params}`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`${res.status} ${res.statusText} — ${body}`);
+    }
+
+    const json = await res.json();
+    const rows = json.data || [];
+    const totalTickets = rows.reduce(
+      (sum, row) => sum + Number(row?.v_totalticket ?? 0),
+      0
+    );
+    const openTickets = rows.reduce(
+      (sum, row) => sum + Number(row?.v_openticket ?? 0),
+      0
+    );
+
+    setTotals({ totalTickets, openTickets });
+  }, [getAccessToken]);
 
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
     setLoading(true);
@@ -49,16 +92,25 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
       }
 
       const json = await res.json();
+      const totalCount = json.total || 0;
+
       setData(json.data);
-      setTotal(json.total);
+      setTotal(totalCount);
       setTotalPages(json.totalPages);
       setPage(currentPage);
+
+      const totalsKey = JSON.stringify({ total: totalCount, filters });
+      if (totalsKey !== lastTotalsKeyRef.current) {
+        lastTotalsKeyRef.current = totalsKey;
+        await fetchTotals(filters, totalCount);
+      }
     } catch (err) {
       setError(err.message);
+      setTotals({ totalTickets: 0, openTickets: 0 });
     } finally {
       setLoading(false);
     }
-  }, [limit, getAccessToken]);
+  }, [fetchTotals, limit, getAccessToken]);
 
   useEffect(() => {
     fetchData(1);
@@ -71,6 +123,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
     page,
     limit,
     total,
+    totals,
     totalPages,
     hasNext: page < totalPages,
     hasPrev: page > 1,

@@ -6,7 +6,7 @@ import MyTeamTab from "@/components/manage/MyTeamTab";
 import SuperAdminTab from "@/components/manage/SuperAdminTab";
 import useManagerCheck from "@/hooks/UseManagerCheck";
 import { useAuth } from "@/context/AuthContext";
-import { Users } from "lucide-react";
+import { ExternalLink, Users } from "lucide-react";
 
 export default function Manage() {
   const { isManager, loading } = useManagerCheck();
@@ -28,7 +28,7 @@ export default function Manage() {
     : tabs[0]?.id ?? "company";
 
   return (
-    <div className="p-6 rounded-lg">
+    <div className="min-h-screen flex flex-col p-4 md:p-6 pb-0 md:pb-0">
       <div className="mb-4 px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -49,12 +49,51 @@ export default function Manage() {
         onTabChange={setActiveTab}
       />
 
-      <div className="mt-4">
+      <div className="mt-4 flex-1">
         {validTab === "admin"   && <SuperAdminTab />}
         {validTab === "clients" && <MyClientsTab />}
         {validTab === "company" && <MyCompanyTab />}
         {validTab === "team"    && <MyTeamTab />}
       </div>
+      <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="px-6 py-3 flex flex-col sm:flex-row items-center sm:justify-between gap-4 relative">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
+            Sparta Services, LLC
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap hidden sm:block absolute left-1/2 -translate-x-1/2">
+            &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
+          </p>
+          <div className="flex flex-nowrap justify-center sm:justify-end sm:flex-wrap gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-2 w-full sm:w-auto">
+            <a href="https://www.spartaserv.com/terms-conditions" target="_blank" rel="noopener noreferrer"
+              className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 shrink-0"
+              style={{ fontSize: "clamp(11px, 3vw, 14px)" }}>
+              Terms
+              <ExternalLink style={{ width: "clamp(10px, 2.5vw, 12px)", height: "clamp(10px, 2.5vw, 12px)" }} className="opacity-60 flex-shrink-0" />
+            </a>
+            <a href="https://www.spartaserv.com/privacy-policy" target="_blank" rel="noopener noreferrer"
+              className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 shrink-0"
+              style={{ fontSize: "clamp(11px, 3vw, 14px)" }}>
+              Privacy Policy
+              <ExternalLink style={{ width: "clamp(10px, 2.5vw, 12px)", height: "clamp(10px, 2.5vw, 12px)" }} className="opacity-60 flex-shrink-0" />
+            </a>
+            <a href="https://www.spartaserv.com" target="_blank" rel="noopener noreferrer"
+              className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 shrink-0"
+              style={{ fontSize: "clamp(11px, 3vw, 14px)" }}>
+              spartaserv.com
+              <ExternalLink style={{ width: "clamp(10px, 2.5vw, 12px)", height: "clamp(10px, 2.5vw, 12px)" }} className="opacity-60 flex-shrink-0" />
+            </a>
+            <a href="https://Portal.SpartaServ.com" target="_blank" rel="noopener noreferrer"
+              className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 shrink-0"
+              style={{ fontSize: "clamp(11px, 3vw, 14px)" }}>
+              Portal
+              <ExternalLink style={{ width: "clamp(10px, 2.5vw, 12px)", height: "clamp(10px, 2.5vw, 12px)" }} className="opacity-60 flex-shrink-0" />
+            </a>
+          </div>
+          <p className="text-[10px] text-gray-400 dark:text-gray-500 sm:hidden text-center">
+            &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
