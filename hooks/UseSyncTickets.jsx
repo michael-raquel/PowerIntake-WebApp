@@ -11,7 +11,7 @@ export default function useAutoSyncDynamics() {
 
     try {
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets/auto-sync-dynamics`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets/sync-dynamics`,
         {
           method: "POST",
           headers: {

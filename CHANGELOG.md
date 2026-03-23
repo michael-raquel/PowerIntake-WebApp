@@ -1,21 +1,28 @@
-## [1.2.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.1...v1.2.2) (2026-03-23)
+
+# [1.2.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.0-dev.3...v1.2.0-dev.4) (2026-03-23)
+
+
+
+### Bug Fixes
+
+
+* test dev ([56539b7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/56539b7bca529bec319874175d096d2fccee893e))
+
+# [1.2.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.0-dev.2...v1.2.0-dev.3) (2026-03-23)
+
 
 
 ### Bug Fixes
 
-* test main ([a66acc3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a66acc3f30ca8e1aa072fd4d27f5c36a5ea35816))
-
-## [1.2.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.0...v1.2.1) (2026-03-23)
-
-
-### Bug Fixes
 
 * test ([89b3e57](https://github.com/michael-raquel/PowerIntake-WebApp/commit/89b3e576c8cc479b0fa06832a88772d70c5bd038))
 
 # [1.2.0](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.1.1...v1.2.0) (2026-03-23)
 
 
+
 ### Bug Fixes
+
 
 * adjusted to add Release date ([c124db1](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c124db13b04081204f4d558a64556d0aa63f5526))
 * aura fix ([4f757b7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4f757b7b7c40677249014d0ff9399623482a90e9))
@@ -29,6 +36,7 @@
 ### Features
 
 * update of dev location on tag format from v1.2-dev.3 to dev-v1.2.3 ([1452319](https://github.com/michael-raquel/PowerIntake-WebApp/commit/145231989c2012352e99c4e8e10136c0022c2bf2))
+
 
 # [1.2.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.1.2-dev.6...v1.2.0-dev.1) (2026-03-23)
 
