@@ -192,37 +192,38 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const readonlyClass = "bg-gray-50 dark:bg-gray-800/50 rounded-md px-3 py-2 border border-gray-200 dark:border-gray-700 text-sm text-gray-900 dark:text-white";
 
   return (
-   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70"
       style={{ padding: 'env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px)' }}>
       <div
         className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-[95vw] lg:max-w-[75vw] flex flex-col overflow-hidden relative"
         style={{ height: 'min(95dvh, 95vh)', maxHeight: 'min(95dvh, 95vh)' }}>
 
-          
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-xs font-medium text-gray-500">Ticket</span>
+            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ticket</span>
             <span className="text-xs font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-md">#{ticket.v_ticketnumber}</span>
             <span className={cn('text-xs font-medium px-2.5 py-1 rounded-md border', STATUS_COLORS[ticket.v_status])}>{ticket.v_status}</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
+          <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+            <X className="w-4 h-4" />
+          </Button>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 sm:space-y-6">
-            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 flex items-center gap-4">
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700 flex items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
                 {ticket.v_username?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
               </div>
               <div>
-                <p className="text-xs text-gray-500">Requester</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Requester</p>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">{ticket.v_username}</p>
-                <p className="text-xs text-gray-500">{ticket.v_useremail}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{ticket.v_useremail}</p>
               </div>
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500">Ticket Details</h3>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400">Ticket Details</h3>
               <div className="grid grid-cols-2 gap-2 md:flex md:flex-wrap md:gap-3">
                 {[
                   { label: 'Source', value: ticket.v_source },
@@ -230,13 +231,13 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                   { label: 'Lifecycle', value: ticket.v_ticketlifecycle },
                   { label: 'Technician', value: ticket.v_technicianname },
                 ].map(({ label, value }) => (
-                  <div key={label} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 border border-gray-200 md:flex-1">
-                    <p className="text-xs text-gray-500">{label}</p>
+                  <div key={label} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-gray-700 md:flex-1">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{label}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{value || '—'}</p>
                   </div>
                 ))}
-                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 border border-gray-200 md:flex-1">
-                  <p className="text-xs text-gray-500">Priority</p>
+                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 border border-gray-200 dark:border-gray-700 md:flex-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Priority</p>
                   <span className={cn('text-xs font-medium px-2 py-0.5 rounded inline-block mt-0.5', PRIORITY_COLORS[ticket.v_priority])}>
                     {ticket.v_priority || '—'}
                   </span>
@@ -245,10 +246,10 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
             </div>
 
             <div className="space-y-3">
-              <h3 className="text-xs font-semibold text-gray-500">Issue Details</h3>
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400">Issue Details</h3>
               <div className="space-y-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Title</label>
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Title</label>
                   {canEdit ? (
                     <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Enter ticket title" className={cn("font-medium", inputClass)} />
                   ) : (
@@ -256,11 +257,19 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                   )}
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Description</label>
+                  <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Description</label>
                   {canEdit ? (
-                    <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Enter ticket description" rows={4} className={cn("resize-none", inputClass)} />
+                    <Textarea
+                      value={description}
+                      onChange={e => setDescription(e.target.value)}
+                      placeholder="Enter ticket description"
+                      rows={4}
+                      className={cn("resize-none max-h-[220px] overflow-y-auto", inputClass)}
+                    />
                   ) : (
-                    <div className={readonlyClass}>{description}</div>
+                    <div className={cn(readonlyClass, "max-h-[220px] overflow-y-auto")}>
+                      {description}
+                    </div>
                   )}
                 </div>
               </div>
@@ -268,23 +277,25 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-semibold text-gray-500">Support Calls</h3>
-                {canEdit && <Button variant="outline" size="sm" onClick={handleAddCall} className="gap-1 h-8"><Plus className="w-3.5 h-3.5" /> Add</Button>}
+                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400">Support Calls</h3>
+                {canEdit && <Button variant="outline" size="sm" onClick={handleAddCall} className="gap-1 h-8 dark:border-gray-600 dark:hover:bg-gray-800"><Plus className="w-3.5 h-3.5" /> Add</Button>}
               </div>
               <div className="space-y-3">
                 {supportCalls.map(call => (
-                  <div key={call.id} className="relative bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200">
+                  <div key={call.id} className="relative bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                     {canEdit && supportCalls.length > 1 && (
                       <Button variant="ghost" size="icon" onClick={() => setSupportCalls(prev => prev.filter(c => c.id !== call.id))}
-                        className="absolute top-2 right-2 h-6 w-6"><X className="w-3.5 h-3.5" /></Button>
+                        className="absolute top-2 right-2 h-6 w-6 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700">
+                        <X className="w-3.5 h-3.5" />
+                      </Button>
                     )}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">Date</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Date</p>
                         {canEdit ? (
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-8 text-sm">
+                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-8 text-sm dark:border-gray-600 dark:hover:bg-gray-800">
                                 <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                                 <span>{call.date ? format(call.date, "PPP") : "Select date"}</span>
                               </Button>
@@ -302,7 +313,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                         )}
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">Start</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Start</p>
                         {canEdit ? (
                           <Input type="time" value={call.fromTime} min={minTimeForDate(call.date) || undefined}
                             onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)} className="h-8 text-sm" />
@@ -311,7 +322,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                         )}
                       </div>
                       <div>
-                        <p className="text-xs text-gray-500 mb-1">End</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">End</p>
                         {canEdit ? (
                           <Input type="time" value={call.toTime} min={minTimeForDate(call.date) || undefined}
                             onChange={e => handleCallChange(call.id, 'toTime', e.target.value)} className="h-8 text-sm" />
@@ -322,7 +333,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                     </div>
                   </div>
                 ))}
-                {!supportCalls.length && <p className="text-sm text-gray-500 italic text-center py-4">No support calls scheduled.</p>}
+                {!supportCalls.length && <p className="text-sm text-gray-500 dark:text-gray-400 italic text-center py-4">No support calls scheduled.</p>}
               </div>
             </div>
 
@@ -335,27 +346,52 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
             )}
           </div>
 
-          <div className="w-12 sm:w-14 border-l border-gray-200 dark:border-gray-800 flex flex-col items-center py-4 gap-2 shrink-0 bg-gray-50/50">
+          <div className="w-12 sm:w-14 border-l border-gray-200 dark:border-gray-800 flex flex-col items-center py-4 gap-2 shrink-0 bg-gray-50/50 dark:bg-gray-800/50">
             {TABS.map(({ id, icon: Icon, label }) => (
-              <button key={id} onClick={() => {
-                if (activeTab === id) { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); }
-                else { setActiveTab(id); setPanelOpen(true); }
-              }} title={label}
-                className={cn('w-8 h-8 rounded-lg flex items-center justify-center transition-all',
-                  activeTab === id ? 'bg-purple-600 text-white shadow-md' : 'text-gray-400 hover:bg-gray-200 hover:text-gray-600')}>
+              <button
+                key={id}
+                onClick={() => {
+                  if (activeTab === id) {
+                    setPanelOpen(false);
+                    setTimeout(() => setActiveTab(null), 200);
+                  } else {
+                    setActiveTab(id);
+                    setPanelOpen(true);
+                  }
+                }}
+                title={label}
+                className={cn(
+                  'w-8 h-8 rounded-lg flex items-center justify-center transition-all',
+                  activeTab === id
+                    ? 'bg-purple-600 text-white shadow-md'
+                    : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200'
+                )}
+              >
                 <Icon className="w-4 h-4" />
               </button>
             ))}
           </div>
         </div>
 
-        <div className={cn('absolute top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 shadow-xl transition-all duration-300 overflow-hidden z-30',
-          panelOpen ? 'w-[85vw] sm:w-80 md:w-1/2' : 'w-0')}>
+        <div className={cn(
+          'absolute top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl transition-all duration-300 overflow-hidden z-30',
+          panelOpen ? 'w-[85vw] sm:w-80 md:w-1/2' : 'w-0'
+        )}>
           {panelOpen && (
             <div className="w-full h-full flex flex-col">
-              <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{TABS.find(t => t.id === activeTab)?.label}</h3>
-                <Button variant="ghost" size="icon" onClick={() => { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); }} className="h-7 w-7">
+              <div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-800">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {TABS.find(t => t.id === activeTab)?.label}
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    setPanelOpen(false);
+                    setTimeout(() => setActiveTab(null), 200);
+                  }}
+                  className="h-7 w-7 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
+                >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </Button>
               </div>
@@ -363,14 +399,31 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                 {activeTab === 'notes' && <ComNotes ticket={ticket} ticketUuid={ticket.v_ticketuuid} canEdit={isEditableStatus} />}
                 {activeTab === 'user' && <ComUserInformation ticket={ticket} />}
                 {activeTab === 'closure' && <ComClosureDate ticket={ticket} />}
-                {activeTab === 'attachments' && <ComAttachment ticketuuid={ticket.v_ticketuuid} attachments={attachments} onChange={setAttachments}
-                  canEdit={isEditableStatus} createdby={ticket.v_entrauserid} modifiedby={account?.localAccountId} />}
+                {activeTab === 'attachments' && (
+                  <ComAttachment
+                    ticketuuid={ticket.v_ticketuuid}
+                    attachments={attachments}
+                    onChange={setAttachments}
+                    canEdit={isEditableStatus}
+                    createdby={ticket.v_entrauserid}
+                    modifiedby={account?.localAccountId}
+                  />
+                )}
                 {activeTab === 'timeline' && <ComTimelineView ticket={ticket} />}
               </div>
             </div>
           )}
         </div>
-        {panelOpen && <div className="absolute inset-y-0 left-0 right-[85vw] sm:right-80 md:right-1/2 bg-transparent z-20" onClick={() => { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); }} />}
+
+        {panelOpen && (
+          <div
+            className="absolute inset-y-0 left-0 right-[85vw] sm:right-80 md:right-1/2 bg-transparent z-20"
+            onClick={() => {
+              setPanelOpen(false);
+              setTimeout(() => setActiveTab(null), 200);
+            }}
+          />
+        )}
       </div>
     </div>
   );
