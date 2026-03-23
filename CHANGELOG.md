@@ -1,3 +1,24 @@
+## [1.2.3-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.6...v1.2.3-dev.7) (2026-03-23)
+
+
+### Bug Fixes
+
+* test "ss" to dev ([d20596c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d20596c78f6d8ada1060930b536b9f72bf6ce0e6))
+
+## [1.2.3-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.5...v1.2.3-dev.6) (2026-03-23)
+
+
+### Bug Fixes
+
+* Update azure-static-web-apps-icy-tree-0f2b00310.yml ([bc48b1f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/bc48b1f3bd9c163ea7aa4e6050c2bc8b4a565a13))
+
+## [1.2.3-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.4...v1.2.3-dev.5) (2026-03-23)
+
+
+### Bug Fixes
+
+* test dev ([e28db25](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e28db25b39536cc97036357fdd54625ba842cd68))
+
 ## [1.2.3-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.3...v1.2.3-dev.4) (2026-03-23)
 
 
