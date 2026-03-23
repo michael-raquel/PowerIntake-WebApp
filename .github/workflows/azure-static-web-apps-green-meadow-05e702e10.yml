@@ -1,16 +1,17 @@
 name: Azure Static Web Apps CI/CD
 
 on:
-  workflow_run:
-    workflows: ["Release"]
+  push:
     branches:
       - main
-    types:
-      - completed
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
 
 jobs:
   build_and_deploy_job:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
@@ -18,14 +19,12 @@ jobs:
         with:
           submodules: true
           lfs: false
-          fetch-depth: 0
 
-      # 1️⃣ Resolve version and date — git describe picks up v1.1.2 prod tag
+      # 1️⃣ Resolve version and date before the Azure action runs
       - name: Set version and date env vars
         run: |
-          git fetch --tags
-          VERSION=$(git describe --tags --abbrev=0 --match "v[0-9]*" 2>/dev/null || echo "v0.0.0")
-          echo "NEXT_PUBLIC_APP_VERSION=${VERSION}" >> $GITHUB_ENV
+          VERSION=$(node -p "require('./package.json').version")
+          echo "NEXT_PUBLIC_APP_VERSION=v${VERSION}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
 
       # 2️⃣ Write .env.production so Next.js picks it up during internal build
