@@ -1,5 +1,4 @@
 name: Azure Static Web Apps CI/CD (DEV)
-
 on:
   push:
     branches:
@@ -14,7 +13,6 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
-
     steps:
       - uses: actions/checkout@v3
         with:
@@ -30,10 +28,11 @@ jobs:
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
 
       # 2️⃣ Write .env.production (CRITICAL for Next export)
+      # ✅ Use ${VAR} shell syntax — ${{ env.VAR }} is empty at YAML-expansion time
       - name: Write .env.production
         run: |
-          echo "NEXT_PUBLIC_APP_VERSION=${{ env.NEXT_PUBLIC_APP_VERSION }}" >> .env.production
-          echo "NEXT_PUBLIC_APP_RELEASE_DATE=${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}" >> .env.production
+          echo "NEXT_PUBLIC_APP_VERSION=${NEXT_PUBLIC_APP_VERSION}" >> .env.production
+          echo "NEXT_PUBLIC_APP_RELEASE_DATE=${NEXT_PUBLIC_APP_RELEASE_DATE}" >> .env.production
           echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}" >> .env.production
           echo "NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID_DEV }}" >> .env.production
 
@@ -48,7 +47,6 @@ jobs:
           api_location: ""
           output_location: "out"
           production_branch: "dev"
-
         # 3️⃣ Safety fallback envs
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}
@@ -60,7 +58,6 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
-
     steps:
       - name: Close Pull Request
         uses: Azure/static-web-apps-deploy@v1
