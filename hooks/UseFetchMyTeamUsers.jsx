@@ -3,18 +3,19 @@ import { useAuth } from "@/context/AuthContext";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
-export default function useFetchMyTeam(initialPage = 1, initialLimit = 12) {
+export default function useFetchMyTeam(initialPage = 1, initialLimit = null) {
   const { tokenInfo }              = useAuth();
   const { instance, accounts }     = useMsal();
   const [data,       setData]      = useState([]);
   const [loading,    setLoading]   = useState(false);
   const [error,      setError]     = useState(null);
   const [page,       setPage]      = useState(initialPage);
-  const [limit]                    = useState(initialLimit);
+  const [limit, setLimit]          = useState(initialLimit);
   const [total,      setTotal]     = useState(0);
   const [totalPages, setTotalPages]= useState(1);
   const [totals,     setTotals]    = useState({ totalTickets: 0, openTickets: 0 });
   const lastTotalsKeyRef           = useRef("");
+  const limitRef                   = useRef(initialLimit);
 
   const entrauserid = tokenInfo?.account?.localAccountId;
 
@@ -86,8 +87,9 @@ export default function useFetchMyTeam(initialPage = 1, initialLimit = 12) {
       const params = new URLSearchParams({
         entrauserid,
         page:  currentPage,
-        limit,
       });
+
+      if (limitRef.current != null) params.append("limit", limitRef.current);
 
       if (filters.search) params.append("search", filters.search);
       if (filters.status) params.append("status", filters.status);
@@ -126,7 +128,15 @@ export default function useFetchMyTeam(initialPage = 1, initialLimit = 12) {
     } finally {
       setLoading(false);
     }
-  }, [entrauserid, fetchTotals, limit, getAccessToken]);
+  }, [entrauserid, fetchTotals, getAccessToken]);
+
+  useEffect(() => {
+    if (initialLimit !== limitRef.current) {
+      limitRef.current = initialLimit;
+      setLimit(initialLimit);
+      fetchData(1);
+    }
+  }, [initialLimit, fetchData]);
 
   useEffect(() => {
     fetchData(1);

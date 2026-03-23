@@ -17,6 +17,8 @@ export const supportCards = [
     title: "Call Support Team",
     description: "Speak directly with our MSP experts.",
     iconBg: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-300",
+    telephone: "877-655-3469",
+    localNumber: "425-655-3468",
   },
 ];
 

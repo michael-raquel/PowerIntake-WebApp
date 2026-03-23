@@ -2,17 +2,18 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
-export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 12) {
+export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = null) {
   const { instance, accounts } = useMsal();
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
   const [page,       setPage]       = useState(initialPage);
-  const [limit]                     = useState(initialLimit);
+  const [limit, setLimit]           = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0 });
   const lastTotalsKeyRef            = useRef("");
+  const limitRef                    = useRef(initialLimit);
 
   const resolveApiUrl = useCallback((path) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -80,10 +81,13 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
   }, [getAccessToken, resolveApiUrl]);
 
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
+    if (!accounts?.[0]) return;
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({ page: currentPage, limit });
+      const params = new URLSearchParams({ page: currentPage });
+
+      if (limitRef.current != null) params.append("limit", limitRef.current);
 
       if (filters.search)     params.append("search",     filters.search);
       if (filters.clientname) params.append("clientname", filters.clientname);
@@ -127,11 +131,21 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     } finally {
       setLoading(false);
     }
-  }, [fetchTotals, getAccessToken, limit, resolveApiUrl]);
+  }, [accounts, fetchTotals, getAccessToken, resolveApiUrl]);
 
   useEffect(() => {
+    if (!accounts?.[0]) return;
+    if (initialLimit !== limitRef.current) {
+      limitRef.current = initialLimit;
+      setLimit(initialLimit);
+      fetchData(1);
+    }
+  }, [accounts, initialLimit, fetchData]);
+
+  useEffect(() => {
+    if (!accounts?.[0]) return;
     fetchData(1);
-  }, [fetchData]);
+  }, [accounts, fetchData]);
 
   return {
     data,
