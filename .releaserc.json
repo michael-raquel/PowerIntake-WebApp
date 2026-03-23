@@ -3,10 +3,12 @@
     "main",
     {
       "name": "dev",
-      "prerelease": "dev",
-      "channel": "dev"
+      "prerelease": false,
+      "channel": "dev",
+      "tagFormat": "dev-v${version}"
     }
   ],
+  "tagFormat": "v${version}",
   "plugins": [
     "@semantic-release/commit-analyzer",
     "@semantic-release/release-notes-generator",
