@@ -54,9 +54,9 @@ export default function ClientsFilter({
   };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
 
-      <div className="relative flex-1">
+      <div className="relative flex-1 w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
         <Input
           value={search}

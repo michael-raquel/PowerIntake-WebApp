@@ -1,51 +1,35 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Clock, Loader2, XCircle, AlertCircle, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Clock, Loader2, XCircle } from 'lucide-react';
 
 const STATUS_STYLES = {
-  Submitted: {
+  'New': {
     icon: CheckCircle2,
     color: 'text-green-600 dark:text-green-400',
-    bg: 'bg-green-100 dark:bg-green-900/30',
+    bg: 'bg-green-50 dark:bg-green-950/30',
     border: 'border-green-200 dark:border-green-800',
-    dot: 'bg-green-500 ring-4 ring-green-100 dark:ring-green-900/20',
   },
-  Open: {
-    icon: CheckCircle2,
-    color: 'text-green-600 dark:text-green-400',
-    bg: 'bg-green-100 dark:bg-green-900/30',
-    border: 'border-green-200 dark:border-green-800',
-    dot: 'bg-green-500 ring-4 ring-green-100 dark:ring-green-900/20',
-  },
-  'In Progress': {
-    icon: Loader2,
-    color: 'text-blue-600 dark:text-blue-400',
-    bg: 'bg-blue-100 dark:bg-blue-900/30',
-    border: 'border-blue-200 dark:border-blue-800',
-    dot: 'bg-blue-500 ring-4 ring-blue-100 dark:ring-blue-900/20',
-  },
-  Closed: {
-    icon: XCircle,
-    color: 'text-gray-600 dark:text-gray-400',
-    bg: 'bg-gray-100 dark:bg-gray-800/50',
-    border: 'border-gray-200 dark:border-gray-700',
-    dot: 'bg-gray-400 ring-4 ring-gray-100 dark:ring-gray-800',
-  },
-  Pending: {
-    icon: AlertCircle,
-    color: 'text-yellow-600 dark:text-yellow-400',
-    bg: 'bg-yellow-100 dark:bg-yellow-900/30',
-    border: 'border-yellow-200 dark:border-yellow-800',
-    dot: 'bg-yellow-500 ring-4 ring-yellow-100 dark:ring-yellow-900/20',
-  },
+  'Assigned':             { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
+  'Information Provided': { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
+  'Escalate to Onsite':   { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
+  'Client Responded':     { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
+  'Rescheduled':          { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
+  'Scheduling Required':  { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
+  'Working Issue Now':    { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
+  'Waiting':              { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
+  'Waiting for Approval': { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
+  'Work Completed': { icon: CheckCircle2, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-800' },
+  'Problem Solved': { icon: CheckCircle2, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-800' },
+  'Cancelled':           { icon: XCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-800' },
+  'Technician Rejected': { icon: XCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-800' },
+  'Merged':              { icon: XCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-800' },
 };
 
 const defaultStyle = {
   icon: Clock,
   color: 'text-gray-600 dark:text-gray-400',
-  bg: 'bg-gray-100 dark:bg-gray-800/50',
+  bg: 'bg-gray-50 dark:bg-gray-800/50',
   border: 'border-gray-200 dark:border-gray-700',
-  dot: 'bg-gray-400 ring-4 ring-gray-100 dark:ring-gray-800',
 };
 
 export default function ComTimelineView({ ticket }) {
@@ -63,6 +47,7 @@ export default function ComTimelineView({ ticket }) {
     );
   }
 
+  console.log('Ticket statuses:', statuses);
   return (
     <div className="relative">
       <div className="absolute left-[19px] top-3 bottom-3 w-0.5 bg-gradient-to-b from-purple-300 via-purple-400 to-purple-300 dark:from-purple-600 dark:via-purple-700 dark:to-purple-600 rounded-full opacity-50" />
@@ -77,12 +62,12 @@ export default function ComTimelineView({ ticket }) {
             <div key={s.v_ticketstatusid} className="relative flex items-start gap-3 group">
               <div className="relative shrink-0">
                 <div className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110',
-                  style.bg,
-                  style.border,
-                  'border-2'
+                  'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110 border-2',
+                  style.bg, style.border
                 )}>
-                  <Icon className={cn('w-4 h-4 animate-[spin_3s_linear_infinite]', style.color)} />
+                  <Icon className={cn('w-4 h-4', style.color,
+                    style.icon === Loader2 && 'animate-[spin_3s_linear_infinite]'
+                  )} />
                 </div>
                 {!isLast && (
                   <div className="absolute top-10 left-4 w-0.5 h-6 bg-gradient-to-b from-gray-200 to-transparent dark:from-gray-700 dark:to-transparent" />
@@ -90,27 +75,19 @@ export default function ComTimelineView({ ticket }) {
               </div>
 
               <div className={cn(
-                'flex-1 min-w-0 rounded-xl p-3 transition-all duration-200 group-hover:shadow-md',
-                style.bg,
-                'border',
-                style.border
+                'flex-1 min-w-0 rounded-xl p-3 transition-all duration-200 group-hover:shadow-md border',
+                style.bg, style.border
               )}>
                 <div className="flex items-center justify-between gap-2">
-                  <p className={cn('text-sm font-semibold', style.color)}>
-                    {s.v_status}
-                  </p>
+                  <p className={cn('text-sm font-semibold', style.color)}>{s.v_status}</p>
                   <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 bg-white/50 dark:bg-gray-900/50 px-2 py-1 rounded-full">
                     {format(new Date(s.v_createdat), 'MMM d')}
                   </span>
                 </div>
-                
                 <div className="flex items-center gap-1.5 mt-1.5">
                   <Clock className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {format(new Date(s.v_createdat), 'hh:mm a')}
-                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{format(new Date(s.v_createdat), 'hh:mm a')}</p>
                 </div>
-
                 {s.v_note && (
                   <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 pl-2 border-l-2 border-gray-200 dark:border-gray-700">
                     {s.v_note}

@@ -62,15 +62,15 @@ export default function SuperAdminFilter({
     };
 
   return (
-    <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+    <div className="flex flex-row items-center gap-1 sm:gap-2 w-full px-4 py-3 border-b border-gray-200 dark:border-gray-800">
 
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div className="relative flex-1 min-w-[100px] sm:min-w-[150px]">
+        <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
         <Input
           value={search}
           onChange={handleSearch}
           placeholder="Search user name..."
-          className="pl-9 pr-8"
+          className="pl-7 sm:pl-9 pr-8 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 text-xs sm:text-sm h-8 sm:h-10"
         />
         {search && (
           <button
@@ -87,23 +87,23 @@ export default function SuperAdminFilter({
           <Button
             variant="outline"
             size="sm"
-            className={`relative gap-2 ${
+            className={`relative gap-1 sm:gap-2 dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300 px-2 sm:px-3 h-8 sm:h-10 ${
               activeFilterCount > 0
                 ? "border-violet-500 bg-violet-50 text-violet-600 hover:bg-violet-100 dark:bg-violet-900/20 dark:text-violet-400 dark:border-violet-500 dark:hover:bg-violet-900/30"
                 : ""
             }`}
           >
-            <SlidersHorizontal className="w-4 h-4" />
-            <span>Filters</span>
+            <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="text-xs sm:text-sm whitespace-nowrap">Filters</span>
             {activeFilterCount > 0 && (
-              <Badge className="h-4 w-4 p-0 flex items-center justify-center text-[10px] bg-violet-600 hover:bg-violet-600 text-white dark:bg-violet-500">
+              <Badge className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[8px] sm:text-xs bg-violet-600 hover:bg-violet-600 text-white dark:bg-violet-500">
                 {activeFilterCount}
               </Badge>
             )}
           </Button>
         </PopoverTrigger>
 
-        <PopoverContent className="w-72 p-4" align="end">
+        <PopoverContent className="w-72 p-4 dark:bg-gray-900 dark:border-gray-800" align="end">
           <div className="space-y-4">
 
             <div className="flex items-center justify-between">

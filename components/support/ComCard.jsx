@@ -17,6 +17,8 @@ export const supportCards = [
     title: "Call Support Team",
     description: "Speak directly with our MSP experts.",
     iconBg: "bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-300",
+    telephone: "877-655-3469",
+    localNumber: "425-655-3468",
   },
 ];
 
@@ -31,11 +33,11 @@ export const learnMoreCards = [
     title: "App Version Info",
     description: "Current version details and comprehensive update history.",
     iconBg: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-300",
-    version: "Version 3.0.0",
-    release: "Released August 01, 2025",
+    version: process.env.NEXT_PUBLIC_APP_VERSION || "v0.0.0-local",
+    release: `Released ${process.env.NEXT_PUBLIC_APP_RELEASE_DATE || "August 01, 2025"}`,
   },
 ];
-
+//jasperwitnessserer1aura
 export default function ComCard({
   title,
   description,

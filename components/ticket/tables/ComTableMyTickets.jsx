@@ -3,6 +3,8 @@ import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { useAuth } from '@/context/AuthContext';
 import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
+import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
+import { RefreshCw } from "lucide-react";
 
 const cardFields = [
   { key: 'v_source',         label: 'Source'     },
@@ -33,10 +35,14 @@ export default function ComTableMyTickets({
   const prevMyTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
 
+  const { runSync, loading: syncing, error: syncError } = useAutoSyncDynamics();
+
   const myTickets = useMemo(
     () => tickets.filter(t => t.v_entrauserid === tokenInfo?.account?.localAccountId),
     [tickets, tokenInfo?.account?.localAccountId]
   );
+
+  
 
   const filteredTickets = useMemo(
   () =>
@@ -70,6 +76,7 @@ export default function ComTableMyTickets({
       onFilterOptionsChange?.({
         Source:   [...new Set(myTickets.map(t => t.v_source).filter(Boolean))],
         Category: [...new Set(myTickets.map(t => t.v_ticketcategory).filter(Boolean))],
+        Priority:  [...new Set(myTickets.map(t => t.v_priority).filter(Boolean))],
         Status:   [...new Set(myTickets.map(t => t.v_status).filter(Boolean))],
       });
     }
@@ -81,6 +88,12 @@ export default function ComTableMyTickets({
       onTotalRecordsChange(filteredTickets.length);
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
+
+  const handleSync = async () => {
+    await runSync();
+
+    onTicketUpdated?.(); 
+  };
 
   const getPriorityClass = (priority) => {
     switch (priority?.toLowerCase()) {
@@ -114,6 +127,15 @@ export default function ComTableMyTickets({
 
       {/* Desktop */}
       <div className="hidden sm:block overflow-x-auto">
+         <div className="flex justify-end mb-2 border-b py-2">
+            <button
+              onClick={handleSync}
+              disabled={loading || syncing}
+              className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
+            </button>
+        </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">

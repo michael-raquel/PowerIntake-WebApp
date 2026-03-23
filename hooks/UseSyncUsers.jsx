@@ -8,6 +8,19 @@ const useSyncUsers = () => {
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
 
+  const resolveApiUrl = useCallback((path) => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+    if (!baseUrl) {
+      if (typeof window !== "undefined") {
+        return new URL(path, window.location.origin).toString();
+      }
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not set");
+    }
+
+    return new URL(path, baseUrl).toString();
+  }, []);
+
   const getAccessToken = useCallback(async () => {
     if (!accounts?.[0]) return null;
 
@@ -27,15 +40,14 @@ const useSyncUsers = () => {
     try {
       const accessToken = await getAccessToken();
 
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/sync`,
-        {
-          method: "POST",
-          headers: {
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-        }
-      );
+      const url = resolveApiUrl("/users/sync");
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
 
       if (!res.ok) {
         const body = await res.text();
@@ -46,11 +58,16 @@ const useSyncUsers = () => {
       setResult(json);
     } catch (err) {
       console.error("[useSyncUsers] Error:", err);
-      setError(err.message);
+
+      if (err instanceof TypeError) {
+        setError("Network error. Check API base URL, CORS, and server availability.");
+      } else {
+        setError(err?.message || String(err));
+      }
     } finally {
       setLoading(false);
     }
-  }, [getAccessToken]);
+  }, [getAccessToken, resolveApiUrl]);
 
   return { syncUsers, loading, error, result };
 };

@@ -3,6 +3,8 @@ import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { useAuth } from '@/context/AuthContext';
 import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
+import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
+import { RefreshCw } from "lucide-react";
 
 const cardFields = [
   { key: 'v_department',     label: 'Dept'     },
@@ -32,6 +34,8 @@ export default function ComTableCompany({
 
   const prevTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
+  
+  const { runSync, loading: syncing, error: syncError } = useAutoSyncDynamics();
 
  const filteredTickets = useMemo(
   () =>
@@ -82,6 +86,12 @@ export default function ComTableCompany({
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
 
+  const handleSync = async () => {
+    await runSync();
+
+    onTicketUpdated?.(); 
+  };
+
   if (loading) return <div className="text-center py-6 text-gray-500 dark:text-gray-400">Loading...</div>;
   if (error) return <div className="text-center py-6 text-red-500 dark:text-red-400">{error}</div>;
 
@@ -114,13 +124,22 @@ export default function ComTableCompany({
 
       {/* Desktop Table */}
       <div className="hidden sm:block overflow-x-auto">
+        <div className="flex justify-end mb-2 border-b py-2">
+            <button
+              onClick={handleSync}
+              disabled={loading || syncing}
+              className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
+            </button>
+        </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
               {['Source','TICKET ID', 'DEPARTMENT', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY','CREATED AT', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
                 <th
                   key={header}
-                  className="px-4 py-3 text-left text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
+                  className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
                 >
                   {header}
                 </th>

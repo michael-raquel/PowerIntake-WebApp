@@ -15,8 +15,6 @@ const FILTER_CONFIG = {
   'my-ticket': ['Source', 'Priority', 'Category', 'Status'],
 };
 
-const PRIORITY_OPTIONS = ['High', 'Medium', 'Low'];
-
 export default function ComFilters({
   onSearch,
   searchValue,
@@ -34,17 +32,14 @@ export default function ComFilters({
     ([_, v]) => v && typeof v === 'string' && v.trim() !== ''
   ).length;
 
-  const getOptionsForFilter = (filter) => {
-    if (filter === 'Priority') return PRIORITY_OPTIONS;
-
-    const options = filterOptions[filter] || [];
-    const uniqueOptions = [...new Set(options.map(v => String(v).trim()).filter(Boolean))];
-    const selected = selectedFilters[filter];
-
-    return selected && !uniqueOptions.includes(selected)
-      ? [selected, ...uniqueOptions]
-      : uniqueOptions;
-  };
+ const getOptionsForFilter = (filter) => {
+  const options = filterOptions[filter] || [];
+  const uniqueOptions = [...new Set(options.map(v => String(v).trim()).filter(Boolean))];
+  const selected = selectedFilters[filter];
+  return selected && !uniqueOptions.includes(selected)
+    ? [selected, ...uniqueOptions]
+    : uniqueOptions;
+};
 
   const handleFilterChange = (filter, value) => {
     if (!value) return;

@@ -7,7 +7,7 @@ import { useAppTheme } from '@/context/ThemeContext';
 import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateUserSettings } from '@/hooks/UseUpdateUserSettings';
 import { Button } from '@/components/ui/button';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Settings } from 'lucide-react';
 import { NotificationsSection, AssistSection, DarkModeSection } from '@/components/settings/ComCards';
 
 export default function SettingsPage() {
@@ -60,7 +60,7 @@ export default function SettingsPage() {
     if (settingsLoaded && localSettings.darkmode !== isDarkMode) {
       setLocalSettings(prev => ({ ...prev, darkmode: isDarkMode }));
     }
-  }, [isDarkMode, settingsLoaded]);
+  }, [isDarkMode, settingsLoaded, localSettings.darkmode]);
 
   const handleToggle = async (setting, value) => {
     setLoadingToggles((prev) => ({ ...prev, [setting]: true }));
@@ -112,11 +112,18 @@ export default function SettingsPage() {
     <div className="min-h-screen flex flex-col p-4 md:p-6 pb-0 md:pb-0">
       <div className="flex-1 flex flex-col gap-4">
 
-        <div className="px-2 bg-gradient-to-l from-pink-500 to-violet-800 rounded-lg py-4">
-          <h2 className="font-bold text-sm sm:text-lg text-white">Settings</h2>
-          <p className="text-xs sm:text-sm text-gray-200 mt-1">
-            Manage notifications, assist tools, and theme preferences
-          </p>
+        <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
+                <Settings className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h2 className="font-black text-xl sm:text-2xl text-white tracking-tight">Settings</h2>
+                <p className="text-xs text-white/60 mt-0.5">Manage notifications, assist tools, and theme preferences</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-6">
@@ -164,44 +171,35 @@ export default function SettingsPage() {
       </div>
 
       <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
-        <div className="px-6 py-3 flex flex-col sm:flex-row items-center sm:justify-between gap-4 relative">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
-            Sparta Services, LLC
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap hidden sm:block absolute left-1/2 -translate-x-1/2">
-            &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
-          </p>
-          <div className="flex flex-nowrap justify-center sm:justify-end sm:flex-wrap gap-x-3 sm:gap-x-6 gap-y-1 sm:gap-y-2 w-full sm:w-auto">
-            <a href="https://www.spartaserv.com/terms-conditions" target="_blank" rel="noopener noreferrer"
-              className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 shrink-0"
-              style={{ fontSize: 'clamp(11px, 3vw, 14px)' }}>
-              Terms
-              <ExternalLink style={{ width: 'clamp(10px, 2.5vw, 12px)', height: 'clamp(10px, 2.5vw, 12px)' }} className="opacity-60 flex-shrink-0" />
-            </a>
-            <a href="https://www.spartaserv.com/privacy-policy" target="_blank" rel="noopener noreferrer"
-              className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 shrink-0"
-              style={{ fontSize: 'clamp(11px, 3vw, 14px)' }}>
-              Privacy Policy
-              <ExternalLink style={{ width: 'clamp(10px, 2.5vw, 12px)', height: 'clamp(10px, 2.5vw, 12px)' }} className="opacity-60 flex-shrink-0" />
-            </a>
-            <a href="https://www.spartaserv.com" target="_blank" rel="noopener noreferrer"
-              className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 shrink-0"
-              style={{ fontSize: 'clamp(11px, 3vw, 14px)' }}>
-              spartaserv.com
-              <ExternalLink style={{ width: 'clamp(10px, 2.5vw, 12px)', height: 'clamp(10px, 2.5vw, 12px)' }} className="opacity-60 flex-shrink-0" />
-            </a>
-            <a href="https://Portal.SpartaServ.com" target="_blank" rel="noopener noreferrer"
-              className="text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors flex items-center gap-1 shrink-0"
-              style={{ fontSize: 'clamp(11px, 3vw, 14px)' }}>
-              Portal
-              <ExternalLink style={{ width: 'clamp(10px, 2.5vw, 12px)', height: 'clamp(10px, 2.5vw, 12px)' }} className="opacity-60 flex-shrink-0" />
-            </a>
-          </div>
-          <p className="text-[10px] text-gray-400 dark:text-gray-500 sm:hidden text-center">
-            &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
-          </p>
-        </div>
-      </footer>
+  <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
+    <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
+      <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+      <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">Sparta Services, LLC</p>
+    </div>
+    <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3">
+      {[
+        { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
+        { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
+        { href: 'https://www.spartaserv.com', label: 'spartaserv.com' },
+        { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
+      ].map((link, i, arr) => (
+        <span key={link.label} className="flex items-center">
+          <a href={link.href} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap">
+            {link.label}
+            <ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
+          </a>
+          {i < arr.length - 1 && (
+            <span className="w-px h-3 bg-gray-300 dark:bg-gray-700 mx-0.5 shrink-0" />
+          )}
+        </span>
+      ))}
+    </div>
+    <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">
+      &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
+    </p>
+  </div>
+</footer>
 
     </div>
   );
