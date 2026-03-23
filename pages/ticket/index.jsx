@@ -143,7 +143,7 @@ export default function TicketPage() {
   const renderPagination = totalRecords > 0 && (
     <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
       <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-        {totalRecords} Records
+        {totalRecords} Total Records
       </span>
       <div className="flex items-center gap-1">
         <button
