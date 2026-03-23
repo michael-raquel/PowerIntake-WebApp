@@ -1,4 +1,5 @@
 name: Azure Static Web Apps CI/CD
+
 on:
   push:
     branches:
@@ -18,15 +19,17 @@ jobs:
         with:
           submodules: true
           lfs: false
+          fetch-depth: 0
 
-      # 1️⃣ Resolve values BEFORE the Azure action runs its internal build
+      # 1️⃣ Resolve version and date before the Azure action runs
       - name: Set version and date env vars
         run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "NEXT_PUBLIC_APP_VERSION=v${VERSION}" >> $GITHUB_ENV
+          git fetch --tags
+          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0-dev")
+          echo "NEXT_PUBLIC_APP_VERSION=${VERSION}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
 
-      # 2️⃣ Write a .env.production file — Next.js picks this up during build
+      # 2️⃣ Write .env.production so Next.js picks it up during internal build
       - name: Write .env.production
         run: |
           echo "NEXT_PUBLIC_APP_VERSION=${{ env.NEXT_PUBLIC_APP_VERSION }}" >> .env.production
@@ -45,7 +48,7 @@ jobs:
           api_location: ""
           output_location: "out"
           production_branch: "dev"
-        # 3️⃣ These are still passed as a safety net / for the action's own process
+        # 3️⃣ Safety net — passed to the action's own process as well
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}
           NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID_DEV }}
