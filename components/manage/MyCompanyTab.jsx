@@ -219,7 +219,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
           )}
           {syncResult && !syncing && (
             <span className="text-xs text-green-500 dark:text-green-400">
-              {syncResult.message} {syncResult.synced ?? 0}
+              {syncResult.message}
             </span>
           )}
           <button
