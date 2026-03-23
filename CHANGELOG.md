@@ -1,3 +1,10 @@
+## [1.1.2-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.1.2-dev.2...v1.1.2-dev.3) (2026-03-23)
+
+
+### Bug Fixes
+
+* **checkbox:** fix lang ([5306923](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5306923344221ba6c0bf2586e7604b153466a8f1))
+
 ## [1.1.2-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.1.2-dev.1...v1.1.2-dev.2) (2026-03-23)
 
 
