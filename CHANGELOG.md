@@ -1,3 +1,10 @@
+## [1.2.4-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.4-dev.9...v1.2.4-dev.10) (2026-03-23)
+
+
+### Bug Fixes
+
+* benta ([445f27b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/445f27bff0c375fb2a49d385dd9a1041801dd440))
+
 ## [1.2.4-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.4-dev.8...v1.2.4-dev.9) (2026-03-23)
 
 
