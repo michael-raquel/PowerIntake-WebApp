@@ -14,7 +14,8 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "echo 'NEXT_PUBLIC_APP_RELEASE_DATE='$(date -u '+%B %d, %Y') >> $GITHUB_ENV && echo 'NEXT_PUBLIC_APP_VERSION=${nextRelease.version}' >> $GITHUB_ENV"
+        "prepareCmd": "echo 'NEXT_PUBLIC_APP_RELEASE_DATE='$(date -u '+%B %d, %Y') >> $GITHUB_ENV && echo 'NEXT_PUBLIC_APP_VERSION=${nextRelease.version}' >> $GITHUB_ENV",
+        "successCmd": "if [ \"${nextRelease.channel}\" = \"dev\" ]; then ALIAS_TAG=$(echo ${nextRelease.version} | sed 's/-dev\\././' | sed 's/^/dev-v/') && git tag $ALIAS_TAG && git push origin $ALIAS_TAG; fi"
       }
     ],
     [
