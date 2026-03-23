@@ -97,7 +97,7 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
           )}
           {syncResult && !syncing && (
             <span className="text-xs text-green-500 dark:text-green-400">
-              {syncResult.message} {syncResult.synced ?? 0}
+              {syncResult.message} New users: {syncResult.synced ?? 0}
             </span>
           )}
           <button
