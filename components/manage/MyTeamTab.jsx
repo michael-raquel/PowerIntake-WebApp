@@ -26,6 +26,7 @@ export default function MyTeamTab() {
     hasNext,
     hasPrev,
     fetchData,
+    totals,
   } = useFetchMyTeam(1, LIMIT);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
@@ -49,11 +50,15 @@ export default function MyTeamTab() {
         statuses={statuses}
       />
 
-      <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex flex-col gap-0.5">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {total} total records
-          </span>
+      <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+        <button
+          onClick={handleSync}
+          disabled={loading || syncing}
+          className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
+        </button>
+        <div className="ml-auto flex flex-col items-end gap-0.5">
           {syncing && (
             <span className="text-xs text-blue-500 dark:text-blue-400">Syncing users...</span>
           )}
@@ -66,13 +71,6 @@ export default function MyTeamTab() {
             </span>
           )}
         </div>
-        <button
-          onClick={handleSync}
-          disabled={loading || syncing}
-          className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-        </button>
       </div>
 {/* 
       {error && (
@@ -187,12 +185,27 @@ export default function MyTeamTab() {
               ))
             )}
           </tbody>
+          <tfoot>
+            <tr className="border-t border-gray-200 dark:border-gray-800">
+              <td className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                Totals
+              </td>
+              <td className="px-4 py-3" />
+              <td className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                {totals?.totalTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+                {totals?.openTickets ?? 0}
+              </td>
+              <td className="px-4 py-3" />
+            </tr>
+          </tfoot>
         </table>
       </div>
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-        <span className="text-xs text-gray-500 dark:text-gray-400">
-          Page {page} of {totalPages}
+        <span className="text-sm text-gray-500 dark:text-gray-400">
+          {total} total records
         </span>
         <div className="flex items-center gap-1">
           <button
