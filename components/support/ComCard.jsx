@@ -37,7 +37,7 @@ export const learnMoreCards = [
     release: "Released August 01, 2025",
   },
 ];
-//jasperwitnesss
+//jasperwitnessser
 export default function ComCard({
   title,
   description,
