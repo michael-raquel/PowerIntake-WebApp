@@ -1,17 +1,16 @@
 name: Azure Static Web Apps CI/CD
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Release"]
     branches:
       - dev
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - dev
+    types:
+      - completed
 
 jobs:
   build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     name: Build and Deploy Job
     steps:
@@ -21,11 +20,11 @@ jobs:
           lfs: false
           fetch-depth: 0
 
-      # 1️⃣ Resolve version and date before the Azure action runs
+      # 1️⃣ Resolve version and date — git describe picks up dev-v1.1.2.6 alias tag
       - name: Set version and date env vars
         run: |
           git fetch --tags
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0-dev")
+          VERSION=$(git describe --tags --abbrev=0 --match "dev-v*" 2>/dev/null || echo "dev-v0.0.0.0")
           echo "NEXT_PUBLIC_APP_VERSION=${VERSION}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
 
@@ -66,4 +65,3 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ICY_TREE_0F2B00310 }}
           action: "close"
-

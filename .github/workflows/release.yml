@@ -23,6 +23,11 @@ jobs:
 
       - run: npm ci
 
+      # 👇 Configure git auth so successCmd can push the alias tag
+      - name: Configure git credentials
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+
       - name: Run Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
