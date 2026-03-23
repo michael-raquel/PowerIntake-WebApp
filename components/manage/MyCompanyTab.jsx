@@ -182,7 +182,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          {total} total records
+          {(total ?? 0)} total records
         </div>
         <div className="ml-auto flex items-center gap-3">
           {syncing && (
@@ -265,23 +265,24 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
-                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
+                    <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Total</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Open</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_openticket ?? 0}</span>
+                    </div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
-                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">Admin</span>
+                    <Switch
+                      className="data-[state=checked]:bg-blue-500 cursor-pointer"
+                      checked={hasRole(row.v_role, "Admin")}
+                      onCheckedChange={(checked) => handleAdminToggle(row, checked)}
+                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
+                    />
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-700 pt-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Admin</span>
-                  <Switch
-                    className="data-[state=checked]:bg-blue-500 cursor-pointer"
-                    checked={hasRole(row.v_role, "Admin")}
-                    onCheckedChange={(checked) => handleAdminToggle(row, checked)}
-                    disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
-                  />
                 </div>
 
               </div>
@@ -388,8 +389,8 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
       </div>
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-        <div className="hidden md:flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
-          <span>{total} total records</span>
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          {(total ?? 0)} total records
         </div>
         <div className="flex items-center gap-1">
           <button
