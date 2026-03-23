@@ -1,3 +1,11 @@
+## [1.2.4-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.4-dev.7...v1.2.4-dev.8) (2026-03-23)
+
+
+### Bug Fixes
+
+* Create release.yml ([292fbfc](https://github.com/michael-raquel/PowerIntake-WebApp/commit/292fbfcaf995ad5c0a6defb410b652b6de797511))
+* Delete .github/workflows/release.yml ([856592c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/856592c97badbf8c650c6a271202ee2d14f4e50a))
+
 ## [1.2.4-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.4-dev.6...v1.2.4-dev.7) (2026-03-23)
 
 
