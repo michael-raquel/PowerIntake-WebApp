@@ -1,3 +1,10 @@
+# [1.2.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.0-dev.1...v1.2.0-dev.2) (2026-03-23)
+
+
+### Bug Fixes
+
+* test ([76abf8b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/76abf8b69e2adfdc6056d958dca837c9a1cb17a0))
+
 # [1.2.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.1.2-dev.6...v1.2.0-dev.1) (2026-03-23)
 
 
