@@ -81,10 +81,21 @@ export default function SupportRoute() {
                         </button>
                       ) : (
                         <div className="rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-center dark:border-orange-900/50 dark:bg-orange-950/40">
-                          <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                            +1 425-655-3468
-                          </p>
-                          <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
+                          <div className="flex gap-4 justify-center">
+                            {card.telephone && (
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                <span className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Telephone</span>
+                                +1 {card.telephone}
+                              </p>
+                            )}
+                            {card.localNumber && (
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                <span className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Local number</span>
+                                +1 {card.localNumber}
+                              </p>
+                            )}
+                          </div>
+                          <p className="mt-3 text-xs text-gray-600 dark:text-gray-400">
                             Mon-Fri, 5AM-5PM PST
                           </p>
                           <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-500">

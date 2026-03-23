@@ -3,18 +3,19 @@ import { useAuth } from "@/context/AuthContext";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
-export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 12) {
+export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = null) {
   const { tokenInfo }    = useAuth();
   const { instance, accounts } = useMsal();
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
   const [page,       setPage]       = useState(initialPage);
-  const [limit]                     = useState(initialLimit);
+  const [limit, setLimit]           = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0 });
   const lastTotalsKeyRef            = useRef("");
+  const limitRef                    = useRef(initialLimit);
 
   const getAccessToken = useCallback(async () => {
     if (!accounts?.[0]) return null;
@@ -86,7 +87,9 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
     try {
       const accessToken = await getAccessToken();
 
-      const params = new URLSearchParams({ page: currentPage, limit, entratenantid });
+      const params = new URLSearchParams({ page: currentPage, entratenantid });
+
+      if (limitRef.current != null) params.append("limit", limitRef.current);
 
       if (filters.search)     params.append("search",     filters.search);
       if (filters.manager)    params.append("manager",    filters.manager);
@@ -128,7 +131,17 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
     } finally {
       setLoading(false);
     }
-  }, [fetchTotals, limit, tokenInfo?.account?.tenantId, getAccessToken]);
+  }, [fetchTotals, tokenInfo?.account?.tenantId, getAccessToken]);
+
+  useEffect(() => {
+    if (initialLimit !== limitRef.current) {
+      limitRef.current = initialLimit;
+      setLimit(initialLimit);
+      if (tokenInfo?.account?.tenantId) {
+        fetchData(1);
+      }
+    }
+  }, [initialLimit, fetchData, tokenInfo?.account?.tenantId]);
 
   useEffect(() => {
     if (tokenInfo?.account?.tenantId) {

@@ -1,13 +1,15 @@
 "use client";
 
+import { useState, useEffect, useCallback, useRef } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight, Copy, Check, Search, X } from "lucide-react";
 import useFetchMyClients from "@/hooks/UseFetchMyClientUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 
 const TABLE_HEADERS = ["Tenant ID", "Client Name", "Total Tickets", "Open Tickets"];
-const LIMIT = 10;
+const MOBILE_CARD_HEIGHT = 150;
+const MIN_RECORDS = 1;
+const DEFAULT_ROWS = 10;
 
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
@@ -30,13 +32,44 @@ function CopyButton({ value }) {
   );
 }
 
-export default function MyClientsTab() {
+export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
+  const [isMobile, setIsMobile] = useState(false);
+  const mobileContainerRef = useRef(null);
+  const [mobileLimit, setMobileLimit] = useState(DEFAULT_ROWS);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const updateMobileLimit = useCallback(() => {
+    if (!mobileContainerRef.current) return;
+    const height = mobileContainerRef.current.clientHeight;
+    if (!height) return;
+    const calculated = Math.max(MIN_RECORDS, Math.floor(height / MOBILE_CARD_HEIGHT));
+    setMobileLimit((prev) => (prev !== calculated ? calculated : prev));
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    const raf = requestAnimationFrame(updateMobileLimit);
+    window.addEventListener("resize", updateMobileLimit);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", updateMobileLimit);
+    };
+  }, [isMobile, updateMobileLimit]);
+
+  const effectiveLimit = isMobile ? mobileLimit : (parentRecordsPerPage || DEFAULT_ROWS);
+
   const {
     data, loading, error,
     page, total, totalPages,
     hasNext, hasPrev, fetchData,
     totals,
-  } = useFetchMyClients(1, LIMIT);
+  } = useFetchMyClients(1, effectiveLimit);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
 
@@ -59,16 +92,16 @@ export default function MyClientsTab() {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
 
-      <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div className="flex items-center gap-1 sm:gap-2 px-4 py-3 border-b border-gray-200 dark:border-gray-800">
+        <div className="relative flex-1 min-w-[100px] sm:min-w-[150px]">
+          <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <Input
             value={search}
             onChange={handleSearch}
             placeholder="Search client name..."
-            className="pl-9 pr-8"
+            className="pl-7 sm:pl-9 pr-8 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 text-xs sm:text-sm h-8 sm:h-10"
           />
           {search && (
             <button
@@ -82,14 +115,10 @@ export default function MyClientsTab() {
       </div>
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <button
-          onClick={handleSync}
-          disabled={loading || syncing}
-          className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-        </button>
-        <div className="ml-auto flex flex-col items-end gap-0.5">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          {total} total records
+        </div>
+        <div className="ml-auto flex items-center gap-3">
           {syncing && (
             <span className="text-xs text-blue-500 dark:text-blue-400">Syncing users...</span>
           )}
@@ -101,10 +130,17 @@ export default function MyClientsTab() {
               {syncResult.message} New users: {syncResult.synced ?? 0}
             </span>
           )}
+          <button
+            onClick={handleSync}
+            disabled={loading || syncing}
+            className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </div>
 
-      <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="flex-1 min-h-0 overflow-y-auto block md:hidden divide-y divide-gray-100 dark:divide-gray-800" ref={mobileContainerRef}>
         {loading ? (
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">Loading...</div>
         ) : data.length === 0 ? (
@@ -140,11 +176,32 @@ export default function MyClientsTab() {
                 </div>
               </div>
             ))}
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Totals</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">All records</span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.totalTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.openTickets ?? 0}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
+        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -157,15 +214,11 @@ export default function MyClientsTab() {
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {loading ? (
-              [...Array(LIMIT)].map((_, i) => (
-                <tr key={i}>
-                  {TABLE_HEADERS.map((h) => (
-                    <td key={h} className="px-4 py-3">
-                      <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-24 mx-auto" />
-                    </td>
-                  ))}
-                </tr>
-              ))
+              <tr>
+                <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  Loading...
+                </td>
+              </tr>
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
@@ -188,27 +241,27 @@ export default function MyClientsTab() {
               ))
             )}
           </tbody>
-          <tfoot>
-            <tr className="border-t border-gray-200 dark:border-gray-800">
-              <td className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
-                Totals
+          <tfoot className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/60">
+            <tr className="text-center">
+              <td colSpan={2} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                Total
               </td>
-              <td className="px-4 py-3" />
-              <td className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.totalTickets ?? 0}
               </td>
-              <td className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.openTickets ?? 0}
               </td>
             </tr>
           </tfoot>
         </table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          {total} total records
-        </span>
+        <div className="hidden md:flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+          <span>{total} total records</span>
+        </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => fetchData(page - 1)}

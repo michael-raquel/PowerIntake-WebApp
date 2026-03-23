@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
+import { useMsal } from "@azure/msal-react";
 import useFetchAllCompanyUsers from "@/hooks/UseFetchAllCompanyUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
 import useCreatePromoteAdmin from "@/hooks/UseCreatePromoteAdmin";
 import useDeleteDemoteAdmin from "@/hooks/UseDeleteDemoteAdmin";
+import useUpdateUserRole from "@/hooks/UseUpdateUserRole";
 import { Switch } from '@/components/ui/switch';
 import CompanyFilter from "@/components/manage/MyCompanyFilter";
 
@@ -20,9 +22,43 @@ const TABLE_HEADERS = [
   "Admin",
 ];
 
-const LIMIT = 10;
+const MOBILE_CARD_HEIGHT = 230;
+const MIN_RECORDS = 1;
+const DEFAULT_ROWS = 10;
 
-export default function MyCompanyTab() {
+export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
+  const { accounts } = useMsal();
+  const [isMobile, setIsMobile] = useState(false);
+  const mobileContainerRef = useRef(null);
+  const [mobileLimit, setMobileLimit] = useState(DEFAULT_ROWS);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  const updateMobileLimit = useCallback(() => {
+    if (!mobileContainerRef.current) return;
+    const height = mobileContainerRef.current.clientHeight;
+    if (!height) return;
+    const calculated = Math.max(MIN_RECORDS, Math.floor(height / MOBILE_CARD_HEIGHT));
+    setMobileLimit((prev) => (prev !== calculated ? calculated : prev));
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    const raf = requestAnimationFrame(updateMobileLimit);
+    window.addEventListener("resize", updateMobileLimit);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", updateMobileLimit);
+    };
+  }, [isMobile, updateMobileLimit]);
+
+  const effectiveLimit = isMobile ? mobileLimit : (parentRecordsPerPage || DEFAULT_ROWS);
+
   const {
     data,
     loading,
@@ -34,7 +70,7 @@ export default function MyCompanyTab() {
     hasPrev,
     fetchData,
     totals,
-  } = useFetchAllCompanyUsers(1, LIMIT);
+  } = useFetchAllCompanyUsers(1, effectiveLimit);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
   const {
@@ -52,15 +88,55 @@ export default function MyCompanyTab() {
     roleValue: "Admin",
     roleDisplayName: "Admin",
   });
+  const { updateUserRole } = useUpdateUserRole();
+  const [activeFilters, setActiveFilters] = useState({});
 
   const handleSync = async () => {
     await syncUsers();
-    fetchData(page);
+    fetchData(page, activeFilters);
   };
 
   const handleFilter = (newFilters) => {
+    setActiveFilters(newFilters);
     fetchData(1, newFilters);
   };
+
+  const buildRoleString = useCallback((currentRole, roleName, checked) => {
+    const rawRoles = String(currentRole || "")
+      .split(",")
+      .map((role) => role.trim())
+      .filter(Boolean);
+
+    const roleSet = new Set(rawRoles.map((role) => role.toLowerCase()));
+    const roleKey = roleName.toLowerCase();
+
+    if (checked) {
+      roleSet.add(roleKey);
+    } else {
+      roleSet.delete(roleKey);
+    }
+
+    const priority = ["superadmin", "admin", "user"];
+    const normalized = new Map([
+      ["superadmin", "SuperAdmin"],
+      ["admin", "Admin"],
+      ["user", "User"],
+    ]);
+
+    const ordered = [];
+    priority.forEach((key) => {
+      if (roleSet.has(key)) ordered.push(normalized.get(key));
+    });
+
+    rawRoles.forEach((role) => {
+      const key = role.toLowerCase();
+      if (!priority.includes(key) && roleSet.has(key)) {
+        ordered.push(role);
+      }
+    });
+
+    return ordered.join(", ");
+  }, []);
 
   const handleAdminToggle = async (row, checked) => {
     try {
@@ -71,9 +147,15 @@ export default function MyCompanyTab() {
         if (demoteGroupLoading || !demoteGroupId) return;
         await demoteAdmin(row?.v_entrauserid);
       }
+
+      await updateUserRole({
+        entrauserid: row?.v_entrauserid,
+        userrole: buildRoleString(row?.v_role, "Admin", checked),
+        modifiedby: accounts?.[0]?.username || null,
+      });
     } catch (err) {
     } finally {
-      fetchData(page);
+      fetchData(page, activeFilters);
     }
   };
 
@@ -82,8 +164,13 @@ export default function MyCompanyTab() {
   const statuses    = [...new Set(data.map((r) => r.v_status).filter(Boolean))];
   const managers    = [...new Set(data.map((r) => r.v_managername).filter(Boolean))];
 
+  const hasRole = (roleValue, roleName) =>
+    String(roleValue || "")
+      .split(",")
+      .map((role) => role.trim().toLowerCase())
+      .includes(roleName.toLowerCase());
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
 
       <CompanyFilter
         onFilter={handleFilter}
@@ -94,14 +181,10 @@ export default function MyCompanyTab() {
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <button
-          onClick={handleSync}
-          disabled={loading || syncing}
-          className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
-        >
-          <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-        </button>
-        <div className="ml-auto flex flex-col items-end gap-0.5">
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          {total} total records
+        </div>
+        <div className="ml-auto flex items-center gap-3">
           {syncing && (
             <span className="text-xs text-blue-500 dark:text-blue-400">Syncing users...</span>
           )}
@@ -113,6 +196,13 @@ export default function MyCompanyTab() {
               {syncResult.message} New users: {syncResult.synced ?? 0}
             </span>
           )}
+          <button
+            onClick={handleSync}
+            disabled={loading || syncing}
+            className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
+          </button>
         </div>
       </div>
 
@@ -125,7 +215,7 @@ export default function MyCompanyTab() {
         </div>
       )} */}
 
-     <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+    <div className="flex-1 min-h-0 overflow-y-auto block md:hidden divide-y divide-gray-100 dark:divide-gray-800" ref={mobileContainerRef}>
         {loading ? (
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             Loading...
@@ -188,7 +278,7 @@ export default function MyCompanyTab() {
                   <span className="text-xs text-gray-500 dark:text-gray-400">Admin</span>
                   <Switch
                     className="data-[state=checked]:bg-blue-500 cursor-pointer"
-                    checked={row.v_role === "Admin"}
+                    checked={hasRole(row.v_role, "Admin")}
                     onCheckedChange={(checked) => handleAdminToggle(row, checked)}
                     disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
                   />
@@ -196,11 +286,32 @@ export default function MyCompanyTab() {
 
               </div>
             ))}
+            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-900 dark:text-white">Totals</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">All records</span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.totalTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.openTickets ?? 0}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
 
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
+        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
@@ -216,15 +327,11 @@ export default function MyCompanyTab() {
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {loading ? (
-              [...Array(LIMIT)].map((_, i) => (
-                <tr key={i}>
-                  {TABLE_HEADERS.map((h) => (
-                    <td key={h} className="px-4 py-3">
-                      <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded animate-pulse w-24" />
-                    </td>
-                  ))}
-                </tr>
-              ))
+              <tr>
+                <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  Loading...
+                </td>
+              </tr>
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
@@ -252,7 +359,7 @@ export default function MyCompanyTab() {
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Switch
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
-                      checked={row.v_role === "Admin"}
+                      checked={hasRole(row.v_role, "Admin")}
                       onCheckedChange={(checked) => handleAdminToggle(row, checked)}
                       disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
                     />
@@ -261,18 +368,15 @@ export default function MyCompanyTab() {
               ))
             )}
           </tbody>
-          <tfoot>
-            <tr className="border-t border-gray-200 dark:border-gray-800">
-              <td className="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
-                Totals
+          <tfoot className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/60">
+            <tr className="text-center">
+              <td colSpan={4} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
+                Total
               </td>
-              <td className="px-4 py-3" />
-              <td className="px-4 py-3" />
-              <td className="px-4 py-3" />
-              <td className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.totalTickets ?? 0}
               </td>
-              <td className="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-200 whitespace-nowrap">
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.openTickets ?? 0}
               </td>
               <td className="px-4 py-3" />
@@ -280,12 +384,13 @@ export default function MyCompanyTab() {
             </tr>
           </tfoot>
         </table>
+        </div>
       </div>
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          {total} total records
-        </span>
+        <div className="hidden md:flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
+          <span>{total} total records</span>
+        </div>
         <div className="flex items-center gap-1">
           <button
             onClick={() => fetchData(page - 1)}

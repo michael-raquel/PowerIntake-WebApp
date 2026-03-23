@@ -2,17 +2,18 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
-export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
+export default function useFetchMyClients(initialPage = 1, initialLimit = null) {
   const { instance, accounts } = useMsal();
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
   const [page,       setPage]       = useState(initialPage);
-  const [limit]                     = useState(initialLimit);
+  const [limit, setLimit]           = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0 });
   const lastTotalsKeyRef            = useRef("");
+  const limitRef                    = useRef(initialLimit);
 
   const getAccessToken = useCallback(async () => {
     if (!accounts?.[0]) return null;
@@ -72,7 +73,9 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
     try {
       const accessToken = await getAccessToken();
 
-      const params = new URLSearchParams({ page: currentPage, limit });
+      const params = new URLSearchParams({ page: currentPage });
+
+      if (limitRef.current != null) params.append("limit", limitRef.current);
 
       if (filters.tenantname) params.append("tenantname", filters.tenantname);
 
@@ -110,7 +113,15 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = 12) {
     } finally {
       setLoading(false);
     }
-  }, [fetchTotals, limit, getAccessToken]);
+  }, [fetchTotals, getAccessToken]);
+
+  useEffect(() => {
+    if (initialLimit !== limitRef.current) {
+      limitRef.current = initialLimit;
+      setLimit(initialLimit);
+      fetchData(1);
+    }
+  }, [initialLimit, fetchData]);
 
   useEffect(() => {
     fetchData(1);
