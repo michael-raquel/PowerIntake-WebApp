@@ -1,4 +1,5 @@
 name: Azure Static Web Apps CI/CD
+
 on:
   push:
     branches:
@@ -13,20 +14,26 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
-    env:
-      NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
-      NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID }}
     steps:
       - uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
 
-      # 👇 ADD THIS
-      - name: Set App Version
+      # 1️⃣ Resolve version and date before the Azure action runs
+      - name: Set version and date env vars
         run: |
           VERSION=$(node -p "require('./package.json').version")
           echo "NEXT_PUBLIC_APP_VERSION=v${VERSION}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
+
+      # 2️⃣ Write .env.production so Next.js picks it up during internal build
+      - name: Write .env.production
+        run: |
+          echo "NEXT_PUBLIC_APP_VERSION=${{ env.NEXT_PUBLIC_APP_VERSION }}" >> .env.production
+          echo "NEXT_PUBLIC_APP_RELEASE_DATE=${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}" >> .env.production
+          echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID }}" >> .env.production
 
       - name: Build And Deploy
         id: builddeploy
@@ -39,10 +46,12 @@ jobs:
           api_location: ""
           output_location: "out"
           production_branch: "main"
+        # 3️⃣ Safety net — passed to the action's own process as well
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
           NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID }}
-          NEXT_PUBLIC_APP_VERSION: ${{ env.NEXT_PUBLIC_APP_VERSION }}  # 👈 ADD THIS
+          NEXT_PUBLIC_APP_VERSION: ${{ env.NEXT_PUBLIC_APP_VERSION }}
+          NEXT_PUBLIC_APP_RELEASE_DATE: ${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
