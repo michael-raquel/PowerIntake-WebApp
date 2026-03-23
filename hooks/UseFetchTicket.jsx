@@ -50,6 +50,7 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenan
         if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
 
         const data = await res.json();
+        console.log("Fetched tickets:", data);
         setTickets(data || []);
       } catch (err) {
         setError(err.message || "Failed to fetch tickets");

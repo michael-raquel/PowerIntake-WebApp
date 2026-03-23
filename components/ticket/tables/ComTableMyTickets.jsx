@@ -70,6 +70,7 @@ export default function ComTableMyTickets({
       onFilterOptionsChange?.({
         Source:   [...new Set(myTickets.map(t => t.v_source).filter(Boolean))],
         Category: [...new Set(myTickets.map(t => t.v_ticketcategory).filter(Boolean))],
+        Priority:  [...new Set(myTickets.map(t => t.v_priority).filter(Boolean))],
         Status:   [...new Set(myTickets.map(t => t.v_status).filter(Boolean))],
       });
     }
