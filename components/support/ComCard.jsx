@@ -37,7 +37,7 @@ export const learnMoreCards = [
     release: `Released ${process.env.NEXT_PUBLIC_APP_RELEASE_DATE || "August 01, 2025"}`,
   },
 ];
-//jasperwitnessser
+//jasperwitnessserer1
 export default function ComCard({
   title,
   description,
