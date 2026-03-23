@@ -31,7 +31,7 @@ const tabs = [
 const IN_PROGRESS_STATUSES = new Set([
   'Assigned', 'Information Provided', 'Escalate to Onsite',
   'Client Responded', 'Rescheduled', 'Scheduling Required',
-  'Working Issue Now', 'Waiting', 'Waiting for Approval',
+  'Working Issue Now', 'Waiting', 'Waiting Approval','Pending Closure',
 ]);
 
 const CANCELLED_STATUSES = new Set(['Cancelled', 'Technician Rejected', 'Merged']);
@@ -54,9 +54,18 @@ const STATUS_CLASSES = {
   'Merged':              'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900',
 };
 
+const DOT_COLORS = {
+  green:  'bg-green-500',
+  blue:   'bg-blue-500',
+  red:    'bg-red-500',
+  purple: 'bg-purple-500',
+  gray:   'bg-gray-400',
+  orange: 'bg-orange-500',
+};
+
 const DotRow = ({ color, label }) => (
   <div className="flex items-center gap-1 min-w-0 overflow-hidden">
-    <span className={`inline-block w-1.5 h-1.5 rounded-full bg-${color}-500 shrink-0`} />
+    <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${DOT_COLORS[color] ?? 'bg-gray-400'}`} />
     <span className="truncate text-[9px] sm:text-[10px] md:text-[11px] text-gray-400 dark:text-gray-500 leading-none">{label}</span>
   </div>
 );
@@ -177,29 +186,25 @@ export default function HomePage() {
         </div>
 
         <Tabs active={safeActiveTab} onChange={setActiveTab} tabs={visibleTabs} />
-
+ 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-
           <StatCard icon="/icons/myticket.svg" label="My Tickets" value={totalTickets} dots={[
-            { color: 'green', label: `${newCount} New` },
-            { color: 'blue', label: `${inProgressCount} In Progress` },
-            { color: 'red', label: `${cancelledCount} Cancelled` },
+            { color: 'green',  label: `${newCount} New` },
+            { color: 'blue',   label: `${inProgressCount} In Progress` },
+            { color: 'red',    label: `${cancelledCount} Cancelled` },
             { color: 'purple', label: `${completedCount} Completed` },
           ]} />
-
           <StatCard icon="/icons/inprogress.svg" label="In Progress" value={inProgressCount} dots={[
             { color: 'blue', label: 'Being worked on' },
           ]} />
-
           <StatCard icon="/icons/completed.svg" label="Cancelled" value={cancelledCount} dots={[
-            { color: 'gray', label: `${cancelledOnlyCount} Cancelled` },
-            { color: 'red', label: `${techRejectedCount} Rejected` },
+            { color: 'gray',   label: `${cancelledOnlyCount} Cancelled` },
+            { color: 'red',    label: `${techRejectedCount} Technician Rejected` },
             { color: 'orange', label: `${mergedCount} Merged` },
           ]} />
-
           <StatCard icon="/icons/completionrate.svg" label="Completion Rate" value={`${completionRate}%`} dots={[
-            { color: 'purple', label: `${workCompletedCount} Completed` },
-            { color: 'green', label: `${problemSolvedCount} Solved` },
+            { color: 'purple', label: `${workCompletedCount} Work Completed` },
+            { color: 'green',  label: `${problemSolvedCount} Problem Solved` },
           ]} />
 
         </div>
