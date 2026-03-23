@@ -168,7 +168,27 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
     fetchData(1, newFilters);
   };
 
-  const roles    = [...new Set(data.map((r) => r.v_role).filter(Boolean))];
+  const getPrimaryRoleKey = (roleValue) => {
+    const roles = String(roleValue || "")
+      .split(",")
+      .map((role) => role.trim())
+      .filter(Boolean);
+
+    const normalized = roles.map((role) => role.toLowerCase());
+
+    if (normalized.includes("superadmin")) return "SuperAdmin";
+    if (normalized.includes("admin")) return "Admin";
+    if (normalized.includes("user")) return "User";
+
+    return roles[0] || "User";
+  };
+
+  const getPrimaryRoleLabel = (roleValue) => {
+    const key = getPrimaryRoleKey(roleValue);
+    return key === "SuperAdmin" ? "Super Admin" : key;
+  };
+
+  const roles    = [...new Set(data.map((r) => getPrimaryRoleKey(r.v_role)).filter(Boolean))];
   const statuses = [...new Set(data.map((r) => r.v_status).filter(Boolean))];
 
   const hasRole = (roleValue, roleName) =>
@@ -201,7 +221,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           )}
           {syncResult && !syncing && (
             <span className="text-xs text-green-500 dark:text-green-400">
-              {syncResult.message} New users: {syncResult.synced ?? 0}
+              {syncResult.message} {syncResult.synced ?? 0}
             </span>
           )}
           <button
@@ -259,7 +279,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                           <div>
                             <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_username}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}
+                              {getPrimaryRoleLabel(row.v_role)}
                             </p>
                           </div>
                         </div>
@@ -357,7 +377,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}
+                    {getPrimaryRoleLabel(row.v_role)}
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {row.v_department || "N/A"}
