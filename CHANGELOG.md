@@ -1,3 +1,10 @@
+## [1.2.4-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.4-dev.6...v1.2.4-dev.7) (2026-03-23)
+
+
+### Bug Fixes
+
+* Delete .github/workflows/azure-static-web-apps-green-meadow-05e702e10.yml ([907d57f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/907d57fe6a65eee8647e604c2ff8e2dbc7d1abb7))
+
 ## [1.2.4-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.4-dev.5...v1.2.4-dev.6) (2026-03-23)
 
 
