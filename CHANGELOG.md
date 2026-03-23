@@ -1,4 +1,55 @@
-## [1.2.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.2...v1.2.3) (2026-03-23)
+
+## [1.2.3-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.7...v1.2.3-dev.8) (2026-03-23)
+
+
+### Reverts
+
+* Revert "added single role per column" ([13db4e6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/13db4e61434c2f27384d92ebf79c876bca86e205))
+
+## [1.2.3-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.6...v1.2.3-dev.7) (2026-03-23)
+
+
+### Bug Fixes
+
+* test "ss" to dev ([d20596c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d20596c78f6d8ada1060930b536b9f72bf6ce0e6))
+
+## [1.2.3-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.5...v1.2.3-dev.6) (2026-03-23)
+
+
+### Bug Fixes
+
+* Update azure-static-web-apps-icy-tree-0f2b00310.yml ([bc48b1f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/bc48b1f3bd9c163ea7aa4e6050c2bc8b4a565a13))
+
+## [1.2.3-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.4...v1.2.3-dev.5) (2026-03-23)
+
+
+### Bug Fixes
+
+* test dev ([e28db25](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e28db25b39536cc97036357fdd54625ba842cd68))
+
+## [1.2.3-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.3...v1.2.3-dev.4) (2026-03-23)
+
+
+### Bug Fixes
+
+* test123 ([71c9d7c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/71c9d7c53cffc180f39db59a888e7de46fc6e808))
+
+## [1.2.3-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.2...v1.2.3-dev.3) (2026-03-23)
+
+
+### Bug Fixes
+
+* test 4 ([7dff7d6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/7dff7d67720ade7fee6a7a0295bf6109105fb135))
+
+## [1.2.3-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.1...v1.2.3-dev.2) (2026-03-23)
+
+
+### Bug Fixes
+
+* aura test ([3981f21](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3981f21f30ae32f5a904248014ac90f08dbeb25d))
+
+## [1.2.3-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.2...v1.2.3-dev.1) (2026-03-23)
+
 
 
 ### Bug Fixes
