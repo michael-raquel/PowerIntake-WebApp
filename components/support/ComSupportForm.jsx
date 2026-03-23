@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import ComEmailSupportConfirmation from "./ComEmailSupportConfirmation";
 
 export default function ComSupportForm({ open, onClose }) {
 	const [message, setMessage] = useState("");
+	const [showConfirmation, setShowConfirmation] = useState(false);
 
 	useEffect(() => {
 		if (!open) return;
@@ -18,6 +20,13 @@ export default function ComSupportForm({ open, onClose }) {
 		document.addEventListener("keydown", handleKey);
 		return () => document.removeEventListener("keydown", handleKey);
 	}, [open, onClose]);
+
+	useEffect(() => {
+		if (!open) {
+			setMessage("");
+			setShowConfirmation(false);
+		}
+	}, [open]);
 
 	if (!open) return null;
 
@@ -60,7 +69,19 @@ export default function ComSupportForm({ open, onClose }) {
 				</div>
 
 				<div className="px-6 py-6">
-					<div className="text-center">
+					{showConfirmation ? (
+						<div className="flex items-center justify-center">
+							<ComEmailSupportConfirmation
+								message={"Your support request has been sent. We'll respond via email soon."}
+								onClose={() => {
+									setShowConfirmation(false);
+									onClose?.();
+								}}
+							/>
+						</div>
+					) : (
+					<>
+						<div className="text-center">
 						<h4 className="text-xl font-semibold text-gray-900 dark:text-white">
 							We&apos;d love to help you
 						</h4>
@@ -83,21 +104,28 @@ export default function ComSupportForm({ open, onClose }) {
 						/>
 					</div>
 
-					<div className="mt-6">
-						<button
-							type="button"
-							className={`w-full rounded-full px-6 py-3 text-sm font-semibold transition ${
-								isSubmitDisabled
-									? "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
-									: "bg-violet-600 text-white hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600"
-							}`}
-							disabled={isSubmitDisabled}
-						>
-							Submit
-						</button>
-					</div>
+						<div className="mt-6">
+							<button
+								type="button"
+								className={`w-full rounded-full px-6 py-3 text-sm font-semibold transition ${
+									isSubmitDisabled
+										? "bg-gray-100 text-gray-400 dark:bg-gray-800 dark:text-gray-500"
+										: "bg-violet-600 text-white hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600"
+								}`}
+								disabled={isSubmitDisabled}
+								onClick={() => {
+									setShowConfirmation(true);
+									setMessage("");
+								}}
+							>
+								Submit
+							</button>
+						</div>
+					</>
+					)}
 				</div>
 			</div>
 		</div>
 	);
 }
+
