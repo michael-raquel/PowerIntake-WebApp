@@ -29,8 +29,8 @@ const tabs = [
 ];
 
 const IN_PROGRESS_STATUSES = new Set([
-  'Assigned', 'Information Provided', 'Escalate to Onsite',
-  'Client Responded', 'Rescheduled', 'Scheduling Required',
+  'Assigned', 'Information Provided', 'Escalate To Onsite',
+  'Client Responded', 'Reschedule', 'Scheduling Required',
   'Working Issue Now', 'Waiting', 'Waiting Approval','Pending Closure',
 ]);
 
