@@ -23,7 +23,6 @@ jobs:
 
       - run: npm ci
 
-      # 👇 Configure git auth so successCmd can push the alias tag
       - name: Configure git credentials
         run: |
           git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
@@ -33,7 +32,13 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
-      # Build runs AFTER semantic-release so env vars are populated
+      # ✅ Read version AFTER semantic-release has updated package.json
+      - name: Set version env vars
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "NEXT_PUBLIC_APP_VERSION=v${VERSION}" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
+
       - name: Build
         run: npm run build
         env:
