@@ -1,3 +1,10 @@
+## [1.2.4-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.4-dev.4...v1.2.4-dev.5) (2026-03-23)
+
+
+### Bug Fixes
+
+* Update azure-static-web-apps-icy-tree-0f2b00310.yml ([c1bdebd](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c1bdebd9cc73aa57e8e21e31ec053f36a825b8f1))
+
 ## [1.2.4-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.4-dev.3...v1.2.4-dev.4) (2026-03-23)
 
 
