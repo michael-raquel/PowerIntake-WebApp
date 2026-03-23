@@ -1,3 +1,15 @@
+# [1.2.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.1.2-dev.6...v1.2.0-dev.1) (2026-03-23)
+
+
+### Bug Fixes
+
+* update to fix dev tagging ([2f09737](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2f097371cfbb2da44478a94c28a470f3e47fa718))
+
+
+### Features
+
+* update of dev location on tag format from v1.2-dev.3 to dev-v1.2.3 ([1452319](https://github.com/michael-raquel/PowerIntake-WebApp/commit/145231989c2012352e99c4e8e10136c0022c2bf2))
+
 ## [1.1.2-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.1.2-dev.5...v1.1.2-dev.6) (2026-03-23)
 
 
