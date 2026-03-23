@@ -1,3 +1,10 @@
+## [1.2.3-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.7...v1.2.3-dev.8) (2026-03-23)
+
+
+### Reverts
+
+* Revert "added single role per column" ([13db4e6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/13db4e61434c2f27384d92ebf79c876bca86e205))
+
 ## [1.2.3-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.3-dev.6...v1.2.3-dev.7) (2026-03-23)
 
 
