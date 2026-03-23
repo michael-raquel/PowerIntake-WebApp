@@ -53,7 +53,6 @@ export function useCreateTicket({ account, onSuccess } = {}) {
       if (!res.ok) throw new Error(data.error || "Failed to submit ticket");
 
       onSuccess?.(data.ticketuuid);
-      console.log("Ticket created with UUID:", data);
       return data.ticketuuid;
     } catch (err) {
       setError(err.message);

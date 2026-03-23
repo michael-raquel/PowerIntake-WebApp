@@ -10,14 +10,26 @@ const getPriorityColor = (priority) => {
   }
 };
 
+const STATUS_COLORS = {
+  'New': 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900',
+  'Assigned': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Information Provided': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Escalate to Onsite': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Client Responded': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Rescheduled': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Scheduling Required': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Working Issue Now': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Waiting': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Waiting for Approval': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Work Completed': 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-900',
+  'Problem Solved': 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/30 dark:text-purple-400 dark:border-purple-900',
+  'Cancelled': 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900',
+  'Technician Rejected': 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900',
+  'Merged': 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-900',
+};
+
 const getStatusColor = (status) => {
-  switch (status) {
-    case 'Submitted':   return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-    case 'In Progress': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
-    case 'Pending':     return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
-    case 'Closed':      return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
-    default:            return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
-  }
+  return STATUS_COLORS[status] || 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400';
 };
 
 const formatDate = (val) => {
@@ -40,7 +52,7 @@ export default function ComCard({ ticket = {}, onClick }) {
   const category   = ticket?.v_ticketcategory  || '—';
   const source     = ticket?.v_source          || '—';
   const technician = ticket?.v_technicianname  || '—';
-  const department = ticket?.v_department || '—';
+  const department = ticket?.v_department      || '—';
   const createdAt  = ticket?.v_createdat       || null;
   const target     = ticket?.v_target          || null;
 
@@ -80,24 +92,24 @@ export default function ComCard({ ticket = {}, onClick }) {
       </div>
 
       <div className="px-3 sm:px-4 pb-3 grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-2 sm:gap-y-2.5">
-       {[
-  { label: 'Client',     value: client },
-  { label: 'Department', value: department },
-  { label: 'Category',   value: category },
-  { label: 'Requester',  value: username },
-  { label: 'Technician', value: technician },
-  { label: 'Source',     value: source },
-  { label: 'Target',     value: formatDate(target) },
-].map(({ label, value }) => (
-  <div key={label} className="min-w-0">
-    <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
-      {label}
-    </p>
-    <p className="text-[11px] sm:text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
-      {value}
-    </p>
-  </div>
-))}
+        {[
+          { label: 'Client',     value: client },
+          { label: 'Department', value: department },
+          { label: 'Category',   value: category },
+          { label: 'Requester',  value: username },
+          { label: 'Technician', value: technician },
+          { label: 'Source',     value: source },
+          { label: 'Target',     value: formatDate(target) },
+        ].map(({ label, value }) => (
+          <div key={label} className="min-w-0">
+            <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+              {label}
+            </p>
+            <p className="text-[11px] sm:text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+              {value}
+            </p>
+          </div>
+        ))}
       </div>
 
       <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800/40 border-t border-gray-100 dark:border-gray-800 gap-2">
