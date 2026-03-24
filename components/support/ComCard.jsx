@@ -3,13 +3,13 @@
 export const supportCards = [
   {
     title: "Email Support",
-    description: "For general inquiries and support.",
+    description: "For general inquiries and support. (This feature will be available in version 2.0)",
     cta: "Contact App Support",
     iconBg: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-300",
   },
   {
     title: "Give Feedback",
-    description: "Share your thoughts and help us improve the app experience.",
+    description: "Share your thoughts and help us improve the app experience. (This feature will be available in version 2.0)",
     cta: "Give App Feedback",
     iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300",
   },
