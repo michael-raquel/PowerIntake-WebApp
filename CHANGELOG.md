@@ -1,3 +1,10 @@
+# [1.3.0-dev.16](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.15...v1.3.0-dev.16) (2026-03-24)
+
+
+### Bug Fixes
+
+* home page, transfer technician rejected into in progress ([6e8e01b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6e8e01b9311a955767164f913d8e0bff0f0026e1))
+
 # [1.3.0-dev.15](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.14...v1.3.0-dev.15) (2026-03-24)
 
 
