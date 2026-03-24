@@ -1,35 +1,105 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Clock, Loader2, XCircle } from 'lucide-react';
+import { CheckCircle2, Clock, Loader2, XCircle, User, UserCog } from 'lucide-react';
 
 const STATUS_STYLES = {
   'New': {
     icon: CheckCircle2,
-    color: 'text-green-600 dark:text-green-400',
-    bg: 'bg-green-50 dark:bg-green-950/30',
-    border: 'border-green-200 dark:border-green-800',
+    color: 'text-emerald-600 dark:text-emerald-400',
+    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
+    border: 'border-emerald-200 dark:border-emerald-800/50',
   },
-  'Assigned':             { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  'Information Provided': { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  'Escalate to Onsite':   { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  'Client Responded':     { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  'Rescheduled':          { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  'Scheduling Required':  { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  'Working Issue Now':    { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  'Waiting':              { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  'Waiting for Approval': { icon: Loader2, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/30', border: 'border-blue-200 dark:border-blue-800' },
-  'Work Completed': { icon: CheckCircle2, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-800' },
-  'Problem Solved': { icon: CheckCircle2, color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-950/30', border: 'border-purple-200 dark:border-purple-800' },
-  'Cancelled':           { icon: XCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-800' },
-  'Technician Rejected': { icon: XCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-800' },
-  'Merged':              { icon: XCircle, color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-950/30', border: 'border-rose-200 dark:border-rose-800' },
+  'Assigned': { 
+    icon: Loader2, 
+    color: 'text-blue-600 dark:text-blue-400', 
+    bg: 'bg-blue-50 dark:bg-blue-950/30', 
+    border: 'border-blue-200 dark:border-blue-800/50',
+  },
+  'Information Provided': { 
+    icon: Loader2, 
+    color: 'text-blue-600 dark:text-blue-400', 
+    bg: 'bg-blue-50 dark:bg-blue-950/30', 
+    border: 'border-blue-200 dark:border-blue-800/50',
+  },
+  'Escalate to Onsite': { 
+    icon: Loader2, 
+    color: 'text-blue-600 dark:text-blue-400', 
+    bg: 'bg-blue-50 dark:bg-blue-950/30', 
+    border: 'border-blue-200 dark:border-blue-800/50',
+  },
+  'Client Responded': { 
+    icon: Loader2, 
+    color: 'text-blue-600 dark:text-blue-400', 
+    bg: 'bg-blue-50 dark:bg-blue-950/30', 
+    border: 'border-blue-200 dark:border-blue-800/50',
+  },
+  'Rescheduled': { 
+    icon: Loader2, 
+    color: 'text-blue-600 dark:text-blue-400', 
+    bg: 'bg-blue-50 dark:bg-blue-950/30', 
+    border: 'border-blue-200 dark:border-blue-800/50',
+  },
+  'Scheduling Required': { 
+    icon: Loader2, 
+    color: 'text-blue-600 dark:text-blue-400', 
+    bg: 'bg-blue-50 dark:bg-blue-950/30', 
+    border: 'border-blue-200 dark:border-blue-800/50',
+  },
+  'Working Issue Now': { 
+    icon: Loader2, 
+    color: 'text-blue-600 dark:text-blue-400', 
+    bg: 'bg-blue-50 dark:bg-blue-950/30', 
+    border: 'border-blue-200 dark:border-blue-800/50',
+  },
+  'Waiting': { 
+    icon: Loader2, 
+    color: 'text-blue-600 dark:text-blue-400', 
+    bg: 'bg-blue-50 dark:bg-blue-950/30', 
+    border: 'border-blue-200 dark:border-blue-800/50',
+  },
+  'Waiting for Approval': { 
+    icon: Loader2, 
+    color: 'text-blue-600 dark:text-blue-400', 
+    bg: 'bg-blue-50 dark:bg-blue-950/30', 
+    border: 'border-blue-200 dark:border-blue-800/50',
+  },
+  'Work Completed': { 
+    icon: CheckCircle2, 
+    color: 'text-purple-600 dark:text-purple-400', 
+    bg: 'bg-purple-50 dark:bg-purple-950/30', 
+    border: 'border-purple-200 dark:border-purple-800/50',
+  },
+  'Problem Solved': { 
+    icon: CheckCircle2, 
+    color: 'text-purple-600 dark:text-purple-400', 
+    bg: 'bg-purple-50 dark:bg-purple-950/30', 
+    border: 'border-purple-200 dark:border-purple-800/50',
+  },
+  'Cancelled': { 
+    icon: XCircle, 
+    color: 'text-rose-600 dark:text-rose-400', 
+    bg: 'bg-rose-50 dark:bg-rose-950/30', 
+    border: 'border-rose-200 dark:border-rose-800/50',
+  },
+  'Technician Rejected': { 
+    icon: XCircle, 
+    color: 'text-rose-600 dark:text-rose-400', 
+    bg: 'bg-rose-50 dark:bg-rose-950/30', 
+    border: 'border-rose-200 dark:border-rose-800/50',
+  },
+  'Merged': { 
+    icon: XCircle, 
+    color: 'text-rose-600 dark:text-rose-400', 
+    bg: 'bg-rose-50 dark:bg-rose-950/30', 
+    border: 'border-rose-200 dark:border-rose-800/50',
+  },
 };
 
 const defaultStyle = {
   icon: Clock,
-  color: 'text-gray-600 dark:text-gray-400',
-  bg: 'bg-gray-50 dark:bg-gray-800/50',
-  border: 'border-gray-200 dark:border-gray-700',
+  color: 'text-gray-500 dark:text-gray-400',
+  bg: 'bg-gray-50 dark:bg-gray-800/30',
+  border: 'border-gray-200 dark:border-gray-700/50',
 };
 
 export default function ComTimelineView({ ticket }) {
@@ -37,67 +107,87 @@ export default function ComTimelineView({ ticket }) {
 
   if (!statuses.length) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-        <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full mb-3">
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
           <Clock className="w-6 h-6 text-gray-400 dark:text-gray-500" />
         </div>
-        <p className="text-sm font-medium text-gray-700 dark:text-gray-300">No timeline entries</p>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Status updates will appear here</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">No timeline entries</p>
       </div>
     );
   }
 
-  console.log('Ticket statuses:', statuses);
   return (
-    <div className="relative">
-      <div className="absolute left-[19px] top-3 bottom-3 w-0.5 bg-gradient-to-b from-purple-300 via-purple-400 to-purple-300 dark:from-purple-600 dark:via-purple-700 dark:to-purple-600 rounded-full opacity-50" />
+    <div className="relative pl-2">
+      {statuses.map((s, idx) => {
+        const style = STATUS_STYLES[s.v_status] || defaultStyle;
+        const Icon = style.icon;
+        const isLast = idx === statuses.length - 1;
+        const isNew = s.v_status === 'New';
+        
+        let person = null;
+        if (isNew) {
+          person = ticket?.v_username;
+        } else {
+          person = s.v_technicianname || ticket?.v_technicianname;
+        }
 
-      <div className="space-y-3">
-        {statuses.map((s, index) => {
-          const style = STATUS_STYLES[s.v_status] || defaultStyle;
-          const Icon = style.icon;
-          const isLast = index === statuses.length - 1;
+        return (
+          <div key={s.v_ticketstatusid} className="relative flex gap-4 pb-8 last:pb-0">
+            {!isLast && (
+              <div className="absolute left-5 top-10 bottom-0 w-px bg-gradient-to-b from-gray-200 via-gray-300 to-transparent dark:from-gray-700 dark:via-gray-600 dark:to-transparent" />
+            )}
 
-          return (
-            <div key={s.v_ticketstatusid} className="relative flex items-start gap-3 group">
-              <div className="relative shrink-0">
-                <div className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 group-hover:scale-110 border-2',
-                  style.bg, style.border
-                )}>
-                  <Icon className={cn('w-4 h-4', style.color,
-                    style.icon === Loader2 && 'animate-[spin_3s_linear_infinite]'
-                  )} />
-                </div>
-                {!isLast && (
-                  <div className="absolute top-10 left-4 w-0.5 h-6 bg-gradient-to-b from-gray-200 to-transparent dark:from-gray-700 dark:to-transparent" />
-                )}
-              </div>
-
+            <div className="relative z-10">
               <div className={cn(
-                'flex-1 min-w-0 rounded-xl p-3 transition-all duration-200 group-hover:shadow-md border',
-                style.bg, style.border
+                'w-10 h-10 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 group-hover:scale-105 border-2',
+                style.bg,
+                style.border
               )}>
-                <div className="flex items-center justify-between gap-2">
-                  <p className={cn('text-sm font-semibold', style.color)}>{s.v_status}</p>
-                  <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 bg-white/50 dark:bg-gray-900/50 px-2 py-1 rounded-full">
-                    {format(new Date(s.v_createdat), 'MMM d')}
-                  </span>
+                <Icon className={cn(
+                  'w-4 h-4', 
+                  style.color,
+                  style.icon === Loader2 && 'animate-spin'
+                )} />
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className={cn('text-sm font-semibold', style.color)}>
+                      {s.v_status}
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                      {format(new Date(s.v_createdat), 'MMM d, yyyy')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                    <Clock className="w-3 h-3" />
+                    <span>{format(new Date(s.v_createdat), 'hh:mm a')}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <Clock className="w-3 h-3 text-gray-400 dark:text-gray-500" />
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{format(new Date(s.v_createdat), 'hh:mm a')}</p>
-                </div>
-                {s.v_note && (
-                  <p className="text-xs text-gray-600 dark:text-gray-300 mt-2 pl-2 border-l-2 border-gray-200 dark:border-gray-700">
-                    {s.v_note}
-                  </p>
+
+                {person && (
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                    {isNew ? (
+                      <User className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                    ) : (
+                      <UserCog className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                    )}
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      {isNew ? 'Created by' : 'Assigned to'}:
+                    </span>
+                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                      {person}
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })}
     </div>
   );
 }

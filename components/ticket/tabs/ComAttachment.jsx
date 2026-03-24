@@ -1,8 +1,9 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import Image from 'next/image';
-import { Paperclip, X, Eye, Download, ImageIcon } from 'lucide-react';
+import { Paperclip, X, Eye, Download, ImageIcon, Upload, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import { toast } from "sonner";
 import useUploadImage from '@/hooks/UseUploadImage';
 import useDeleteImage from '@/hooks/UseDeleteImage';
 import useDownloadImage from '@/hooks/UseDownloadImage';
@@ -12,6 +13,7 @@ import useUpdateAttachments from '@/hooks/UseUpdateAttachment';
 
 export default function ComAttachment({
   ticketuuid,
+  ticket,
   attachments = [],
   onChange,
   canEdit = false,
@@ -19,6 +21,7 @@ export default function ComAttachment({
   modifiedby
 }) {
   const fileInputRef = useRef(null);
+  const [dragActive, setDragActive] = useState(false);
   const [downloadingId, setDownloadingId] = useState(null);
   const { uploadImage } = useUploadImage();
   const { deleteImage } = useDeleteImage();
@@ -26,6 +29,18 @@ export default function ComAttachment({
   const { getAttachments, attachments: fetchedAttachments, loading: fetchLoading } = useGetAttachments();
   const { createAttachments, loading: createLoading } = useCreateAttachments();
   const { updateAttachments, loading: updateLoading } = useUpdateAttachments();
+
+  const readOnlyStatuses = [
+    'Work Completed',
+    'Problem Solved',
+    'Cancelled',
+    'Merged',
+    'Technician Rejected'
+  ];
+  
+  const isReadOnly = readOnlyStatuses.includes(ticket?.v_status);
+  const canModify = canEdit && !isReadOnly;
+  const isLoading = createLoading || updateLoading || fetchLoading;
 
   const fetchAttachments = useCallback(async () => {
     if (!ticketuuid) return;
@@ -42,165 +57,196 @@ export default function ComAttachment({
 
   useEffect(() => {
     if (!fetchedAttachments) return;
-    if (fetchedAttachments.length > 0) {
-      const formatted = fetchedAttachments.map(a => ({
-        name: decodeURIComponent(a.v_attachment?.split('/').pop()?.split('?')[0] || 'Unknown'),
-        blobName: a.v_attachment?.split('/').pop()?.split('?')[0] || '',
-        url: a.v_attachment,
-        createdAt: a.v_createdat,
-        attachmentuuid: a.v_attachmentuuid
-      }));
-      onChange(formatted);
-    } else {
-      onChange([]);
-    }
+    const formatted = fetchedAttachments.map(a => ({
+      name: decodeURIComponent(a.v_attachment?.split('/').pop()?.split('?')[0] || 'Unknown'),
+      blobName: a.v_attachment?.split('/').pop()?.split('?')[0] || '',
+      url: a.v_attachment,
+      createdAt: a.v_createdat,
+      attachmentuuid: a.v_attachmentuuid
+    }));
+    onChange(formatted.length ? formatted : []);
   }, [fetchedAttachments, onChange]);
 
-  const handleUpload = async (event) => {
-    const files = Array.from(event.target.files || []);
-    event.target.value = '';
-    if (!files.length || !ticketuuid) return;
+  const processUpload = async (files) => {
+    const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+    
+    if (imageFiles.length !== files.length) {
+      toast.error('Invalid file type', { description: 'Only images are allowed.' });
+      return;
+    }
+    if (!imageFiles.length) return;
 
     try {
-      const uploads = await Promise.all(
-        files.map(async (file) => {
-          const result = await uploadImage(file);
-          return {
-            name: result.blobName,
-            blobName: result.blobName,
-            url: result.url,
-            createdAt: result.createdAt,
-          };
-        })
-      );
-
+      const uploads = await Promise.all(imageFiles.map(uploadImage));
       const urls = uploads.map(u => u.url);
 
       if (attachments.length === 0) {
-        await createAttachments({
-          ticketuuid,
-          attachments: urls,
-          createdby: createdby || modifiedby
-        });
+        await createAttachments({ ticketuuid, attachments: urls, createdby: createdby || modifiedby });
       } else {
-        const existing = attachments.map(a => a.url);
-        await updateAttachments({
-          ticketuuid,
-          attachments: [...existing, ...urls],
-          modifiedby: modifiedby || createdby
+        await updateAttachments({ 
+          ticketuuid, 
+          attachments: [...attachments.map(a => a.url), ...urls],
+          modifiedby: modifiedby || createdby 
         });
       }
 
       await fetchAttachments();
+      toast.success('Uploaded', { description: `${imageFiles.length} file(s) uploaded` });
     } catch (err) {
-      console.error('Upload failed:', err);
+      toast.error('Upload failed', { description: 'Please try again.' });
     }
   };
 
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length && canModify) await processUpload(files);
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(e.type === 'dragenter' || e.type === 'dragover');
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (!canModify) {
+      toast.error('Read-only', { description: `Cannot modify when ticket is ${ticket?.v_status}` });
+      return;
+    }
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length) await processUpload(files);
+  };
+
   const handleRemove = async (attachment, index) => {
-    if (!ticketuuid) return;
+    if (!canModify) return;
 
     try {
       const blobName = attachment.url.split('/').pop()?.split('?')[0];
       if (blobName) await deleteImage(blobName);
 
       const remaining = attachments.filter((_, i) => i !== index).map(a => a.url);
-      await updateAttachments({
-        ticketuuid,
-        attachments: remaining,
-        modifiedby: modifiedby || createdby
-      });
-
+      await updateAttachments({ ticketuuid, attachments: remaining, modifiedby: modifiedby || createdby });
       await fetchAttachments();
+      toast.success('Removed', { description: attachment.name });
     } catch (err) {
-      console.error('Delete failed:', err);
+      toast.error('Failed to remove', { description: 'Please try again.' });
     }
   };
-
-  const handleView = (url) => window.open(url, '_blank');
 
   const handleDownload = async (attachment, index) => {
     try {
       setDownloadingId(index);
       const blobName = attachment.url.split('/').pop()?.split('?')[0];
-      if (!blobName) throw new Error('Invalid blob name');
-      await downloadImage(blobName, attachment.name);
-    } catch (err) {
-      console.error('Download failed:', err);
+      if (blobName) await downloadImage(blobName, attachment.name);
+    } catch {
       window.open(attachment.url, '_blank');
     } finally {
       setDownloadingId(null);
     }
   };
 
-  const isLoading = createLoading || updateLoading || fetchLoading;
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
-            <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-          </div>
-          <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Attachments</p>
-            {isLoading && (
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 flex items-center gap-1.5">
-                <span className="w-1 h-1 bg-gray-400 dark:bg-gray-500 rounded-full animate-pulse" />
-                Loading...
-              </p>
-            )}
-          </div>
+      {/* Header */}
+      <div className="flex items-center gap-2">
+        <div className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
+          <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
         </div>
-        {canEdit && (
-          <>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isLoading}
-              className="w-full sm:w-auto h-9 px-4 text-xs border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-            >
-              <Download className="w-3.5 h-3.5 mr-1.5" />
-              Upload files
-            </Button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept="image/*"
-              className="hidden"
-              onChange={handleUpload}
-              disabled={isLoading}
-            />
-          </>
-        )}
+        <div>
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Attachments</p>
+          {isReadOnly && (
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <Lock className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Read-only mode - ticket is {ticket.v_status}
+              </p>
+            </div>
+          )}
+          {isLoading && <p className="text-xs text-gray-500 dark:text-gray-400">Loading...</p>}
+        </div>
       </div>
 
-      {!attachments.length && (
-        <div className="flex flex-col items-center justify-center py-16 px-4 text-center bg-gray-50 dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800">
-          <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-xl mb-3">
-            <ImageIcon className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+      {/* Upload Zone - Only show if not read-only */}
+      {canModify && (
+        <label
+          className={`
+            flex flex-col items-center justify-center cursor-pointer
+            border-2 border-dashed rounded-xl p-8 transition-all duration-200
+            ${dragActive 
+              ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30' 
+              : 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600'
+            }
+          `}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+            disabled={isLoading}
+          />
+          <Upload className={`w-10 h-10 mb-3 transition-colors ${dragActive ? 'text-purple-500' : 'text-gray-400 dark:text-gray-500'}`} />
+          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            Drop images here or click to upload
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            JPG, PNG, GIF, WebP supported
+          </p>
+        </label>
+      )}
+
+      {/* Read-only Banner */}
+      {isReadOnly && (
+        <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <Lock className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              This ticket is <span className="font-medium text-gray-700 dark:text-gray-300">{ticket?.v_status}</span>. 
+              Attachments are in read-only mode. You can view and download existing files, but cannot upload or remove them.
+            </p>
           </div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">No attachments</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Upload files to attach them to this ticket</p>
         </div>
       )}
 
+      {/* Empty State */}
+      {!attachments.length && (
+        <div className="flex flex-col items-center py-12 bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-800">
+          <ImageIcon className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-3" />
+          <p className="text-sm text-gray-500 dark:text-gray-400">No attachments yet</p>
+          {canModify && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Upload images by clicking or dragging</p>
+          )}
+          {isReadOnly && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Attachments are read-only for {ticket?.v_status} tickets</p>
+          )}
+        </div>
+      )}
+
+      {/* Attachment Grid */}
       {attachments.length > 0 && (
         <div className="grid grid-cols-1 gap-4">
-          {attachments.map((a, index) => (
+          {attachments.map((a, idx) => (
             <div
-              key={a.attachmentuuid || `${a.name}-${index}`}
-              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden"
+              key={a.attachmentuuid || idx}
+              className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden hover:border-gray-300 dark:hover:border-gray-700 transition-colors"
             >
               <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                 <div className="flex items-start gap-2">
                   <div className="w-1 h-1 mt-2 bg-gray-300 dark:bg-gray-600 rounded-full" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate" title={a.name}>
-                      {a.name}
-                    </p>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{a.name}</p>
                     {a.createdAt && (
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         {format(new Date(a.createdAt), 'MMM d, yyyy')}
@@ -210,9 +256,9 @@ export default function ComAttachment({
                 </div>
               </div>
 
-              <div className="p-4 bg-gray-50 dark:bg-gray-800/30">
-                <div className="relative w-full aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden">
-                  {a.url ? (
+              <div className="p-4 bg-gray-50 dark:bg-gray-800/20">
+                <div className="relative w-full aspect-video bg-gray-100 dark:bg-gray-800/50 rounded-lg overflow-hidden">
+                  {a.url && a.url.trim() !== '' ? (
                     <Image
                       src={a.url}
                       alt={a.name}
@@ -221,54 +267,48 @@ export default function ComAttachment({
                       className="object-contain"
                       onError={(e) => {
                         e.currentTarget.onerror = null;
-                        e.currentTarget.src =
-                          'https://via.placeholder.com/400x200?text=Preview+not+available';
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.parentElement?.querySelector('.fallback-icon')?.classList.remove('hidden');
                       }}
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="w-8 h-8 text-gray-300 dark:text-gray-600" />
-                    </div>
-                  )}
+                  ) : null}
+                  <div className={`fallback-icon ${a.url && a.url.trim() !== '' ? 'hidden' : ''} w-full h-full flex items-center justify-center`}>
+                    <ImageIcon className="w-8 h-8 text-gray-300 dark:text-gray-600" />
+                  </div>
                 </div>
               </div>
 
-              <div className="px-4 py-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20">
-                <div className="flex items-center justify-end gap-1 sm:gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleView(a.url)}
-                    className="h-8 px-2 sm:px-3 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+              <div className="px-4 py-3 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-800">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => window.open(a.url, '_blank')}
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <Eye className="w-3.5 h-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">View</span>
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleDownload(a, idx)} 
+                  disabled={downloadingId === idx}
+                  className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <Download className="w-3.5 h-3.5 sm:mr-1.5" />
+                  <span className="hidden sm:inline">{downloadingId === idx ? '...' : 'Download'}</span>
+                </Button>
+                {canModify && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleRemove(a, idx)} 
+                    className="text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
                   >
-                    <Eye className="w-3.5 h-3.5 sm:mr-1.5" />
-                    <span className="hidden sm:inline">View</span>
+                    <X className="w-3.5 h-3.5 sm:mr-1.5" />
+                    <span className="hidden sm:inline">Remove</span>
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDownload(a, index)}
-                    disabled={downloadingId === index}
-                    className="h-8 px-2 sm:px-3 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-                  >
-                    <Download className="w-3.5 h-3.5 sm:mr-1.5" />
-                    <span className="hidden sm:inline">
-                      {downloadingId === index ? 'Downloading...' : 'Download'}
-                    </span>
-                  </Button>
-                  {canEdit && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleRemove(a, index)}
-                      disabled={isLoading}
-                      className="h-8 px-2 sm:px-3 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30"
-                    >
-                      <X className="w-3.5 h-3.5 sm:mr-1.5" />
-                      <span className="hidden sm:inline">Remove</span>
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           ))}
