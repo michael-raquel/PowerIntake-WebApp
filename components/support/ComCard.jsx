@@ -4,7 +4,7 @@ export const supportCards = [
   {
     title: "Email Support",
     description: "For general inquiries and support. (This feature will be available in version 2.0)",
-    cta: "Contact App Support",
+    cta: "Email App Support",
     iconBg: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-300",
   },
   {
