@@ -1,3 +1,10 @@
+# [1.3.0-dev.13](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.12...v1.3.0-dev.13) (2026-03-24)
+
+
+### Bug Fixes
+
+* Attachment UI ([6665f62](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6665f6200f067b66d10596f98d8468b372ee9027))
+
 # [1.3.0-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.11...v1.3.0-dev.12) (2026-03-24)
 
 
