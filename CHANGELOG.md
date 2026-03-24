@@ -1,3 +1,10 @@
+## [1.3.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0...v1.3.1) (2026-03-24)
+
+
+### Bug Fixes
+
+* jiangnan main ([a779e46](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a779e4660d5bb103744e7e20484a9e701688cc50))
+
 # [1.3.0](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.2.5...v1.3.0) (2026-03-24)
 
 
