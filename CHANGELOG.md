@@ -1,3 +1,10 @@
+# [1.3.0-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.11...v1.3.0-dev.12) (2026-03-24)
+
+
+### Bug Fixes
+
+* ticketpage update form ([dc74976](https://github.com/michael-raquel/PowerIntake-WebApp/commit/dc74976f8c10cbc427c671313dced59fa62560f1))
+
 # [1.3.0-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.10...v1.3.0-dev.11) (2026-03-24)
 
 
