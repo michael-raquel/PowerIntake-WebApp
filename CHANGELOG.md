@@ -1,3 +1,10 @@
+# [1.3.0-dev.14](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.13...v1.3.0-dev.14) (2026-03-24)
+
+
+### Bug Fixes
+
+* update the open panel in mobile mode view ([e149bb2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e149bb25c84e6e54563df28e97b4756b58d08199))
+
 # [1.3.0-dev.13](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.12...v1.3.0-dev.13) (2026-03-24)
 
 
