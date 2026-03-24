@@ -1,3 +1,10 @@
+# [1.3.0-dev.15](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.14...v1.3.0-dev.15) (2026-03-24)
+
+
+### Bug Fixes
+
+* fix the dynamic table ([eacfae9](https://github.com/michael-raquel/PowerIntake-WebApp/commit/eacfae997435d3a979bdcc9e84561902f846ce6a))
+
 # [1.3.0-dev.14](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.13...v1.3.0-dev.14) (2026-03-24)
 
 
