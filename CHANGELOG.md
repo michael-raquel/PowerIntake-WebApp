@@ -1,3 +1,10 @@
+# [1.3.0-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.8...v1.3.0-dev.9) (2026-03-24)
+
+
+### Bug Fixes
+
+* changed the contact app support to email app support ([50f4940](https://github.com/michael-raquel/PowerIntake-WebApp/commit/50f49400dcb7c78d1dade531b58b367795efb42f))
+
 # [1.3.0-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.7...v1.3.0-dev.8) (2026-03-23)
 
 
