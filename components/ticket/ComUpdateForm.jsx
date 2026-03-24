@@ -438,7 +438,9 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
         <div className={cn(
           'absolute top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl transition-all duration-300 overflow-hidden z-30',
-          panelOpen ? 'w-[84vw] sm:w-80 lg:w-1/2' : 'w-0'
+          panelOpen
+            ? 'w-[83vw] sm:w-80 md:w-96 lg:w-1/2'
+            : 'w-0'
         )}>
           {panelOpen && (
             <div className="w-full h-full flex flex-col">
