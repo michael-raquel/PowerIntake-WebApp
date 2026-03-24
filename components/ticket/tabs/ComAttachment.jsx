@@ -153,7 +153,6 @@ export default function ComAttachment({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-2">
         <div className="p-1.5 bg-gray-100 dark:bg-gray-800 rounded-lg">
           <Paperclip className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -172,7 +171,6 @@ export default function ComAttachment({
         </div>
       </div>
 
-      {/* Upload Zone - Only show if not read-only */}
       {canModify && (
         <label
           className={`
@@ -207,7 +205,6 @@ export default function ComAttachment({
         </label>
       )}
 
-      {/* Read-only Banner */}
       {isReadOnly && (
         <div className="bg-gray-50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
           <div className="flex items-center gap-2">
@@ -220,7 +217,6 @@ export default function ComAttachment({
         </div>
       )}
 
-      {/* Empty State */}
       {!attachments.length && (
         <div className="flex flex-col items-center py-12 bg-gray-50 dark:bg-gray-900/30 rounded-xl border border-gray-200 dark:border-gray-800">
           <ImageIcon className="w-8 h-8 text-gray-400 dark:text-gray-500 mb-3" />
@@ -234,7 +230,6 @@ export default function ComAttachment({
         </div>
       )}
 
-      {/* Attachment Grid */}
       {attachments.length > 0 && (
         <div className="grid grid-cols-1 gap-4">
           {attachments.map((a, idx) => (
