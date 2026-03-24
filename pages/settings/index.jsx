@@ -109,8 +109,8 @@ export default function SettingsPage() {
   const showLoading = loading || !settingsLoaded;
 
   return (
-    <div className="min-h-screen flex flex-col p-4 md:p-6 pb-0 md:pb-0">
-      <div className="flex-1 flex flex-col gap-4">
+    <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
+      <div className="flex flex-col gap-4 flex-1">
 
         <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
           <div className="flex items-center justify-between">
@@ -180,7 +180,7 @@ export default function SettingsPage() {
       {[
         { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
         { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
-        { href: 'https://www.spartaserv.com', label: 'spartaserv.com' },
+        { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
         { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
       ].map((link, i, arr) => (
         <span key={link.label} className="flex items-center">

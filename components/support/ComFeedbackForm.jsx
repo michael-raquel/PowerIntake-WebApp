@@ -8,6 +8,16 @@ export default function ComFeedbackForm({ open, onClose }) {
 	const [message, setMessage] = useState("");
 	const [selectedMood, setSelectedMood] = useState(null);
 	const [showConfirmation, setShowConfirmation] = useState(false);
+	const [prevOpen, setPrevOpen] = useState(open);
+
+	if (open !== prevOpen) {
+		setPrevOpen(open);
+		if (!open) {
+			setMessage("");
+			setSelectedMood(null);
+			setShowConfirmation(false);
+		}
+	}
 
 	const moods = useMemo(
 		() => [
@@ -70,14 +80,6 @@ export default function ComFeedbackForm({ open, onClose }) {
 		document.addEventListener("keydown", handleKey);
 		return () => document.removeEventListener("keydown", handleKey);
 	}, [open, onClose]);
-
-	useEffect(() => {
-		if (!open) {
-			setMessage("");
-			setSelectedMood(null);
-			setShowConfirmation(false);
-		}
-	}, [open]);
 
 	if (!open) return null;
 

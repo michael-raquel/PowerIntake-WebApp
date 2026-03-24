@@ -146,7 +146,7 @@ export default function ComUserInformation({ ticket }) {
             🌐
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Timezone</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Company HQ Timezone</p>
             <p className="text-sm font-semibold text-gray-900 dark:text-white mt-1 break-words">
               {ticket?.v_usertimezone || '—'}
             </p>

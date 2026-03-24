@@ -91,7 +91,7 @@ export default function Manage() {
             {[
               { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
               { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
-              { href: 'https://www.spartaserv.com', label: 'spartaserv.com' },
+              { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
               { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
             ].map((link, i, arr) => (
               <span key={link.label} className="flex items-center">

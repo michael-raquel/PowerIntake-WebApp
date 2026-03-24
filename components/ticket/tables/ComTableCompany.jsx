@@ -107,24 +107,41 @@ export default function ComTableCompany({
   return (
     <>
       {/* Mobile View */}
-      <div className="sm:hidden space-y-3 p-3">
-        {paginated.map(ticket => (
-          <ComCard
-            key={ticket.v_ticketuuid}
-            ticket={ticket}
-            fields={cardFields}
-            onClick={() => setSelectedTicket(ticket)}
-            priorityClass={getPriorityClass(ticket.v_priority)}
-          />
-        ))}
-        {!paginated.length && (
-          <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
-        )}
+      <div className="sm:hidden">
+        <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200 dark:border-gray-800">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {filteredTickets.length} Total Records
+          </span>
+          <button
+            onClick={handleSync}
+            disabled={loading || syncing}
+            className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+        <div className="space-y-3 p-3">
+          {paginated.map(ticket => (
+            <ComCard
+              key={ticket.v_ticketuuid}
+              ticket={ticket}
+              fields={cardFields}
+              onClick={() => setSelectedTicket(ticket)}
+              priorityClass={getPriorityClass(ticket.v_priority)}
+            />
+          ))}
+          {!paginated.length && (
+            <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
+          )}
+        </div>
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden sm:block overflow-x-auto">
-        <div className="flex justify-end mb-2 border-b py-2">
+       <div className="hidden sm:block overflow-x-auto">
+        <div className="flex justify-between items-center mb-2 border-b py-2">
+           <span className="text-xs text-gray-500 dark:text-gray-400">
+           {filteredTickets.length} Total Records
+          </span>
             <button
               onClick={handleSync}
               disabled={loading || syncing}
@@ -144,7 +161,7 @@ export default function ComTableCompany({
                   {header}
                 </th>
               ))}
-            </tr>
+             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {paginated.map(t => (
@@ -155,43 +172,43 @@ export default function ComTableCompany({
               >
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
                   {t.v_source}
-                </td>
+                 </td>
                 <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
                   {t.v_ticketnumber}
-                </td>
+                 </td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                   {t.v_department}
-                </td>
+                 </td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                   {t.v_username}
-                </td>
+                 </td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
                   {t.v_title}
-                </td>
+                 </td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
                   {t.v_ticketcategory}
-                </td>
+                 </td>
                 <td className="px-4 py-3 whitespace-nowrap">
                   <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
                     {t.v_priority}
                   </span>
-                </td>
+                 </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
-                  </td>
+                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
-                  </td>
+                   </td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                   {t.v_status}
-                </td>
+                 </td>
                 <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                   {t.v_technicianname}
-                </td>
-              </tr>
+                 </td>
+               </tr>
             ))}
           </tbody>
-        </table>
+         </table>
       </div>
 
       {selectedTicket && (

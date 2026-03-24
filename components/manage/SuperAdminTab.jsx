@@ -43,7 +43,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
     if (!mobileContainerRef.current) return;
     const height = mobileContainerRef.current.clientHeight;
     if (!height) return;
-    const calculated = Math.max(MIN_RECORDS, Math.floor(height / MOBILE_CARD_HEIGHT));
+    const calculated = Math.max(DEFAULT_ROWS, Math.floor(height / MOBILE_CARD_HEIGHT));
     setMobileLimit((prev) => (prev !== calculated ? calculated : prev));
   }, []);
 
@@ -86,12 +86,13 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
     groupId: demoteGroupId,
   } = useDeleteDemoteAdmin({
     roleValue: "SuperAdmin",
-    roleDisplayName: "Super Admin",
+    roleDisplayName: "SuperAdmin",
   });
   const { updateUserRole } = useUpdateUserRole();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState({});
+  const [roleOverrides, setRoleOverrides] = useState({});
 
   const buildRoleString = useCallback((currentRole, roleName, checked) => {
     const rawRoles = String(currentRole || "")
@@ -131,6 +132,15 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
   }, []);
 
   const handleSuperAdminToggle = async (row, checked) => {
+    const userKey = row?.v_entrauserid;
+    const updatedRole = buildRoleString(row?.v_role, "SuperAdmin", checked);
+    if (userKey) {
+      setRoleOverrides((prev) => ({
+        ...prev,
+        [userKey]: updatedRole,
+      }));
+    }
+
     const payload = {
       userOid: row?.v_entrauserid,
       roleValue: "SuperAdmin",
@@ -153,7 +163,14 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
       });
     } catch (err) {
     } finally {
-      fetchData(page, activeFilters);
+      await fetchData(page, activeFilters);
+      if (userKey) {
+        setRoleOverrides((prev) => {
+          const next = { ...prev };
+          delete next[userKey];
+          return next;
+        });
+      }
     }
   };
 
@@ -171,11 +188,20 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
   const roles    = [...new Set(data.map((r) => r.v_role).filter(Boolean))];
   const statuses = [...new Set(data.map((r) => r.v_status).filter(Boolean))];
 
-  const hasRole = (roleValue, roleName) =>
-    String(roleValue || "")
+  const normalizeRole = (role) =>
+    String(role || "")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+
+  const getRoleValue = (row) => roleOverrides[row?.v_entrauserid] ?? row?.v_role;
+
+  const hasRole = (roleValue, roleName) => {
+    const target = normalizeRole(roleName);
+    return String(roleValue || "")
       .split(",")
-      .map((role) => role.trim().toLowerCase())
-      .includes(roleName.toLowerCase());
+      .map((role) => normalizeRole(role))
+      .includes(target);
+  };
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
@@ -201,7 +227,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           )}
           {syncResult && !syncing && (
             <span className="text-xs text-green-500 dark:text-green-400">
-              {syncResult.message} New users: {syncResult.synced ?? 0}
+              {syncResult.message}
             </span>
           )}
           <button
@@ -259,7 +285,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                           <div>
                             <p className="text-sm font-semibold text-gray-900 dark:text-white">{row.v_username}</p>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}
+                              {getRoleValue(row) === "SuperAdmin" ? "Super Admin" : getRoleValue(row) || "User"}
                             </p>
                           </div>
                         </div>
@@ -289,7 +315,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                           <span className="text-xs text-gray-500 dark:text-gray-400">Super Admin</span>
                           <Switch
                             className="data-[state=checked]:bg-blue-500 cursor-pointer"
-                            checked={hasRole(row.v_role, "SuperAdmin")}
+                            checked={hasRole(getRoleValue(row), "SuperAdmin")}
                             onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
                             disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
                           />
@@ -357,7 +383,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {row.v_role === "SuperAdmin" ? "Super Admin" : row.v_role || "User"}
+                    {getRoleValue(row) === "SuperAdmin" ? "Super Admin" : getRoleValue(row) || "User"}
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {row.v_department || "N/A"}
@@ -376,7 +402,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Switch
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
-                      checked={hasRole(row.v_role, "SuperAdmin")}
+                      checked={hasRole(getRoleValue(row), "SuperAdmin")}
                       onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
                       disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
                     />

@@ -3,13 +3,13 @@
 export const supportCards = [
   {
     title: "Email Support",
-    description: "For general inquiries and support.",
-    cta: "Contact App Support",
+    description: "For general inquiries and support. (This feature will be available in version 2.0)",
+    cta: "Email App Support",
     iconBg: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-300",
   },
   {
     title: "Give Feedback",
-    description: "Share your thoughts and help us improve the app experience.",
+    description: "Share your thoughts and help us improve the app experience. (This feature will be available in version 2.0)",
     cta: "Give App Feedback",
     iconBg: "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300",
   },
@@ -37,7 +37,7 @@ export const learnMoreCards = [
     release: `Released ${process.env.NEXT_PUBLIC_APP_RELEASE_DATE || "August 01, 2025"}`,
   },
 ];
-//jasperwitnessserer1aura
+//jasperwitnessserer1auralacaespaeaheyhuhhehi
 export default function ComCard({
   title,
   description,

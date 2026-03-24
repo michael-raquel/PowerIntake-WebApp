@@ -34,7 +34,7 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
     if (!mobileContainerRef.current) return;
     const height = mobileContainerRef.current.clientHeight;
     if (!height) return;
-    const calculated = Math.max(MIN_RECORDS, Math.floor(height / MOBILE_CARD_HEIGHT));
+    const calculated = Math.max(DEFAULT_ROWS, Math.floor(height / MOBILE_CARD_HEIGHT));
     setMobileLimit((prev) => (prev !== calculated ? calculated : prev));
   }, []);
 
@@ -97,7 +97,7 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
           )}
           {syncResult && !syncing && (
             <span className="text-xs text-green-500 dark:text-green-400">
-              {syncResult.message} New users: {syncResult.synced ?? 0}
+              {syncResult.message}
             </span>
           )}
           <button

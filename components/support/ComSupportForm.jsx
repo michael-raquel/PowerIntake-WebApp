@@ -7,6 +7,15 @@ import ComEmailSupportConfirmation from "./ComEmailSupportConfirmation";
 export default function ComSupportForm({ open, onClose }) {
 	const [message, setMessage] = useState("");
 	const [showConfirmation, setShowConfirmation] = useState(false);
+	const [prevOpen, setPrevOpen] = useState(open);
+
+	if (open !== prevOpen) {
+		setPrevOpen(open);
+		if (!open) {
+			setMessage("");
+			setShowConfirmation(false);
+		}
+	}
 
 	useEffect(() => {
 		if (!open) return;
@@ -20,13 +29,6 @@ export default function ComSupportForm({ open, onClose }) {
 		document.addEventListener("keydown", handleKey);
 		return () => document.removeEventListener("keydown", handleKey);
 	}, [open, onClose]);
-
-	useEffect(() => {
-		if (!open) {
-			setMessage("");
-			setShowConfirmation(false);
-		}
-	}, [open]);
 
 	if (!open) return null;
 
@@ -128,4 +130,3 @@ export default function ComSupportForm({ open, onClose }) {
 		</div>
 	);
 }
-

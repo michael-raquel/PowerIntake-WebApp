@@ -103,25 +103,42 @@ export default function ComTableTeam({
 
   return (
     <>
-      {/* Mobile*/}
-      <div className="sm:hidden space-y-3 p-3">
-        {paginated.map(ticket => (
-          <ComCard
-            key={ticket.v_ticketuuid}
-            ticket={ticket}
-            fields={cardFields}
-            onClick={() => setSelectedTicket(ticket)}
-            priorityClass={getPriorityClass(ticket.v_priority)}
-          />
-        ))}
-        {!paginated.length && (
-          <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
-        )}
+      {/* Mobile */}
+      <div className="sm:hidden">
+        <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200 dark:border-gray-800">
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {filteredTickets.length} Total Records
+          </span>
+          <button
+            onClick={handleSync}
+            disabled={loading || syncing}
+            className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
+          </button>
+        </div>
+        <div className="space-y-3 p-3">
+          {paginated.map(ticket => (
+            <ComCard
+              key={ticket.v_ticketuuid}
+              ticket={ticket}
+              fields={cardFields}
+              onClick={() => setSelectedTicket(ticket)}
+              priorityClass={getPriorityClass(ticket.v_priority)}
+            />
+          ))}
+          {!paginated.length && (
+            <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
+          )}
+        </div>
       </div>
 
       {/* Desktop */}
-      <div className="hidden sm:block overflow-x-auto">
-         <div className="flex justify-end mb-2 border-b py-2">
+        <div className="hidden sm:block overflow-x-auto">
+        <div className="flex justify-between items-center mb-2 border-b py-2">
+           <span className="text-xs text-gray-500 dark:text-gray-400">
+           {filteredTickets.length} Total Records
+          </span>
             <button
               onClick={handleSync}
               disabled={loading || syncing}
@@ -152,6 +169,7 @@ export default function ComTableTeam({
                   {header}
                 </th>
               ))}
+              
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">

@@ -1,7 +1,7 @@
 import React from "react";
 
 export default function ComFeedbackConfirmation({
-  message = "Thanks for your feedback — we'll review it shortly.",
+  message = "Thanks for your feedback — we will review it shortly.",
   onClose,
 }) {
   return (
