@@ -31,10 +31,11 @@ const tabs = [
 const IN_PROGRESS_STATUSES = new Set([
   'Assigned', 'Information Provided', 'Escalate To Onsite',
   'Client Responded', 'Reschedule', 'Scheduling Required',
-  'Working Issue Now', 'Waiting', 'Waiting Approval','Pending Closure',
+  'Working Issue Now', 'Waiting', 'Waiting Approval', 'Pending Closure',
+  'Technician Rejected', 
 ]);
 
-const CANCELLED_STATUSES = new Set(['Cancelled', 'Technician Rejected', 'Merged']);
+const CANCELLED_STATUSES = new Set(['Cancelled', 'Merged']);
 
 const STATUS_CLASSES = {
   'New': 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900',
@@ -135,17 +136,18 @@ export default function HomePage() {
   const loading = isTeamView ? loadingTeamTickets : loadingMyTickets;
   const error = isTeamView ? errorTeamTickets : errorMyTickets;
 
-  const totalTickets = tickets.length;
-  const newCount = tickets.filter(t => t.v_status === 'New').length;
-  const inProgressCount = tickets.filter(t => IN_PROGRESS_STATUSES.has(t.v_status)).length;
-  const cancelledOnlyCount = tickets.filter(t => t.v_status === 'Cancelled').length;
+  const totalTickets      = tickets.length;
+  const newCount          = tickets.filter(t => t.v_status === 'New').length;
+  const inProgressCount   = tickets.filter(t => IN_PROGRESS_STATUSES.has(t.v_status)).length;
   const techRejectedCount = tickets.filter(t => t.v_status === 'Technician Rejected').length;
-  const mergedCount = tickets.filter(t => t.v_status === 'Merged').length;
-  const cancelledCount = cancelledOnlyCount + techRejectedCount + mergedCount;
+  const cancelledOnlyCount = tickets.filter(t => t.v_status === 'Cancelled').length;
+  const mergedCount       = tickets.filter(t => t.v_status === 'Merged').length;
+  const cancelledCount    = cancelledOnlyCount + mergedCount; 
   const workCompletedCount = tickets.filter(t => t.v_status === 'Work Completed').length;
   const problemSolvedCount = tickets.filter(t => t.v_status === 'Problem Solved').length;
-  const completedCount = workCompletedCount + problemSolvedCount;
-  const completionRate = Math.round((completedCount / (totalTickets - cancelledCount)) * 100) || 0;
+  const completedCount    = workCompletedCount + problemSolvedCount;
+  const completionRate    = Math.round((completedCount / (totalTickets - cancelledCount)) * 100) || 0;
+
   return (
     <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
       <div className="flex flex-col gap-4 flex-1">
@@ -186,7 +188,7 @@ export default function HomePage() {
         </div>
 
         <Tabs active={safeActiveTab} onChange={setActiveTab} tabs={visibleTabs} />
- 
+
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard icon="/icons/myticket.svg" label="My Tickets" value={totalTickets} dots={[
             { color: 'green',  label: `${newCount} New` },
@@ -198,15 +200,13 @@ export default function HomePage() {
             { color: 'blue', label: 'Being worked on' },
           ]} />
           <StatCard icon="/icons/completed.svg" label="Cancelled" value={cancelledCount} dots={[
-            { color: 'gray',   label: `${cancelledOnlyCount} Cancelled` },
-            { color: 'red',    label: `${techRejectedCount} Technician Rejected` },
+            { color: 'red',   label: `${cancelledOnlyCount} Cancelled` },
             { color: 'orange', label: `${mergedCount} Merged` },
           ]} />
           <StatCard icon="/icons/completionrate.svg" label="Completion Rate" value={`${completionRate}%`} dots={[
             { color: 'purple', label: `${workCompletedCount} Work Completed` },
             { color: 'green',  label: `${problemSolvedCount} Problem Solved` },
           ]} />
-
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
