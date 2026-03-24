@@ -147,8 +147,8 @@ export default function HomePage() {
   const completedCount = workCompletedCount + problemSolvedCount;
   const completionRate = Math.round((completedCount / (totalTickets - cancelledCount)) * 100) || 0;
   return (
-    <div className="min-h-[100dvh] bg-gray-50 dark:bg-black flex flex-col p-4 md:p-6 pb-0">
-      <div className="w-full space-y-6 sm:space-y-8 flex-1">
+    <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
+      <div className="flex flex-col gap-4 flex-1">
 
         <div className="relative w-full overflow-hidden rounded-2xl" style={{ paddingBottom: 'max(110px, 13%)' }}>
           <div className="absolute inset-0 flex transition-transform duration-500 ease-out"
@@ -263,7 +263,7 @@ export default function HomePage() {
         </div>
       </div>
 
-      <footer className="flex-shrink-0 border-t border-gray-200 dark:border-gray-800">
+      <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
         <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
           <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
             <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
