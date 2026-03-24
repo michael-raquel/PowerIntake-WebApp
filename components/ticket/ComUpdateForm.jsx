@@ -141,10 +141,13 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   if (!ticket) return null;
 
-  const isEditableStatus = ticket.v_status !== 'Work Completed' && ticket.v_status !== 'Problem Solved' && ticket.v_status !== 'Technician Rejected' && ticket.v_status !== 'Cancelled' && ticket.v_status !== 'Merged';
-  const canEdit = ticket.v_entrauserid === account?.localAccountId && isEditableStatus;
-  const selectedDates = supportCalls.map(c => c.date?.toDateString()).filter(Boolean);
+  const closedStatuses = ['Work Completed', 'Problem Solved', 'Technician Rejected', 'Cancelled', 'Merged'];
+
+  const isEditableStatus = !closedStatuses.includes(ticket.v_status);
+  const canEdit = ticket.v_entrauserid === account?.localAccountId && ticket.v_status === 'New';
   const canEditAttachments = isEditableStatus;
+  const selectedDates = supportCalls.map(c => c.date?.toDateString()).filter(Boolean);
+
 
   const handleCallChange = (id, field, value) => {
     if (!canEdit) return;
@@ -255,7 +258,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70"
       style={{ padding: 'env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px)' }}>
       <div
-        className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-[95vw] lg:max-w-[70vw] xl:max-w-[60vw] 2xl:max-w-[50vw] flex flex-col overflow-hidden relative"
+        className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-[95vw] lg:max-w-[75vw] xl:max-w-[65vw] 2xl:max-w-[55vw] flex flex-col overflow-hidden relative"
         style={{ height: 'min(95dvh, 95vh)', maxHeight: 'min(95dvh, 95vh)' }}>
 
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">

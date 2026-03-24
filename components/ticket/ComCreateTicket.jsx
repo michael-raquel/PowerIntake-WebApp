@@ -390,7 +390,7 @@ export default function ComCreateTicket({ onClose }) {
             </div>
 
             <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
-              <h2 className="text-lg font-medium mb-4">Attachments (Images only)</h2>
+              <h2 className="text-lg font-medium mb-4">Attachments</h2>
               <div
                 onClick={() => fileInputRef.current?.click()}
                 onDrop={e => { e.preventDefault(); setDragOver(false); processFiles(e.dataTransfer.files); }}
