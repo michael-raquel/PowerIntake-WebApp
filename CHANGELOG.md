@@ -1,3 +1,10 @@
+# [1.3.0-dev.26](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.25...v1.3.0-dev.26) (2026-03-25)
+
+
+### Bug Fixes
+
+* OverFlow Issue Fix ([503da3f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/503da3fbf0d9498e050417c9cc6bef80cd94ce72))
+
 # [1.3.0-dev.25](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.24...v1.3.0-dev.25) (2026-03-25)
 
 
