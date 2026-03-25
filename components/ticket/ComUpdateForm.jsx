@@ -50,48 +50,41 @@ const PRIORITY_COLORS = {
   Low: 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400',
 };
 
-
-const SLOT_MINUTES = 30;
 const CALL_DURATION_MS = 2 * 60 * 60 * 1000;
 
 const toHHMM = (date) => `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
-const roundToNextSlot = (date) => {
-  const minutes = date.getMinutes();
-  const remainder = minutes % SLOT_MINUTES;
-
-  if (remainder === 0) {
-    return new Date(date.getTime() + SLOT_MINUTES * 60 * 1000);
-  } else {
-    const minutesToAdd = SLOT_MINUTES - remainder;
-    return new Date(date.getTime() + minutesToAdd * 60 * 1000);
-  }
+const formatTo12Hour = (time24) => {
+  if (!time24) return '';
+  const [hours, minutes] = time24.split(':').map(Number);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours % 12 || 12;
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
 };
 
 const getNextStartTime = () => {
   const now = new Date();
-  const futureTime = new Date(now.getTime() + 30 * 60 * 1000);
-  const roundedTime = roundToNextSlot(futureTime);
-  return roundedTime;
-};
-
-const addDuration = (date) => {
-  const endDate = new Date(date.getTime() + CALL_DURATION_MS);
-  return toHHMM(endDate);
-};
-
-const minTimeForDate = (date) => {
-  if (!date) return '';
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-
-  if (d.getTime() === today.getTime()) {
-    const nextStart = getNextStartTime();
-    return toHHMM(nextStart);
+  now.setMinutes(now.getMinutes() + 30);
+  const minutes = now.getMinutes();
+  if (minutes % 30 !== 0) now.setMinutes(Math.ceil(minutes / 30) * 30);
+  now.setSeconds(0, 0);
+  if (now.getMinutes() === 60) {
+    now.setHours(now.getHours() + 1);
+    now.setMinutes(0);
   }
-  return '';
+  if (now.getHours() > 23 || (now.getHours() === 23 && now.getMinutes() > 30)) return null;
+  return now;
+};
+
+const calcEndTime = (date, startTime) => {
+  if (!date || !startTime) return '';
+  const [h, m] = startTime.split(':').map(Number);
+  const end = new Date(date);
+  end.setHours(h, m, 0, 0);
+  end.setTime(end.getTime() + CALL_DURATION_MS);
+  if (end.getDate() > new Date(date).getDate()) return '23:59';
+  if (end.getHours() > 23 || (end.getHours() === 23 && end.getMinutes() > 30)) return '23:30';
+  return toHHMM(end);
 };
 
 export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
@@ -99,6 +92,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const { updateTicket, loading } = useUpdateTicket({ account });
   const [activeTab, setActiveTab] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [openPopovers, setOpenPopovers] = useState({});
   const [title, setTitle] = useState(ticket?.v_title || '');
   const [description, setDescription] = useState(ticket?.v_description || '');
   const [attachments, setAttachments] = useState(
@@ -146,8 +140,12 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const isEditableStatus = !closedStatuses.includes(ticket.v_status);
   const canEdit = ticket.v_entrauserid === account?.localAccountId && ticket.v_status === 'New';
   const canEditAttachments = isEditableStatus;
-  const selectedDates = supportCalls.map(c => c.date?.toDateString()).filter(Boolean);
+  const selectedDates = useMemo(() => supportCalls.map(c => c.date?.toDateString()).filter(Boolean), [supportCalls]);
 
+  const isToday = (date) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return new Date(date).toDateString() === today.toDateString();
+  };
 
   const handleCallChange = (id, field, value) => {
     if (!canEdit) return;
@@ -155,7 +153,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
       const call = prev.find(c => c.id === id);
       if (!call) return prev;
 
-      if (field === 'date' && value) {
+      if (field === 'date') {
         if (prev.some(c => c.id !== id && c.date?.toDateString() === new Date(value).toDateString())) {
           toast.error("Date already selected", { description: "Only one support call per day." });
           return prev;
@@ -163,47 +161,43 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
         const newDate = new Date(value);
         let fromTime = call.fromTime;
+        let toTime = call.toTime;
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const isToday = newDate.toDateString() === today.toDateString();
-
-        if (isToday) {
+        if (isToday(newDate)) {
           const nextStart = getNextStartTime();
-          fromTime = toHHMM(nextStart);
+          if (nextStart) {
+            fromTime = toHHMM(nextStart);
+            toTime = calcEndTime(newDate, fromTime);
+          }
         }
-
-        const [hours, minutes] = fromTime.split(':').map(Number);
-        const startDateObj = new Date(newDate);
-        startDateObj.setHours(hours, minutes, 0, 0);
-        const toTime = addDuration(startDateObj);
 
         return prev.map(c => c.id === id ? { ...c, date: value, fromTime, toTime } : c);
       }
 
       if (field === 'fromTime') {
-        const min = minTimeForDate(call.date);
-        if (min && value < min) {
-          toast.error('Cannot select a past time.', { description: `Earliest slot is ${min}.` });
+        const now = new Date();
+        const currentTime = toHHMM(now);
+
+        if (isToday(call.date) && value < currentTime) {
+          toast.error('Invalid start time', { description: `Start time cannot be in the past. Current time is ${formatTo12Hour(currentTime)}` });
           return prev;
         }
 
-        const [hours, minutes] = value.split(':').map(Number);
-        const startDateObj = new Date(call.date);
-        startDateObj.setHours(hours, minutes, 0, 0);
-        const newToTime = addDuration(startDateObj);
-
+        const newToTime = calcEndTime(call.date, value);
         return prev.map(c => c.id === id ? { ...c, fromTime: value, toTime: newToTime } : c);
       }
 
       if (field === 'toTime') {
-        const min = minTimeForDate(call.date);
-        if (min && value < min) {
-          toast.error('Cannot select a past time.', { description: `Earliest slot is ${min}.` });
+        const now = new Date();
+        const currentTime = toHHMM(now);
+
+        if (isToday(call.date) && value < currentTime) {
+          toast.error('Invalid end time', { description: `End time cannot be in the past. Current time is ${formatTo12Hour(currentTime)}` });
           return prev;
         }
-        if (value <= call.fromTime) {
-          toast.error('End time must be after start time.');
+
+        if (value <= call.fromTime && value !== '23:59') {
+          toast.error('Start time must be earlier than end time');
           return prev;
         }
         return prev.map(c => c.id === id ? { ...c, toTime: value } : c);
@@ -215,14 +209,18 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const handleAddCall = () => {
     if (!canEdit) return;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let newDate = new Date(today);
+    let newDate = new Date();
+    newDate.setHours(0, 0, 0, 0);
     while (selectedDates.includes(newDate.toDateString())) newDate.setDate(newDate.getDate() + 1);
 
-    const startDateObj = getNextStartTime();
-    const fromTime = toHHMM(startDateObj);
-    const toTime = addDuration(startDateObj);
+    const nextStart = getNextStartTime();
+    let fromTime = '09:00';
+    let toTime = '17:00';
+
+    if (nextStart) {
+      fromTime = toHHMM(nextStart);
+      toTime = calcEndTime(newDate, fromTime);
+    }
 
     setSupportCalls(prev => [...prev, {
       id: Date.now(),
@@ -234,9 +232,23 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     toast.success("Support call added", { description: `Scheduled for ${format(newDate, 'MMM d, yyyy')}` });
   };
 
-
   const handleUpdate = async () => {
     if (!ticket.v_ticketuuid || !canEdit || !hasChanges) return;
+
+    const now = new Date();
+    const currentTime = toHHMM(now);
+
+    for (const call of supportCalls) {
+      if (isToday(call.date) && call.fromTime < currentTime) {
+        toast.error('Invalid start time', { description: `Start time cannot be in the past. Current time is ${formatTo12Hour(currentTime)}` });
+        return;
+      }
+      if (call.fromTime >= call.toTime && call.toTime !== '23:59') {
+        toast.error('Start time must be earlier than end time');
+        return;
+      }
+    }
+
     await updateTicket({
       ticketuuid: ticket.v_ticketuuid,
       formData: { title, description, timezone: ticket.v_usertimezone, location: ticket.v_officelocation },
@@ -254,6 +266,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const inputClass = "text-sm lg:text-base bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 px-3 py-2 lg:px-4 lg:py-3";
   const readonlyClass = "bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700 text-sm lg:text-base text-gray-900 dark:text-white px-3 py-2 lg:px-4 lg:py-3";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70"
       style={{ padding: 'env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px)' }}>
@@ -356,30 +369,44 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                       <div>
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">Date</p>
                         {canEdit ? (
-                          <Popover>
+                          <Popover
+                            open={openPopovers[call.id] || false}
+                            onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}
+                          >
                             <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-8 lg:h-9 text-sm lg:text-base dark:border-gray-600 dark:hover:bg-gray-800">
-                                <CalendarIcon className="mr-2 h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                                <span>{call.date ? format(call.date, "PPP") : "Select date"}</span>
+                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-8 lg:h-9 text-sm lg:text-base dark:border-gray-600 dark:hover:bg-gray-800 px-2">
+                                <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">{call.date ? format(call.date, "MMM d, yyyy") : "Select date"}</span>
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                              <Calendar mode="single" selected={call.date} onSelect={date => date && handleCallChange(call.id, 'date', date)}
+                              <Calendar
+                                mode="single"
+                                selected={call.date}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    handleCallChange(call.id, 'date', date);
+                                    setOpenPopovers(prev => ({ ...prev, [call.id]: false }));
+                                  }
+                                }}
                                 disabled={date => {
                                   const today = new Date(); today.setHours(0, 0, 0, 0);
                                   return date < today || selectedDates.includes(date.toDateString());
-                                }} initialFocus />
+                                }}
+                                initialFocus
+                              />
                             </PopoverContent>
                           </Popover>
                         ) : (
-                          <p className="text-sm lg:text-base text-gray-900 dark:text-white">{call.date ? format(call.date, "PPP") : '—'}</p>
+                          <p className="text-sm lg:text-base text-gray-900 dark:text-white truncate">{call.date ? format(call.date, "MMM d, yyyy") : '—'}</p>
                         )}
                       </div>
                       <div>
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">Start</p>
                         {canEdit ? (
-                          <Input type="time" value={call.fromTime} min={minTimeForDate(call.date) || undefined}
-                            onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)} className="h-8 lg:h-9 text-sm lg:text-base" />
+                          <Input type="time" value={call.fromTime}
+                            onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
+                            className="h-8 lg:h-9 text-sm lg:text-base w-full" />
                         ) : (
                           <p className="text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</p>
                         )}
@@ -387,8 +414,9 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                       <div>
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">End</p>
                         {canEdit ? (
-                          <Input type="time" value={call.toTime} min={minTimeForDate(call.date) || undefined}
-                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)} className="h-8 lg:h-9 text-sm lg:text-base" />
+                          <Input type="time" value={call.toTime}
+                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
+                            className="h-8 lg:h-9 text-sm lg:text-base w-full" />
                         ) : (
                           <p className="text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</p>
                         )}
