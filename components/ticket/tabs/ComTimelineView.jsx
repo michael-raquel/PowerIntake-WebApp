@@ -176,7 +176,7 @@ export default function ComTimelineView({ ticket }) {
                       <UserCog className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
                     )}
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {isNew ? 'Created by' : 'Assigned to'}:
+                      {isNew ? 'Created by' : 'Technician'}:
                     </span>
                     <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
                       {person}
