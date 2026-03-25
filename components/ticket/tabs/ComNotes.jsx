@@ -108,7 +108,7 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
           </div>
         ) : (
           notes.map((note, index) => {
-            const isCurrentUser = currentUserUuid != null && note.v_createdby === currentUserUuid; // ✅ uuid vs uuid
+            const isCurrentUser = currentUserUuid != null && note.v_createdby === currentUserUuid; 
             const showHeader    = index === 0 || notes[index - 1]?.v_createdby !== note.v_createdby;
 
             return (

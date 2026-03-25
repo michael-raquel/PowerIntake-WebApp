@@ -149,7 +149,7 @@ export default function ComFilters({
                       onValueChange={(value) => handleFilterChange(filter, value)}
                       disabled={!options.length}
                     >
-                      <SelectTrigger className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:focus:ring-gray-700 h-8 text-xs">
+                      <SelectTrigger className="w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:focus:ring-gray-700 h-8 text-xs">
                         <SelectValue placeholder={options.length ? `Select ${filter}` : 'No options'} />
                       </SelectTrigger>
                       <SelectContent className="dark:bg-gray-900 dark:border-gray-800">
