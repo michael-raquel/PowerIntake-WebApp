@@ -1,3 +1,11 @@
+# [1.3.0-dev.20](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.19...v1.3.0-dev.20) (2026-03-25)
+
+
+### Bug Fixes
+
+*  fix Additional Texts on Attachment Title ([71629be](https://github.com/michael-raquel/PowerIntake-WebApp/commit/71629be12ec8320dc7c59407f1f6bb4d933a1870))
+* fix the loading animation to a clock ([ddc4400](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ddc440051569d52e26aa1774bbd31e0dd6f78899))
+
 # [1.3.0-dev.19](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.18...v1.3.0-dev.19) (2026-03-25)
 
 
