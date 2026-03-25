@@ -10,55 +10,55 @@ const STATUS_STYLES = {
     border: 'border-emerald-200 dark:border-emerald-800/50',
   },
   'Assigned': { 
-    icon: Loader2, 
+    icon: Clock, 
     color: 'text-blue-600 dark:text-blue-400', 
     bg: 'bg-blue-50 dark:bg-blue-950/30', 
     border: 'border-blue-200 dark:border-blue-800/50',
   },
   'Information Provided': { 
-    icon: Loader2, 
+    icon: Clock, 
     color: 'text-blue-600 dark:text-blue-400', 
     bg: 'bg-blue-50 dark:bg-blue-950/30', 
     border: 'border-blue-200 dark:border-blue-800/50',
   },
   'Escalate to Onsite': { 
-    icon: Loader2, 
+    icon: Clock, 
     color: 'text-blue-600 dark:text-blue-400', 
     bg: 'bg-blue-50 dark:bg-blue-950/30', 
     border: 'border-blue-200 dark:border-blue-800/50',
   },
   'Client Responded': { 
-    icon: Loader2, 
+    icon: Clock, 
     color: 'text-blue-600 dark:text-blue-400', 
     bg: 'bg-blue-50 dark:bg-blue-950/30', 
     border: 'border-blue-200 dark:border-blue-800/50',
   },
   'Rescheduled': { 
-    icon: Loader2, 
+    icon: Clock, 
     color: 'text-blue-600 dark:text-blue-400', 
     bg: 'bg-blue-50 dark:bg-blue-950/30', 
     border: 'border-blue-200 dark:border-blue-800/50',
   },
   'Scheduling Required': { 
-    icon: Loader2, 
+    icon: Clock, 
     color: 'text-blue-600 dark:text-blue-400', 
     bg: 'bg-blue-50 dark:bg-blue-950/30', 
     border: 'border-blue-200 dark:border-blue-800/50',
   },
   'Working Issue Now': { 
-    icon: Loader2, 
+    icon: Clock, 
     color: 'text-blue-600 dark:text-blue-400', 
     bg: 'bg-blue-50 dark:bg-blue-950/30', 
     border: 'border-blue-200 dark:border-blue-800/50',
   },
   'Waiting': { 
-    icon: Loader2, 
+    icon: Clock, 
     color: 'text-blue-600 dark:text-blue-400', 
     bg: 'bg-blue-50 dark:bg-blue-950/30', 
     border: 'border-blue-200 dark:border-blue-800/50',
   },
   'Waiting for Approval': { 
-    icon: Loader2, 
+    icon: Clock, 
     color: 'text-blue-600 dark:text-blue-400', 
     bg: 'bg-blue-50 dark:bg-blue-950/30', 
     border: 'border-blue-200 dark:border-blue-800/50',
@@ -146,7 +146,7 @@ export default function ComTimelineView({ ticket }) {
                 <Icon className={cn(
                   'w-4 h-4', 
                   style.color,
-                  style.icon === Loader2 && 'animate-spin'
+                  style.icon
                 )} />
               </div>
             </div>
