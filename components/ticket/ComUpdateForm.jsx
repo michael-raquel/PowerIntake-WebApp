@@ -21,7 +21,7 @@ import ComTimelineView from './tabs/ComTimelineView';
 const TABS = [
   { id: 'notes', icon: StickyNote, label: 'Notes' },
   { id: 'user', icon: User, label: 'User Information' },
-  { id: 'closure', icon: CalendarCheck, label: 'Resolution Date' },
+  { id: 'closure', icon: CalendarCheck, label: 'Resolution' },
   { id: 'attachments', icon: Paperclip, label: 'Attachments' },
   { id: 'timeline', icon: GitBranch, label: 'Timeline' },
 ];
