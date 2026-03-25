@@ -306,7 +306,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
                       checked={hasRole(getRoleValue(row), "Admin")}
                       onCheckedChange={(checked) => handleAdminToggle(row, checked)}
-                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
+                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin") || hasRole(getRoleValue(row), "Super Admin")}
                     />
                   </div>
                 </div>
@@ -388,7 +388,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
                       checked={hasRole(getRoleValue(row), "Admin")}
                       onCheckedChange={(checked) => handleAdminToggle(row, checked)}
-                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
+                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin")}
                     />
                   </td>
                 </tr>
