@@ -159,13 +159,13 @@ export default function ComAttachment({
         </div>
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Attachments</p>
-          {canModify && !isReadOnly && (
+          {/* {canModify && !isReadOnly && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Upload, view, download or remove files</p>
           )}
           {isReadOnly && (
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Read-only - Ticket is {ticket.v_status}</p>
           )}
-          {isLoading && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Loading...</p>}
+          {isLoading && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Loading...</p>} */}
         </div>
       </div>
 
@@ -208,7 +208,7 @@ export default function ComAttachment({
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              This ticket is <span className="font-medium text-gray-700 dark:text-gray-300">{ticket?.v_status}</span>.
+              {/* This ticket is <span className="font-medium text-gray-700 dark:text-gray-300">{ticket?.v_status}</span>. */}
               Attachments are in read-only mode. You can view and download existing files, but cannot upload or remove them.
             </p>
           </div>
