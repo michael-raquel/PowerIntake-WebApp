@@ -1,3 +1,11 @@
+# [1.3.0-dev.18](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.17...v1.3.0-dev.18) (2026-03-25)
+
+
+### Bug Fixes
+
+* 2100 - Fix Closure to Resolution ([131f11b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/131f11b06ec4abad155260eec9282ee206a6747d))
+* disabled the switch for admin promotion if the user is a superadmin ([3fa6a0d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3fa6a0d08784e7c00cda44a6ae37709fc2b4cb37))
+
 # [1.3.0-dev.17](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.16...v1.3.0-dev.17) (2026-03-25)
 
 
