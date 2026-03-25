@@ -355,14 +355,20 @@ export default function ComCreateTicket({ onClose }) {
 
                     <div>
                       <Label className="text-xs mb-1 block">Time <span className="text-red-500">*</span></Label>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         {(['fromTime', 'toTime']).map((key, i) => (
                           <Fragment key={key}>
-                            {i === 1 && <span className="text-sm text-gray-500 shrink-0 whitespace-nowrap">to</span>}
-                            <div className="relative flex-1 min-w-[100px]">
-                              <Input type="time" value={call[key]}
+                            {i === 1 && (
+                              <span className="text-sm text-gray-500 text-center sm:text-left">to</span>
+                            )}
+                            <div className="relative flex-1">
+                              <Input
+                                type="time"
+                                value={call[key]}
                                 onChange={e => handleCallChange(call.id, key, e.target.value)}
-                                step="900" className="pl-8 w-full text-sm h-9 min-w-0" />
+                                step="900"
+                                className="pl-8 w-full text-sm"
+                              />
                               <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
                             </div>
                           </Fragment>
