@@ -60,12 +60,25 @@ const detectTimezone = () => {
 
 const toHHMM = d => `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
 
+const formatTo12Hour = (time24) => {
+  if (!time24) return '';
+  const [hours, minutes] = time24.split(':').map(Number);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours % 12 || 12;
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
+};
+
 const getMinTimeForToday = () => {
   const now = new Date();
   now.setMinutes(now.getMinutes() + 30);
-  const rem = now.getMinutes() % 30;
-  if (rem !== 0) now.setMinutes(now.getMinutes() + (30 - rem));
+  const minutes = now.getMinutes();
+  if (minutes % 30 !== 0) now.setMinutes(Math.ceil(minutes / 30) * 30);
   now.setSeconds(0, 0);
+  if (now.getMinutes() === 60) {
+    now.setHours(now.getHours() + 1);
+    now.setMinutes(0);
+  }
+  if (now.getHours() > 23 || (now.getHours() === 23 && now.getMinutes() > 30)) return '23:30';
   return toHHMM(now);
 };
 
@@ -75,6 +88,7 @@ const calcEndTime = (date, startTime) => {
   const end = new Date(date);
   end.setHours(h, m, 0, 0);
   end.setTime(end.getTime() + CALL_DURATION_HOURS * 3600000);
+  if (end.getDate() > new Date(date).getDate()) return '23:59';
   if (end.getHours() > 23 || (end.getHours() === 23 && end.getMinutes() > 30)) return '23:30';
   return toHHMM(end);
 };
@@ -98,20 +112,20 @@ function UserInfoPanel({ profile, profileLoading }) {
     <div className="grid grid-cols-2 gap-4">
       {profileLoading
         ? USER_FIELDS.map((f, i) => (
-            <div key={i} className={f[3]}>
-              <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
-              <div className="h-4 w-24 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
-            </div>
-          ))
+          <div key={i} className={f[3]}>
+            <div className="h-3 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2" />
+            <div className="h-4 w-24 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+          </div>
+        ))
         : USER_FIELDS.map(([label, key, transform, span]) => {
-            const value = transform ? transform(profile?.[key]) : profile?.[key];
-            return (
-              <div key={label} className={span}>
-                <p className="text-xs font-medium text-gray-500 uppercase">{label}</p>
-                <p className="text-sm text-gray-900 dark:text-white mt-1 break-all">{value ?? '—'}</p>
-              </div>
-            );
-          })}
+          const value = transform ? transform(profile?.[key]) : profile?.[key];
+          return (
+            <div key={label} className={span}>
+              <p className="text-xs font-medium text-gray-500 uppercase">{label}</p>
+              <p className="text-sm text-gray-900 dark:text-white mt-1 break-all">{value ?? '—'}</p>
+            </div>
+          );
+        })}
     </div>
   );
 }
@@ -129,6 +143,7 @@ export default function ComCreateTicket({ onClose }) {
   const [errors, setErrors] = useState({});
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
+  const [openPopovers, setOpenPopovers] = useState({});
 
   const handleInputChange = ({ target: { name, value } }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -156,28 +171,10 @@ export default function ComCreateTicket({ onClose }) {
       }
 
       if (field === 'fromTime') {
-        if (isToday(call.date)) {
-          const min = getMinTimeForToday();
-          if (value < min) {
-            toast.error('Invalid start time', { description: `Earliest available time is ${min}` });
-            return prev;
-          }
-        }
         return prev.map(c => c.id === id ? { ...c, fromTime: value, toTime: calcEndTime(call.date, value) } : c);
       }
 
       if (field === 'toTime') {
-        if (isToday(call.date)) {
-          const min = getMinTimeForToday();
-          if (value < min) {
-            toast.error('Invalid end time', { description: `Earliest available time is ${min}` });
-            return prev;
-          }
-        }
-        if (value <= call.fromTime) {
-          toast.error('Invalid end time', { description: 'End time must be after start time.' });
-          return prev;
-        }
         return prev.map(c => c.id === id ? { ...c, toTime: value } : c);
       }
 
@@ -214,17 +211,25 @@ export default function ComCreateTicket({ onClose }) {
       toast.error('Please fill in all required fields');
       return false;
     }
+
+    const now = new Date();
+    const currentTime = toHHMM(now);
+
     for (const call of supportCalls) {
-      if (!call.date) { toast.error('Please select a date for all support calls'); return false; }
+      if (!call.date) {
+        toast.error('Please select a date for all support calls');
+        return false;
+      }
+
       if (isToday(call.date)) {
-        const min = getMinTimeForToday();
-        if (call.fromTime < min) {
+        if (call.fromTime < currentTime) {
           fieldRefs.current[`call-${call.id}-date`]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          toast.error('Invalid start time', { description: `Earliest available time is ${min}` });
+          toast.error('Invalid start time', { description: `Start time cannot be in the past. Current time is ${formatTo12Hour(currentTime)}` });
           return false;
         }
       }
-      if (call.fromTime >= call.toTime) {
+
+      if (call.fromTime >= call.toTime && call.toTime !== '23:59') {
         toast.error('Start time must be earlier than end time');
         return false;
       }
@@ -316,7 +321,10 @@ export default function ComCreateTicket({ onClose }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div ref={el => fieldRefs.current[`call-${call.id}-date`] = el}>
                       <Label className="text-xs mb-1 block">Date <span className="text-red-500">*</span></Label>
-                      <Popover>
+                      <Popover
+                        open={openPopovers[call.id] || false}
+                        onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}
+                      >
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="w-full justify-start text-left">
                             <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
@@ -324,14 +332,23 @@ export default function ComCreateTicket({ onClose }) {
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
-                          <Calendar mode="single" selected={call.date}
-                            onSelect={d => d && handleCallChange(call.id, 'date', d)}
+                          <Calendar
+                            mode="single"
+                            selected={call.date}
+                            onSelect={(d) => {
+                              if (d) {
+                                handleCallChange(call.id, 'date', d);
+                                setOpenPopovers(prev => ({ ...prev, [call.id]: false }));
+                              }
+                            }}
                             disabled={date => {
                               const today = new Date(); today.setHours(0, 0, 0, 0);
                               const used = supportCalls.filter(c => c.id !== call.id).map(c => c.date?.toDateString());
                               return date < today || used.includes(date.toDateString());
                             }}
-                            captionLayout="dropdown" initialFocus />
+                            captionLayout="dropdown"
+                            initialFocus
+                          />
                         </PopoverContent>
                       </Popover>
                     </div>
@@ -339,7 +356,7 @@ export default function ComCreateTicket({ onClose }) {
                     <div>
                       <Label className="text-xs mb-1 block">Time <span className="text-red-500">*</span></Label>
                       <div className="flex items-center gap-2">
-                        {(['fromTime', 'toTime'] ).map((key, i) => (
+                        {(['fromTime', 'toTime']).map((key, i) => (
                           <Fragment key={key}>
                             {i === 1 && <span className="text-sm text-gray-500">to</span>}
                             <div className="relative flex-1">
