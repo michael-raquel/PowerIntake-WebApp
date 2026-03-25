@@ -25,7 +25,7 @@ export default function ComClosureDate({ ticket }) {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Created</p>
           </div>
           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            {formatDate(created)}
+            {formatDate(created, true)}
           </p>
         </div>
 
@@ -37,7 +37,7 @@ export default function ComClosureDate({ ticket }) {
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Target Date</p>
           </div>
           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            {formatDate(target)}
+            {formatDate(target, true)}
           </p>
         </div>
 
