@@ -1,3 +1,10 @@
+# [1.3.0-dev.25](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.24...v1.3.0-dev.25) (2026-03-25)
+
+
+### Bug Fixes
+
+* Adjusted Closure Date Notes and Summary ([8c80229](https://github.com/michael-raquel/PowerIntake-WebApp/commit/8c80229062c57fa2b72e778a832eca022250d545))
+
 # [1.3.0-dev.24](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.23...v1.3.0-dev.24) (2026-03-25)
 
 
