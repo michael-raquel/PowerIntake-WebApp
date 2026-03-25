@@ -1,3 +1,10 @@
+# [1.3.0-dev.21](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.20...v1.3.0-dev.21) (2026-03-25)
+
+
+### Bug Fixes
+
+* ticket create toast issues ([4114edd](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4114edd22a766df23d74e02f638f18373fbcea67))
+
 # [1.3.0-dev.20](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.19...v1.3.0-dev.20) (2026-03-25)
 
 
