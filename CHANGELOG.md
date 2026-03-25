@@ -1,3 +1,10 @@
+# [1.3.0-dev.23](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.22...v1.3.0-dev.23) (2026-03-25)
+
+
+### Bug Fixes
+
+* Altered Assigned to into Technician ([5f3d009](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5f3d009fad01063c2dccde1272d18f8ec16ab7fb))
+
 # [1.3.0-dev.22](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.21...v1.3.0-dev.22) (2026-03-25)
 
 
