@@ -1,3 +1,10 @@
+# [1.3.0-dev.34](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.33...v1.3.0-dev.34) (2026-03-26)
+
+
+### Bug Fixes
+
+* Rolebased tab in homepage and  text-alignment in the footer total records ([cd2f896](https://github.com/michael-raquel/PowerIntake-WebApp/commit/cd2f8964bf2a1fc2e102897f351b5078efbe854f))
+
 # [1.3.0-dev.33](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.32...v1.3.0-dev.33) (2026-03-26)
 
 
