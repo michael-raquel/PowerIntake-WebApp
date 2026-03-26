@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { StickyNote, Send } from 'lucide-react';
+import { StickyNote, Send, Paperclip } from 'lucide-react';
 import { format } from 'date-fns';
 import { useFetchNote } from '@/hooks/UseFetchNotes';
 import { useCreateNote } from '@/hooks/UseCreateNotes';
@@ -20,35 +20,62 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
 
   const [newNote, setNewNote]         = useState('');
   const [isComposing, setIsComposing] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [optimisticNotes, setOptimisticNotes] = useState([]);
 
   const { notes, loading, error, fetchNotes } = useFetchNote(id);
   const { createNote, submitting }            = useCreateNote();
 
+  const allNotes = [...optimisticNotes, ...notes].sort((a, b) => 
+    new Date(a.v_createdat) - new Date(b.v_createdat)
+  );
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [notes]);
+  }, [allNotes]);
 
   const handleSubmit = async () => {
-    if (!newNote.trim() || !id || submitting) return;
+    if (!newNote.trim() || !id || isSubmitting) return;
 
     const noteText = newNote.trim();
     setNewNote('');
+    setIsSubmitting(true);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = '40px';
     }
 
-    await createNote({
-      ticketuuid: id,
-      note:       noteText,
-      createdby:  currentEntraId, // DB resolves entrauserid → useruuid internally
-    });
+    const optimisticNote = {
+      v_noteuuid: `temp-${Date.now()}`,
+      v_note: noteText,
+      v_createdat: new Date().toISOString(),
+      v_createdby: currentUserUuid || currentEntraId, 
+      v_createdbyname: currentUserName,
+      isOptimistic: true
+    };
 
-    fetchNotes();
+    setOptimisticNotes(prev => [...prev, optimisticNote]);
+
+    try {
+      await createNote({
+        ticketuuid: id,
+        note: noteText,
+        createdby: currentEntraId,
+      });
+
+      await fetchNotes();
+      
+      setOptimisticNotes([]);
+    } catch (error) {
+      setOptimisticNotes(prev => prev.filter(n => n.v_noteuuid !== optimisticNote.v_noteuuid));
+      console.error('Failed to send message:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing && !isSubmitting) {
       e.preventDefault();
       handleSubmit();
     }
@@ -64,9 +91,23 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
   };
 
   const getDisplayName = (note) => {
-    if (note.v_createdbyname) return note.v_createdbyname;                          // from DB join
-    if (currentUserUuid && note.v_createdby === currentUserUuid) return currentUserName; // fallback
+    if (!note.v_note && !note.v_createdby) {
+      return 'Power Intake';
+    }
+    
+    if (note.v_createdbyname) return note.v_createdbyname;
+    if ((currentUserUuid && note.v_createdby === currentUserUuid) || 
+        (currentEntraId && note.v_createdby === currentEntraId)) {
+      return currentUserName;
+    }
     return 'Unknown';
+  };
+
+  const getNoteContent = (note) => {
+    if (!note.v_note && !note.v_createdby) {
+      return '📎 File attachment uploaded';
+    }
+    return note.v_note;
   };
 
   const formatMessageTime = (timestamp) => {
@@ -78,7 +119,13 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
     return format(date, 'MMM d, h:mm a');
   };
 
-  if (loading) {
+  const isCurrentUserNote = (note) => {
+    if (note.isOptimistic) return true;
+    return (currentUserUuid != null && note.v_createdby === currentUserUuid) ||
+           (currentEntraId != null && note.v_createdby === currentEntraId);
+  };
+
+  if (loading && allNotes.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center text-gray-400 dark:text-gray-500">
@@ -91,14 +138,14 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-lg overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {error && (
           <div className="text-sm text-red-400 dark:text-red-500 text-center py-2">
             Failed to load messages
           </div>
         )}
 
-        {!notes?.length ? (
+        {allNotes.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
             <StickyNote className="w-12 h-12 mb-3 opacity-30" />
             <p className="text-sm">No messages yet</p>
@@ -107,17 +154,15 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
             </p>
           </div>
         ) : (
-          notes.map((note, index) => {
-            const isCurrentUser = currentUserUuid != null && note.v_createdby === currentUserUuid; 
-            const showHeader    = index === 0 || notes[index - 1]?.v_createdby !== note.v_createdby;
-
+          allNotes.map((note, index) => {
+            const isCurrentUser = isCurrentUserNote(note);
+            const displayName = getDisplayName(note);
+            const noteContent = getNoteContent(note);
+            const isAttachment = !note.v_note && !note.v_createdby;
+            const isOptimistic = note.isOptimistic;
+            
             return (
               <div key={note.v_noteuuid} className="space-y-1">
-                {showHeader && !isCurrentUser && (
-                  <div className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                    {getDisplayName(note)}
-                  </div>
-                )}
                 <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`
@@ -126,10 +171,12 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
                         ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-br-none'
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none'
                       }
+                      ${isAttachment ? 'border border-dashed border-purple-300 dark:border-purple-700' : ''}
+                      ${isOptimistic ? 'opacity-70' : ''}
                     `}
                   >
                     <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">
-                      {note.v_note}
+                      {noteContent}
                     </p>
                     <div className={`flex items-center gap-1 mt-1 text-[10px] ${
                       isCurrentUser
@@ -137,9 +184,9 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
                         : 'text-gray-500 dark:text-gray-400'
                     }`}>
                       <span>{formatMessageTime(note.v_createdat)}</span>
-                      {isCurrentUser && (
-                        <span className="ml-1">• You</span>
-                      )}
+                      <span>•</span>
+                      <span>{displayName}</span>
+                      {isOptimistic && <span className="ml-1">(sending...)</span>}
                     </div>
                   </div>
                 </div>
@@ -162,11 +209,11 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
             placeholder="Write a message..."
             className="flex-1 min-h-[40px] max-h-[100px] resize-none bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-purple-500 dark:focus:ring-purple-400 overflow-y-auto"
             rows={1}
-            disabled={submitting}
+            disabled={isSubmitting}
           />
           <Button
             onClick={handleSubmit}
-            disabled={!newNote.trim() || submitting}
+            disabled={!newNote.trim() || isSubmitting}
             className="h-[40px] px-4 bg-purple-600 hover:bg-purple-700 dark:bg-purple-600 dark:hover:bg-purple-700 text-white rounded-lg shrink-0"
           >
             <Send className="h-4 w-4 mr-2" />
