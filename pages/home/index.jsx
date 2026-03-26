@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { useRouter } from 'next/navigation';
 import { useFetchMyTeamUsers } from '@/hooks/UseFetchMyTeam';
+import useManagerCheck from '@/hooks/UseManagerCheck';
 
 const images = [
   { src: '/homebanner.png', alt: 'Home Banner' },
@@ -19,13 +20,6 @@ const footerLinks = [
   { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
   { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
   { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
-];
-
-const tabs = [
-  { label: 'My Clients', value: 'my-client' },
-  { label: 'My Company', value: 'my-company' },
-  { label: 'My Team', value: 'my-team' },
-  { label: 'My Tickets', value: 'my-ticket' },
 ];
 
 const IN_PROGRESS_STATUSES = new Set([
@@ -107,7 +101,6 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
   const metadataItems = [
     ticket.v_source && { label: 'Source', value: ticket.v_source },
     { label: 'Client', value: ticket.v_tenantname },
-    { label: 'Department', value: ticket.v_department },
     showOwner && { label: 'Requester', value: ticket.v_username },
     { label: 'Category', value: ticket.v_ticketcategory },
     ticket.v_technicianname && { label: 'Technician', value: ticket.v_technicianname },
@@ -115,7 +108,6 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
 
   const gridData = [
     { label: 'Client', value: ticket.v_tenantname || '—' },
-    { label: 'Department', value: ticket.v_department || '—' },
     { label: 'Category', value: ticket.v_ticketcategory || '—' },
     { label: 'Requester', value: ticket.v_username || '—' },
     { label: 'Technician', value: ticket.v_technicianname || '—' },
@@ -150,13 +142,15 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
           ))}
         </div>
       </div>
-      <div className="hidden sm:block px-3 sm:px-4 pb-3">
+       <div className="hidden sm:block px-3 sm:px-4 pb-3">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-gray-600 dark:text-gray-400">
           {metadataItems.map((item, index) => (
             <span key={item.label} className="inline-flex items-center gap-1">
               <span className="font-medium text-gray-500 dark:text-gray-500">{item.label}:</span>
               <span className="font-medium text-gray-700 dark:text-gray-300">{item.value}</span>
-              {index < metadataItems.length - 1 && <span className="text-gray-300 dark:text-gray-600 ml-1">|</span>}
+              {index < metadataItems.length - 1 && (
+                <span className="text-gray-300 dark:text-gray-600 ml-1">|</span>
+              )}
             </span>
           ))}
         </div>
@@ -172,8 +166,14 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
 export default function HomePage() {
   const { account, tokenInfo } = useAuth();
   const router = useRouter();
+  const { isManager } = useManagerCheck();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeTab, setActiveTab] = useState('my-ticket');
+
+  const roles = tokenInfo?.account?.roles ?? [];
+  const isSuperAdmin = roles.includes('SuperAdmin');
+  const isAdmin = roles.includes('Admin');
+  const userId = tokenInfo?.account?.localAccountId;
 
   const nextSlide = useCallback(() => setCurrentSlide(p => (p + 1) % images.length), []);
   useEffect(() => { const t = setInterval(nextSlide, 5000); return () => clearInterval(t); }, [nextSlide]);
@@ -197,19 +197,34 @@ export default function HomePage() {
     };
   }, []);
 
-  const userId = tokenInfo?.account?.localAccountId;
+  const tabs = useMemo(() => {
+    const t = [];
+    if (isSuperAdmin) {
+      t.push({ label: 'My Clients', value: 'my-client' });
+      t.push({ label: 'My Company', value: 'my-company' });
+    } else if (isAdmin) {
+      t.push({ label: 'My Company', value: 'my-company' });
+    }
+    if (isManager) t.push({ label: 'My Team', value: 'my-team' });
+    t.push({ label: 'My Tickets', value: 'my-ticket' });
+    return t;
+  }, [isSuperAdmin, isAdmin, isManager]);
+
+  const safeActiveTab = useMemo(() => {
+    const tabValues = tabs.map(t => t.value);
+    return tabValues.includes(activeTab) ? activeTab : 'my-ticket';
+  }, [tabs, activeTab]);
+
   const ticketQuery = useMemo(() => {
-    if (!userId || activeTab === 'my-team') return { enabled: false };
-    if (activeTab === 'my-company') return { enabled: true, scope: 'my-company', entratenantid: tokenInfo?.account?.tenantId };
-    if (activeTab === 'my-client') return { enabled: true, scope: 'my-client', entrauserid: null };
+    if (!userId || safeActiveTab === 'my-team') return { enabled: false };
+    if (safeActiveTab === 'my-company') return { enabled: true, scope: 'my-company', entratenantid: tokenInfo?.account?.tenantId };
+    if (safeActiveTab === 'my-client') return { enabled: true, scope: 'my-client', entrauserid: null };
     return { enabled: true, scope: 'my-ticket', entrauserid: userId };
-  }, [userId, activeTab, tokenInfo?.account?.tenantId]);
+  }, [userId, safeActiveTab, tokenInfo?.account?.tenantId]);
 
   const { tickets: myTickets = [] } = useFetchTicket(ticketQuery);
-  const { data: teamTickets = [] } = useFetchMyTeamUsers({ managerentrauserid: userId, enabled: !!userId });
-  const isManager = teamTickets.length > 0;
-  const visibleTabs = useMemo(() => isManager ? tabs : tabs.filter(t => t.value !== 'my-team'), [isManager]);
-  const safeActiveTab = useMemo(() => visibleTabs.some(t => t.value === activeTab) ? activeTab : 'my-ticket', [visibleTabs, activeTab]);
+  const { data: teamTickets = [] } = useFetchMyTeamUsers({ managerentrauserid: userId, enabled: !!userId && safeActiveTab === 'my-team' });
+  
   const tickets = safeActiveTab === 'my-team' && isManager ? teamTickets : myTickets;
 
   const stats = useMemo(() => {
@@ -269,7 +284,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <TabBar active={safeActiveTab} onChange={setActiveTab} tabs={visibleTabs} />
+        <TabBar active={safeActiveTab} onChange={setActiveTab} tabs={tabs} />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard icon="/icons/myticket.svg" label="My Tickets" value={stats.total} dots={[{ color: 'green', label: `${stats.newCount} New` }, { color: 'blue', label: `${stats.inProgressCount} In Progress` }, { color: 'red', label: `${stats.cancelledCount} Cancelled` }, { color: 'purple', label: `${stats.completedCount} Completed` }]} />

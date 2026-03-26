@@ -199,46 +199,48 @@ useEffect(() => {
     }
 
     return (
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-        <span className="text-xs text-gray-500 dark:text-gray-400">{totalRecords} total records</span>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={safePage === 1}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Previous page"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          {pages.map((page, i) =>
-            page === '...' ? (
-              <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
-            ) : (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                  page === safePage
-                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-                }`}
-              >
-                {page}
-              </button>
-            )
-          )}
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={safePage === totalPages}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Next page"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+       <div className="flex-shrink-0 flex items-center py-3 border-t border-gray-200 dark:border-gray-800">
+      <span className="text-xs text-gray-500 dark:text-gray-400">
+        {totalRecords} Total records
+      </span>
+      <div className="flex items-center gap-1 ml-auto px-4">
+        <button
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={safePage === 1}
+          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        {pages.map((page, i) =>
+          page === '...' ? (
+            <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`w-8 h-8 text-xs rounded-lg transition-colors ${
+                page === safePage
+                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+              }`}
+            >
+              {page}
+            </button>
+          )
+        )}
+        <button
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={safePage === totalPages}
+          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          aria-label="Next page"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
-    );
-  })();
+    </div>
+  );
+})();
 
   const footer = (
     <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
