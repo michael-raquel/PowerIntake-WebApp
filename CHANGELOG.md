@@ -1,3 +1,10 @@
+# [1.3.0-dev.33](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.32...v1.3.0-dev.33) (2026-03-26)
+
+
+### Bug Fixes
+
+* homepage carousel swipe ([df0e272](https://github.com/michael-raquel/PowerIntake-WebApp/commit/df0e272c9d9d67d407b406f03bf60726dc5e62ea))
+
 # [1.3.0-dev.32](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.31...v1.3.0-dev.32) (2026-03-26)
 
 
