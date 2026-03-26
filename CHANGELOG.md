@@ -1,3 +1,10 @@
+# [1.3.0-dev.30](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.29...v1.3.0-dev.30) (2026-03-26)
+
+
+### Reverts
+
+* Revert "feat: added Sparta AI to Powerintake, Responsive" ([17b8904](https://github.com/michael-raquel/PowerIntake-WebApp/commit/17b89047f29ecaa5156ec50073b75d0b0a5a0842))
+
 # [1.3.0-dev.29](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.28...v1.3.0-dev.29) (2026-03-26)
 
 
