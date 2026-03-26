@@ -1,3 +1,10 @@
+# [1.3.0-dev.28](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.27...v1.3.0-dev.28) (2026-03-26)
+
+
+### Bug Fixes
+
+* router push to appropriate page ([8bf72f9](https://github.com/michael-raquel/PowerIntake-WebApp/commit/8bf72f92c6d811af3fd91365954b0f26670fab44))
+
 # [1.3.0-dev.27](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.26...v1.3.0-dev.27) (2026-03-26)
 
 
