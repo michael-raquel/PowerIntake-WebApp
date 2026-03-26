@@ -1,3 +1,10 @@
+# [1.3.0-dev.27](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.26...v1.3.0-dev.27) (2026-03-26)
+
+
+### Bug Fixes
+
+* ticket page recent ticket redirect ([c707ec1](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c707ec1bd0d6144736a42ababde40def09b9f145))
+
 # [1.3.0-dev.26](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.25...v1.3.0-dev.26) (2026-03-25)
 
 
