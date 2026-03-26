@@ -1,3 +1,10 @@
+# [1.3.0-dev.36](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.35...v1.3.0-dev.36) (2026-03-26)
+
+
+### Bug Fixes
+
+* no ticket found message if empty and text alignment to center ([a373e35](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a373e35b727f2de528c67df1920ceb5be450e533))
+
 # [1.3.0-dev.35](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.34...v1.3.0-dev.35) (2026-03-26)
 
 
