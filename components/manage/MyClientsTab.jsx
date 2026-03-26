@@ -244,7 +244,6 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
           <tfoot className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/60">
             <tr className="text-center">
               <td colSpan={2} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                Total
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.totalTickets ?? 0}

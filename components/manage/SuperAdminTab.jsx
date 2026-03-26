@@ -317,7 +317,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                             className="data-[state=checked]:bg-blue-500 cursor-pointer"
                             checked={hasRole(getRoleValue(row), "SuperAdmin")}
                             onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
-                            disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
+                            disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || row.v_status !== "true"}
                           />
                         </div>
                       </div>
@@ -404,7 +404,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
                       checked={hasRole(getRoleValue(row), "SuperAdmin")}
                       onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
-                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading}
+                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || row.v_status !== "true"}
                     />
                   </td>
                 </tr>
@@ -414,7 +414,6 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           <tfoot className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/60">
             <tr className="text-center">
               <td colSpan={4} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                Total
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.totalTickets ?? 0}

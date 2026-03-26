@@ -306,7 +306,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
                       checked={hasRole(getRoleValue(row), "Admin")}
                       onCheckedChange={(checked) => handleAdminToggle(row, checked)}
-                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin") || hasRole(getRoleValue(row), "Super Admin")}
+                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin") || hasRole(getRoleValue(row), "Super Admin") || row.v_status !== "true"}
                     />
                   </div>
                 </div>
@@ -388,7 +388,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
                       checked={hasRole(getRoleValue(row), "Admin")}
                       onCheckedChange={(checked) => handleAdminToggle(row, checked)}
-                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin")}
+                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin") || row.v_status !== "true"}
                     />
                   </td>
                 </tr>
@@ -398,7 +398,6 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
           <tfoot className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/60">
             <tr className="text-center">
               <td colSpan={4} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-                Total
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.totalTickets ?? 0}
