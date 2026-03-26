@@ -1,3 +1,10 @@
+# [1.3.0-dev.32](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.31...v1.3.0-dev.32) (2026-03-26)
+
+
+### Bug Fixes
+
+* Adjusted AI with Navbar Height adjusted ([d0e5173](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d0e517325d1e226ee578bb8e67a9de1638dd0434))
+
 # [1.3.0-dev.31](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.30...v1.3.0-dev.31) (2026-03-26)
 
 
