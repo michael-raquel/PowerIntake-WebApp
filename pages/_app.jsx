@@ -9,7 +9,8 @@ import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider as NextThemeProvider } from "next-themes";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from "sonner";
-import Clarity from "@microsoft/clarity";
+import Clarity from '@microsoft/clarity';
+
 
 const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
   ssr: false,
@@ -17,10 +18,6 @@ const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
 const AuthGuard = dynamic(() => import("@/components/AuthGuard"), {
   ssr: false,
 });
-const SpartaAssistWidget = dynamic(
-  () => import("@/components/SpartaAssistWidget"),
-  { ssr: false }
-);
 
 const msalInstance = new PublicClientApplication(msalConfig);
 const noSidebarPages = ["/", "/register", "/login"];
@@ -36,10 +33,6 @@ function AppContent({ Component, pageProps }) {
   const showSidebar = !isPublicPage;
   const requiredRoles = routeRoleMap[router.pathname] ?? [];
 
-  // Optional: hide widget on offline page
-  const hideAssistRoutes = ["/offline"];
-  const showAssistWidget = !hideAssistRoutes.includes(router.pathname);
-
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker
@@ -49,7 +42,7 @@ function AppContent({ Component, pageProps }) {
     }
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (typeof window !== "undefined") {
       const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
       if (clarityId) {
@@ -59,6 +52,7 @@ function AppContent({ Component, pageProps }) {
       }
     }
   }, []);
+
 
   return (
     <NextThemeProvider
@@ -90,8 +84,6 @@ function AppContent({ Component, pageProps }) {
                 </div>
               </main>
             </div>
-
-            {showAssistWidget && <SpartaAssistWidget />}
             <Toaster />
           </ThemeProvider>
         </AuthProvider>
