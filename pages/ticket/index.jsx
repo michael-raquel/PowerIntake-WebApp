@@ -4,9 +4,11 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import ComFilters from '@/components/ticket/ComFilters';
 import ComTicketTable from '@/components/ticket/ComTicketTable';
 import ComCreateTicket from '@/components/ticket/ComCreateTicket';
+import ComUpdateForm from '@/components/ticket/ComUpdateForm';
 import ComCard from '@/components/ticket/tables/ComCard';
 import { useAuth } from '@/context/AuthContext';
 import useManagerCheck from '@/hooks/UseManagerCheck';
+import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { ExternalLink, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
@@ -22,18 +24,26 @@ const FOOTER_LINKS = [
   { href: 'https://Portal.SpartaServ.com',               label: 'Portal' },
 ];
 
+const VALID_TABS = new Set(['my-client', 'my-company', 'my-team', 'my-ticket']);
+
 export default function TicketPage() {
-  const searchParams = useSearchParams();
-  const router       = useRouter();
+  const searchParams  = useSearchParams();
+  const router        = useRouter();
   const { tokenInfo } = useAuth();
   const { isManager } = useManagerCheck();
 
   const roles        = tokenInfo?.account?.roles ?? [];
   const isSuperAdmin = roles.includes('SuperAdmin');
   const isAdmin      = roles.includes('Admin');
+  const userId       = tokenInfo?.account?.localAccountId;
+
+  const initialUuid = searchParams.get('uuid') || null;
+  const initialTab  = searchParams.get('tab') || null;
 
   const [isMobile,         setIsMobile]        = useState(false);
-  const [activeTab,        setActiveTab]        = useState('my-ticket');
+  const [activeTab,        setActiveTab]        = useState(
+    initialTab && VALID_TABS.has(initialTab) ? initialTab : 'my-ticket'
+  );
   const [currentPage,      setCurrentPage]      = useState(1);
   const [totalRecords,     setTotalRecords]     = useState(0);
   const [showCreateTicket, setShowCreateTicket] = useState(() => searchParams.get('create') === 'true');
@@ -43,12 +53,12 @@ export default function TicketPage() {
   const [refreshKey,       setRefreshKey]       = useState(0);
   const [recordsPerPage,   setRecordsPerPage]   = useState(DEFAULT_ROWS);
 
+  const [selectedTicket,   setSelectedTicket]   = useState(null);
+  const pendingUuid = useRef(initialUuid);
   const tableContainerRef = useRef(null);
-
   const perPage    = isMobile ? MOBILE_PER_PAGE : recordsPerPage;
   const totalPages = Math.max(1, Math.ceil(totalRecords / perPage));
-
-  const safePage = Math.min(currentPage, totalPages);
+  const safePage   = Math.min(currentPage, totalPages);
 
   const tabs = useMemo(() => {
     const t = [];
@@ -67,6 +77,29 @@ export default function TicketPage() {
     const ids = tabs.map(t => t.id);
     return ids.includes(activeTab) ? activeTab : 'my-ticket';
   }, [tabs, activeTab]);
+
+  const ticketQuery = useMemo(() => {
+    if (!userId || safeTab === 'my-team') return { enabled: false };
+    if (safeTab === 'my-company') return { enabled: true, scope: 'my-company', entratenantid: tokenInfo?.account?.tenantId };
+    if (safeTab === 'my-client')  return { enabled: true, scope: 'my-client',  entrauserid: null };
+    return { enabled: true, scope: 'my-ticket', entrauserid: userId };
+  }, [userId, safeTab, tokenInfo?.account?.tenantId]);
+
+  const { tickets = [], isLoading } = useFetchTicket({ ...ticketQuery, refreshKey });
+
+  useEffect(() => {
+    if (!pendingUuid.current || isLoading || !tickets.length) return;
+    const match = tickets.find(t => t.v_ticketuuid === pendingUuid.current);
+    if (match) {
+      setSelectedTicket(match);
+      pendingUuid.current = null; 
+    }
+  }, [tickets, isLoading]);
+
+useEffect(() => {
+  const hasParams = searchParams.get('create') || searchParams.get('uuid') || searchParams.get('tab');
+  if (hasParams) router.replace('/ticket', undefined, { shallow: true });
+}, [router, searchParams]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -89,12 +122,6 @@ export default function TicketPage() {
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', update); };
   }, [isMobile, safeTab]);
 
-  useEffect(() => {
-    if (searchParams.get('create') === 'true') {
-      router.replace('/ticket', undefined, { shallow: true });
-    }
-  }, [searchParams, router]);
-
   const handleTabChange = useCallback((id) => {
     setActiveTab(id);
     setCurrentPage(1);
@@ -106,6 +133,19 @@ export default function TicketPage() {
   const handleFiltersChange = useCallback((filters) => {
     setSelectedFilters(filters);
     setCurrentPage(1);
+  }, []);
+
+  const handleTicketSelect = useCallback((ticket) => {
+    setSelectedTicket(ticket);
+  }, []);
+
+  const handleDialogClose = useCallback(() => {
+    setSelectedTicket(null);
+  }, []);
+
+  const handleTicketUpdated = useCallback(() => {
+    setRefreshKey(k => k + 1);
+    setSelectedTicket(null);
   }, []);
 
   if (showCreateTicket) {
@@ -170,7 +210,6 @@ export default function TicketPage() {
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
-
           {pages.map((page, i) =>
             page === '...' ? (
               <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
@@ -188,7 +227,6 @@ export default function TicketPage() {
               </button>
             )
           )}
-
           <button
             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
             disabled={safePage === totalPages}
@@ -237,14 +275,15 @@ export default function TicketPage() {
   );
 
   const tableProps = {
-    activeTab:              safeTab,
-    currentPage:            safePage,
-    onTotalRecordsChange:   setTotalRecords,
-    onFilterOptionsChange:  setFilterOptions,
+    activeTab:             safeTab,
+    currentPage:           safePage,
+    onTotalRecordsChange:  setTotalRecords,
+    onFilterOptionsChange: setFilterOptions,
     searchValue,
-    filters:                selectedFilters,
+    filters:               selectedFilters,
     refreshKey,
-    onTicketUpdated:        () => setRefreshKey(k => k + 1),
+    onTicketSelect:        handleTicketSelect,   
+    onTicketUpdated:       () => setRefreshKey(k => k + 1),
   };
 
   // ── Mobile 
@@ -274,10 +313,17 @@ export default function TicketPage() {
           </div>
         </div>
         {footer}
+
+        {selectedTicket && (
+          <ComUpdateForm
+            ticket={selectedTicket}
+            onClose={handleDialogClose}
+            onUpdated={handleTicketUpdated}
+          />
+        )}
       </div>
     );
   }
-
   // ── Desktop 
   return (
     <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
@@ -297,15 +343,21 @@ export default function TicketPage() {
             />
           </div>
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 mt-2" />
-
           <div ref={tableContainerRef} className="flex-1 min-h-0 overflow-auto">
             <ComTicketTable {...tableProps} recordsPerPage={recordsPerPage} />
           </div>
-
           {pagination}
         </div>
       </div>
       {footer}
+
+      {selectedTicket && (
+        <ComUpdateForm
+          ticket={selectedTicket}
+          onClose={handleDialogClose}
+          onUpdated={handleTicketUpdated}
+        />
+      )}
     </div>
   );
 }
