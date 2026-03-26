@@ -132,22 +132,27 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
       <div className="px-3 sm:px-4 pt-2.5 sm:pt-3 pb-2">
         <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug">{ticket.v_title}</p>
       </div>
-      <div className="px-3 sm:px-4 pb-3 sm:hidden">
+     <div className="px-3 sm:px-4 pb-3 sm:hidden">
         <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-2 sm:gap-y-2.5">
           {gridData.map(({ label, value }) => (
             <div key={label} className="min-w-0">
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">{label}</p>
-              <p className="text-[11px] sm:text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{value}</p>
+              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                {label}
+              </p>
+              <p className="text-[11px] sm:text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
+                {value}
+              </p>
             </div>
           ))}
         </div>
       </div>
-       <div className="hidden sm:block px-3 sm:px-4 pb-3">
+
+      <div className="hidden sm:block px-3 sm:px-4 pb-3">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-gray-600 dark:text-gray-400">
           {metadataItems.map((item, index) => (
             <span key={item.label} className="inline-flex items-center gap-1">
-              <span className="font-medium text-gray-500 dark:text-gray-500">{item.label}:</span>
-              <span className="font-medium text-gray-700 dark:text-gray-300">{item.value}</span>
+              <span className="text-[9px] sm:text-[10px] tracking-wider text-gray-400 dark:text-gray-500">{item.label}:</span>
+              <span className="text-[11px] sm:text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{item.value}</span>
               {index < metadataItems.length - 1 && (
                 <span className="text-gray-300 dark:text-gray-600 ml-1">|</span>
               )}
@@ -155,6 +160,7 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
           ))}
         </div>
       </div>
+
       <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800/40 border-t border-gray-100 dark:border-gray-800 gap-2">
         <span className="text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500 truncate">{dateLabel} · {timeLabel}</span>
         <span className="text-[9px] sm:text-[10px] text-violet-500 dark:text-violet-400 font-medium whitespace-nowrap shrink-0">View details →</span>
