@@ -90,7 +90,7 @@ const TabBar = ({ active, onChange, tabs }) => (
           className={`px-4 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150 rounded-t-lg border-b-2 cursor-pointer ${active === tab.value
             ? 'border-violet-600 text-violet-600 bg-violet-50 dark:bg-violet-950/30 dark:border-violet-400 dark:text-violet-400 font-semibold'
             : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-white/[0.04]'
-          }`}>
+            }`}>
           {tab.label}
         </button>
       ))}
@@ -130,7 +130,7 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
       className="w-full text-left group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md transition-all duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 relative"
     >
       <div className="absolute left-0 top-0 bottom-0 w-0 group-hover:w-1 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-l-xl transition-all duration-200" />
-      
+
       <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-100 dark:border-gray-800 gap-2">
         <span className="text-[11px] sm:text-xs font-mono font-semibold text-violet-600 dark:text-violet-400 shrink-0">
           #{ticket.v_ticketnumber}
@@ -283,21 +283,21 @@ export default function HomePage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard icon="/icons/myticket.svg" label="My Tickets" value={stats.total} dots={[
-            { color: 'green',  label: `${stats.newCount} New`               },
-            { color: 'blue',   label: `${stats.inProgressCount} In Progress` },
-            { color: 'red',    label: `${stats.cancelledCount} Cancelled`    },
-            { color: 'purple', label: `${stats.completedCount} Completed`    },
+            { color: 'green', label: `${stats.newCount} New` },
+            { color: 'blue', label: `${stats.inProgressCount} In Progress` },
+            { color: 'red', label: `${stats.cancelledCount} Cancelled` },
+            { color: 'purple', label: `${stats.completedCount} Completed` },
           ]} />
           <StatCard icon="/icons/inprogress.svg" label="In Progress" value={stats.inProgressCount} dots={[
             { color: 'blue', label: 'Being worked on' },
           ]} />
           <StatCard icon="/icons/completed.svg" label="Cancelled" value={stats.cancelledCount} dots={[
-            { color: 'red',    label: `${stats.cancelledOnlyCount} Cancelled` },
-            { color: 'orange', label: `${stats.mergedCount} Merged`           },
+            { color: 'red', label: `${stats.cancelledOnlyCount} Cancelled` },
+            { color: 'orange', label: `${stats.mergedCount} Merged` },
           ]} />
           <StatCard icon="/icons/completionrate.svg" label="Completion Rate" value={`${stats.completionRate}%`} dots={[
             { color: 'purple', label: `${stats.workCompletedCount} Work Completed` },
-            { color: 'green',  label: `${stats.problemSolvedCount} Problem Solved` },
+            { color: 'green', label: `${stats.problemSolvedCount} Problem Solved` },
           ]} />
         </div>
 
@@ -307,7 +307,7 @@ export default function HomePage() {
               <h2 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white">Recent tickets</h2>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Your latest 5 active tickets</p>
             </div>
-            <button onClick={() => router.push('/ticket')}
+            <button onClick={() => router.push(`/ticket?tab=${safeActiveTab}`)}
               className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-sm transition-all">
               View all <span>→</span>
             </button>
