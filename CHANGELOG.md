@@ -1,3 +1,10 @@
+# [1.3.0-dev.31](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.30...v1.3.0-dev.31) (2026-03-26)
+
+
+### Bug Fixes
+
+* 2116 and 2112 Removal of total and disable of switch ([548a95a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/548a95ac7d5be60f7aca31a0591a2ed28b478db1))
+
 # [1.3.0-dev.30](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.29...v1.3.0-dev.30) (2026-03-26)
 
 
