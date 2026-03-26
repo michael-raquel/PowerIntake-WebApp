@@ -1,3 +1,10 @@
+# [1.3.0-dev.29](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.28...v1.3.0-dev.29) (2026-03-26)
+
+
+### Features
+
+* added Sparta AI to Powerintake, Responsive ([7f9c4ac](https://github.com/michael-raquel/PowerIntake-WebApp/commit/7f9c4ac9b0f80bc9db9216fd88ab0546389332e7))
+
 # [1.3.0-dev.28](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.27...v1.3.0-dev.28) (2026-03-26)
 
 
