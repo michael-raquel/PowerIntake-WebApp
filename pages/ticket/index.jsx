@@ -201,7 +201,7 @@ useEffect(() => {
     return (
       <div className="flex-shrink-0 flex items-center py-3 border-t border-gray-200 dark:border-gray-800">
   <span className="text-xs text-gray-500 dark:text-gray-400">
-    {totalRecords} Total records
+    {totalRecords} Total Records
   </span>
       <div className="flex items-center gap-1 ml-auto px-4">
         <button
