@@ -100,12 +100,12 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
         (currentEntraId && note.v_createdby === currentEntraId)) {
       return currentUserName;
     }
-    return 'Unknown';
+    return 'Power Intake';
   };
 
   const getNoteContent = (note) => {
     if (!note.v_note && !note.v_createdby) {
-      return '📎 File attachment uploaded';
+      return '📎 File uploaded';
     }
     return note.v_note;
   };
