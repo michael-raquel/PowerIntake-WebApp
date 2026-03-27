@@ -1,7 +1,6 @@
 import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import Image from 'next/image';
-import { useAuth } from '../../context/AuthContext';
 import powersuiteaiicon from './assets/powersuiteai.svg';
 import spartaassisticon from './assets/spartaassistai.svg';
 import teams from './assets/teams.svg';
@@ -57,7 +56,6 @@ export function SettingCard({ icon, title, description, isEnabled, onChange, isL
 export function NotificationsSection({ localSettings, onToggle, loadingToggles = {}, isLoading = false }) {
   return (
     <div>
-      <AuthTokenDisplay />
       <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">Notifications</h2>
       <div className="space-y-4">
         <SettingCard
@@ -81,18 +79,6 @@ export function NotificationsSection({ localSettings, onToggle, loadingToggles =
   );
 }
 
-function AuthTokenDisplay() {
-  const { accessToken, tokenInfo } = useAuth();
-  const token = tokenInfo?.accessToken ?? accessToken;
-  if (!token) return null;
-
-  return (
-    <div className="mb-3">
-      <div className="text-xs text-gray-600 dark:text-gray-400">Auth token (debug):</div>
-      <div className="mt-1 text-xs text-gray-700 dark:text-gray-300 break-all">{token}</div>
-    </div>
-  );
-}
 
 export function AssistSection({ localSettings, onToggle, loadingToggles = {}, isLoading = false }) {
   return (
