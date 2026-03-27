@@ -15,7 +15,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 const MOBILE_PER_PAGE = 10;
 const ROW_HEIGHT = 50;
 const MIN_ROWS = 1;
-const DEFAULT_ROWS = 10;
+const DEFAULT_ROWS = 9;
 
 const FOOTER_LINKS = [
   { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
@@ -197,51 +197,52 @@ export default function TicketPage() {
       pages.push(1, '...', safePage - 1, safePage, safePage + 1, '...', totalPages);
     }
 
-    return (
-      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-800">
-        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-          {totalRecords} Total Records
-        </span>
-        <div className="flex items-center gap-1">
+   return (
+  <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-800 mt-auto">
+    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+      {totalRecords} Total Records
+    </span>
+    <div className="flex items-center gap-1">
+      <button
+        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+        disabled={safePage === 1}
+        className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        aria-label="Previous page"
+      >
+        <ChevronLeft className="w-4 h-4" />
+      </button>
+      {pages.map((page, i) =>
+        page === '...' ? (
+          <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
+        ) : (
           <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={safePage === 1}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Previous page"
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`w-8 h-8 text-xs rounded-lg transition-colors font-medium ${
+              page === safePage
+                ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+            }`}
           >
-            <ChevronLeft className="w-4 h-4" />
+            {page}
           </button>
-          {pages.map((page, i) =>
-            page === '...' ? (
-              <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
-            ) : (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 text-xs rounded-lg transition-colors font-medium ${page === safePage
-                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-                  }`}
-              >
-                {page}
-              </button>
-            )
-          )}
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={safePage === totalPages}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Next page"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    );
+        )
+      )}
+      <button
+        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+        disabled={safePage === totalPages}
+        className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        aria-label="Next page"
+      >
+        <ChevronRight className="w-4 h-4" />
+      </button>
+    </div>
+  </div>
+);
   })();
 
   const footer = (
-    <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 pt-7">
+    <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 ">
       <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
 
         <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
@@ -347,8 +348,7 @@ export default function TicketPage() {
       <div className="flex flex-col gap-4 flex-1 min-h-0">
         {header}
         {tabBar}
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 flex flex-col flex-1 min-h-0">
-          <div className="flex-shrink-0">
+<div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 pb-0 flex flex-col flex-1 min-h-0">          <div className="flex-shrink-0">
             <ComFilters
               onCreateTicket={() => setShowCreateTicket(true)}
               activeTab={safeTab}

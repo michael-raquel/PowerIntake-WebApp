@@ -164,7 +164,7 @@ export default function SupportRoute() {
         </div>
       </div>
 
-     <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 pt-7">
+     <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
       <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
 
         <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
