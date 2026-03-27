@@ -1,3 +1,10 @@
+# [1.3.0-dev.39](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.38...v1.3.0-dev.39) (2026-03-27)
+
+
+### Bug Fixes
+
+* dialog screen size ([1d5d525](https://github.com/michael-raquel/PowerIntake-WebApp/commit/1d5d5255737b9879db3d38e17a0ab203980dc79f))
+
 # [1.3.0-dev.38](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.37...v1.3.0-dev.38) (2026-03-27)
 
 
