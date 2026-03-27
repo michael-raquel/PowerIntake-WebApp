@@ -1,3 +1,10 @@
+# [1.3.0-dev.37](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.36...v1.3.0-dev.37) (2026-03-27)
+
+
+### Bug Fixes
+
+* alignment and note consistent Display ([02aaada](https://github.com/michael-raquel/PowerIntake-WebApp/commit/02aaada2ea2b956db1b62cc49c65af1430904df2))
+
 # [1.3.0-dev.36](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.35...v1.3.0-dev.36) (2026-03-26)
 
 
