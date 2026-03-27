@@ -54,7 +54,7 @@ export default function Manage() {
   }, [updateRecordsPerPage, validTab]);
 
   return (
-    <div className="min-h-[100dvh] flex flex-col p-4 pb-4">
+    <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
       <div className="flex flex-col gap-4 flex-1 min-h-0">
         <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
           <div className="flex items-center justify-between">
