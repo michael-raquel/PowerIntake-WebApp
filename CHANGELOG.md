@@ -1,3 +1,10 @@
+# [1.3.0-dev.41](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.40...v1.3.0-dev.41) (2026-03-27)
+
+
+### Bug Fixes
+
+* Merge pull request [#77](https://github.com/michael-raquel/PowerIntake-WebApp/issues/77) from michael-raquel/manage-ui-revamp ([f598580](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f5985803940db66f007da77763811c6a2c02ba06))
+
 # [1.3.0-dev.40](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.39...v1.3.0-dev.40) (2026-03-27)
 
 
