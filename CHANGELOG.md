@@ -1,3 +1,10 @@
+# [1.3.0-dev.50](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.49...v1.3.0-dev.50) (2026-03-27)
+
+
+### Bug Fixes
+
+* pagination adjustment ([dd1ac58](https://github.com/michael-raquel/PowerIntake-WebApp/commit/dd1ac585dcea315aa60edded470ffa6926dbffb5))
+
 # [1.3.0-dev.49](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.48...v1.3.0-dev.49) (2026-03-27)
 
 
