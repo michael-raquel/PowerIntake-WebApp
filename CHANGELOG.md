@@ -1,3 +1,10 @@
+# [1.3.0-dev.46](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.45...v1.3.0-dev.46) (2026-03-27)
+
+
+### Bug Fixes
+
+* fixed record count on manage page ([1d0f6d7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/1d0f6d719300cb531aa2d5f720d0a57e6ece5639))
+
 # [1.3.0-dev.45](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.44...v1.3.0-dev.45) (2026-03-27)
 
 
