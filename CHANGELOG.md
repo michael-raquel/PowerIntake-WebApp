@@ -1,3 +1,10 @@
+# [1.3.0-dev.40](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.39...v1.3.0-dev.40) (2026-03-27)
+
+
+### Bug Fixes
+
+* ST-attachment fix upload attachment to dynamics ([fa9d365](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fa9d365c42050945a5cfa633924cd383ba6ff08c))
+
 # [1.3.0-dev.39](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.38...v1.3.0-dev.39) (2026-03-27)
 
 
