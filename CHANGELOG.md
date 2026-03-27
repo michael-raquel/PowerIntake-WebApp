@@ -1,3 +1,10 @@
+# [1.3.0-dev.49](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.48...v1.3.0-dev.49) (2026-03-27)
+
+
+### Bug Fixes
+
+* added mobile view so consistent view will ([5b4f759](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5b4f7593ec2d2cfbfc7f5458eed2f814f8a8f2ce))
+
 # [1.3.0-dev.48](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.47...v1.3.0-dev.48) (2026-03-27)
 
 
