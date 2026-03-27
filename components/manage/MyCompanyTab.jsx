@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMsal } from "@azure/msal-react";
 import useFetchAllCompanyUsers from "@/hooks/UseFetchAllCompanyUsers";
@@ -8,7 +8,16 @@ import useSyncUsers from "@/hooks/UseSyncUsers";
 import useCreatePromoteAdmin from "@/hooks/UseCreatePromoteAdmin";
 import useDeleteDemoteAdmin from "@/hooks/UseDeleteDemoteAdmin";
 import useUpdateUserRole from "@/hooks/UseUpdateUserRole";
+import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
+import { useUpdateRecordCount } from "@/hooks/UseUpdateRecordCount";
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import CompanyFilter from "@/components/manage/MyCompanyFilter";
 
 const TABLE_HEADERS = [
@@ -31,6 +40,28 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
   const [isMobile, setIsMobile] = useState(false);
   const mobileContainerRef = useRef(null);
   const [mobileLimit, setMobileLimit] = useState(DEFAULT_ROWS);
+  const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(DEFAULT_ROWS);
+  const [activeFilters, setActiveFilters] = useState({});
+  const [roleOverrides, setRoleOverrides] = useState({});
+  const hasUserSelectionRef = useRef(false);
+  const lastSettingsValueRef = useRef(null);
+
+  const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
+  const { updateRecordCount, loading: updating } = useUpdateRecordCount();
+
+  useEffect(() => {
+    if (userSettings && userSettings.length > 0) {
+      const setting = userSettings[0];
+      const recordCount = Number(setting?.v_managerecordcount);
+      if (recordCount > 0) {
+        const settingsChanged = recordCount !== lastSettingsValueRef.current;
+        lastSettingsValueRef.current = recordCount;
+        if ((settingsChanged || !hasUserSelectionRef.current) && recordCount !== selectedRowsPerPage) {
+          setSelectedRowsPerPage(recordCount);
+        }
+      }
+    }
+  }, [userSettings, selectedRowsPerPage]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -57,7 +88,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
     };
   }, [isMobile, updateMobileLimit]);
 
-  const effectiveLimit = isMobile ? mobileLimit : (parentRecordsPerPage || DEFAULT_ROWS);
+  const effectiveLimit = isMobile ? mobileLimit : (selectedRowsPerPage ?? DEFAULT_ROWS);
 
   const {
     data,
@@ -70,6 +101,8 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
     hasPrev,
     fetchData,
     totals,
+    filterOptions,
+    allRoleData,
   } = useFetchAllCompanyUsers(1, effectiveLimit);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
@@ -89,12 +122,35 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
     roleDisplayName: "Admin",
   });
   const { updateUserRole } = useUpdateUserRole();
-  const [activeFilters, setActiveFilters] = useState({});
-  const [roleOverrides, setRoleOverrides] = useState({});
+  useEffect(() => {
+    if (selectedRowsPerPage !== null) {
+      fetchData(1, activeFilters);
+    }
+  }, [selectedRowsPerPage, fetchData, activeFilters]);
 
   const handleSync = async () => {
     await syncUsers();
     fetchData(page, activeFilters);
+  };
+
+  const handleRecordsPerPageChange = async (value) => {
+    const newValue = Number(value);
+    hasUserSelectionRef.current = true;
+    lastSettingsValueRef.current = newValue;
+    setSelectedRowsPerPage(newValue);
+
+    if (userSettings && userSettings.length > 0) {
+      try {
+        await updateRecordCount({
+          entrauserid: userSettings[0]?.v_entrauserid,
+          ticketrecordcount: userSettings[0]?.v_ticketrecordcount ?? null,
+          managerecordcount: newValue,
+          modifiedby: accounts?.[0]?.username ?? null,
+        });
+      } catch (err) {
+        console.error("Failed to update record count:", err);
+      }
+    }
   };
 
   const handleFilter = (newFilters) => {
@@ -176,17 +232,18 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
     }
   };
 
-  const roles       = [...new Set(data.map((r) => r.v_role).filter(Boolean))];
-  const departments = [...new Set(data.map((r) => r.v_department).filter(Boolean))];
-  const statuses    = [...new Set(data.map((r) => r.v_status).filter(Boolean))];
-  const managers    = [...new Set(data.map((r) => r.v_managername).filter(Boolean))];
+  const roles       = filterOptions?.roles ?? [];
+  const departments = filterOptions?.departments ?? [];
+  const statuses    = filterOptions?.statuses ?? [];
+  const managers    = filterOptions?.managers ?? [];
 
-  const normalizeRole = (role) =>
+  const normalizeRole = useCallback((role) =>
     String(role || "")
       .replace(/\s+/g, "")
-      .toLowerCase();
+      .toLowerCase(),
+  []);
 
-  const getRoleValue = (row) => roleOverrides[row?.v_entrauserid] ?? row?.v_role;
+  const getRoleValue = useCallback((row) => roleOverrides[row?.v_entrauserid] ?? row?.v_role, [roleOverrides]);
 
   const hasRole = (roleValue, roleName) => {
     const target = normalizeRole(roleName);
@@ -195,6 +252,37 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
       .map((role) => normalizeRole(role))
       .includes(target);
   };
+
+  const roleIsActive = Boolean(activeFilters?.selectedRoles && activeFilters.selectedRoles.length > 0);
+
+  const exactRoleData = useMemo(() => {
+    if (!roleIsActive) return [];
+    const selectedRoles = activeFilters.selectedRoles || [];
+    return allRoleData.filter((row) => 
+      selectedRoles.some((selectedRole) => 
+        normalizeRole(getRoleValue(row)) === normalizeRole(selectedRole)
+      )
+    );
+  }, [activeFilters?.selectedRoles, allRoleData, getRoleValue, normalizeRole, roleIsActive]);
+
+  const pagedData = useMemo(() => {
+    if (!roleIsActive) return data;
+    const start = (page - 1) * effectiveLimit;
+    return exactRoleData.slice(start, start + effectiveLimit);
+  }, [data, exactRoleData, effectiveLimit, page, roleIsActive]);
+
+  const displayTotal = roleIsActive ? exactRoleData.length : (total ?? 0);
+  const displayTotalPages = roleIsActive
+    ? (effectiveLimit > 0 ? Math.max(1, Math.ceil(exactRoleData.length / effectiveLimit)) : 1)
+    : totalPages;
+  const displayHasPrev = roleIsActive ? page > 1 : hasPrev;
+  const displayHasNext = roleIsActive ? page < displayTotalPages : hasNext;
+
+  useEffect(() => {
+    if (roleIsActive && page > displayTotalPages) {
+      fetchData(1, activeFilters);
+    }
+  }, [activeFilters, displayTotalPages, fetchData, page, roleIsActive]);
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
 
@@ -207,9 +295,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-        <div className="text-xs text-gray-500 dark:text-gray-400">
-          {(total ?? 0)} Total Records
-        </div>
+        <div className="text-xs text-gray-500 dark:text-gray-400">{displayTotal} Total Records</div>
         <div className="ml-auto flex items-center gap-3">
           {syncing && (
             <span className="text-xs text-blue-500 dark:text-blue-400">Syncing users...</span>
@@ -246,13 +332,13 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             Loading...
           </div>
-        ) : data.length === 0 ? (
+        ) : pagedData.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             No records found.
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
-            {data.map((row, i) => (
+            {pagedData.map((row, i) => (
               <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
 
                 <div className="flex items-center justify-between">
@@ -359,14 +445,14 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                   Loading...
                 </td>
               </tr>
-            ) : data.length === 0 ? (
+            ) : pagedData.length === 0 ? (
               <tr>
                 <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                   No records found.
                 </td>
               </tr>
             ) : (
-              data.map((row, i) => (
+              pagedData.map((row, i) => (
                 <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_managername || "N/A"}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
@@ -414,49 +500,64 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
       </div>
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
-        <div className="text-xs text-gray-500 dark:text-gray-400">
-          {(total ?? 0)} Total Records
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => fetchData(page - 1)}
-            disabled={!hasPrev || loading}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+        <div className="text-xs text-gray-500 dark:text-gray-400">{displayTotal} Total Records</div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-600 dark:text-gray-400 font-medium">Rows per page:</label>
+            <Select value={String(selectedRowsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
+              <SelectTrigger className="w-20 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => fetchData(page - 1, activeFilters)}
+              disabled={!displayHasPrev || loading}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-          {[...Array(totalPages)].map((_, i) => {
-            const pageNum = i + 1;
-            if (pageNum === 1 || pageNum === totalPages || Math.abs(pageNum - page) <= 1) {
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => fetchData(pageNum)}
-                  disabled={loading}
-                  className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                    pageNum === page
-                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            }
-            if (Math.abs(pageNum - page) === 2) {
-              return <span key={pageNum} className="text-xs text-gray-400 px-1">...</span>;
-            }
-            return null;
-          })}
+            {[...Array(displayTotalPages)].map((_, i) => {
+              const pageNum = i + 1;
+              if (pageNum === 1 || pageNum === displayTotalPages || Math.abs(pageNum - page) <= 1) {
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => fetchData(pageNum, activeFilters)}
+                    disabled={loading}
+                    className={`w-8 h-8 text-xs rounded-lg transition-colors ${
+                      pageNum === page
+                        ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              }
+              if (Math.abs(pageNum - page) === 2) {
+                return <span key={pageNum} className="text-xs text-gray-400 px-1">...</span>;
+              }
+              return null;
+            })}
 
-          <button
-            onClick={() => fetchData(page + 1)}
-            disabled={!hasNext || loading}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+            <button
+              onClick={() => fetchData(page + 1, activeFilters)}
+              disabled={!displayHasNext || loading}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
