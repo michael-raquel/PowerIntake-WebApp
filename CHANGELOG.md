@@ -1,3 +1,10 @@
+# [1.3.0-dev.47](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.46...v1.3.0-dev.47) (2026-03-27)
+
+
+### Bug Fixes
+
+* no space in footer top side ([252b842](https://github.com/michael-raquel/PowerIntake-WebApp/commit/252b84243b07c4560ebd5561db2133ec491bf2d4))
+
 # [1.3.0-dev.46](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.45...v1.3.0-dev.46) (2026-03-27)
 
 
