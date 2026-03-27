@@ -328,7 +328,7 @@ useEffect(() => {
   }
   // ── Desktop 
   return (
-    <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
+    <div className="h-[100dvh] flex flex-col p-4 pb-0 overflow-hidden">
       <div className="flex flex-col gap-4 flex-1 min-h-0">
         {header}
         {tabBar}
