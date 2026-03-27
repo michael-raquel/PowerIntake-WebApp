@@ -198,7 +198,7 @@ export default function TicketPage() {
     }
 
    return (
-  <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-800 mt-auto">
+  <div className="flex items-center justify-between px-0 py-2 border-t border-gray-200 dark:border-gray-800 mt-auto">
     <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
       {totalRecords} Total Records
     </span>
