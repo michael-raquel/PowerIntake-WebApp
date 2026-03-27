@@ -512,7 +512,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
         <div className="text-xs text-gray-500 dark:text-gray-400">{displayTotal} Total Records</div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             <label className="text-xs text-gray-600 dark:text-gray-400 font-medium">Rows per page:</label>
             <Select value={String(selectedRowsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
               <SelectTrigger className="w-20 h-8 text-xs">
