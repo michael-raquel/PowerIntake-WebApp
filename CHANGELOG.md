@@ -1,3 +1,10 @@
+# [1.3.0-dev.48](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.47...v1.3.0-dev.48) (2026-03-27)
+
+
+### Bug Fixes
+
+* ticketpage alignment records total ([824a111](https://github.com/michael-raquel/PowerIntake-WebApp/commit/824a111abfdfc5d471bdcc1e2ad04d86d1f2a4da))
+
 # [1.3.0-dev.47](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.46...v1.3.0-dev.47) (2026-03-27)
 
 
