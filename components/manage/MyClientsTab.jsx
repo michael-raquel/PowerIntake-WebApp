@@ -116,7 +116,7 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          {(total ?? 0)} total records
+          {(total ?? 0)} Total Records
         </div>
         <div className="ml-auto flex items-center gap-3">
           {syncing && (
@@ -259,7 +259,7 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          {(total ?? 0)} total records
+          {(total ?? 0)} Total Records
         </div>
         <div className="flex items-center gap-1">
           <button
