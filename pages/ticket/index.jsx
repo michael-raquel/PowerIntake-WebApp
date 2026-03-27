@@ -13,63 +13,63 @@ import { ExternalLink, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 
 const MOBILE_PER_PAGE = 10;
-const ROW_HEIGHT      = 50;
-const MIN_ROWS        = 1;
-const DEFAULT_ROWS    = 10;
+const ROW_HEIGHT = 50;
+const MIN_ROWS = 1;
+const DEFAULT_ROWS = 10;
 
 const FOOTER_LINKS = [
   { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
-  { href: 'https://www.spartaserv.com/privacy-policy',   label: 'Privacy Policy' },
-  { href: 'https://www.spartaserv.com',                  label: 'SpartaServ.com' },
-  { href: 'https://Portal.SpartaServ.com',               label: 'Portal' },
+  { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
+  { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
+  { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
 ];
 
 const VALID_TABS = new Set(['my-client', 'my-company', 'my-team', 'my-ticket']);
 
 export default function TicketPage() {
-  const searchParams  = useSearchParams();
-  const router        = useRouter();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const { tokenInfo } = useAuth();
   const { isManager } = useManagerCheck();
 
-  const roles        = tokenInfo?.account?.roles ?? [];
+  const roles = tokenInfo?.account?.roles ?? [];
   const isSuperAdmin = roles.includes('SuperAdmin');
-  const isAdmin      = roles.includes('Admin');
-  const userId       = tokenInfo?.account?.localAccountId;
+  const isAdmin = roles.includes('Admin');
+  const userId = tokenInfo?.account?.localAccountId;
 
   const initialUuid = searchParams.get('uuid') || null;
-  const initialTab  = searchParams.get('tab') || null;
+  const initialTab = searchParams.get('tab') || null;
 
-  const [isMobile,         setIsMobile]        = useState(false);
-  const [activeTab,        setActiveTab]        = useState(
+  const [isMobile, setIsMobile] = useState(false);
+  const [activeTab, setActiveTab] = useState(
     initialTab && VALID_TABS.has(initialTab) ? initialTab : 'my-ticket'
   );
-  const [currentPage,      setCurrentPage]      = useState(1);
-  const [totalRecords,     setTotalRecords]     = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [showCreateTicket, setShowCreateTicket] = useState(() => searchParams.get('create') === 'true');
-  const [searchValue,      setSearchValue]      = useState('');
-  const [selectedFilters,  setSelectedFilters]  = useState({});
-  const [filterOptions,    setFilterOptions]    = useState({});
-  const [refreshKey,       setRefreshKey]       = useState(0);
-  const [recordsPerPage,   setRecordsPerPage]   = useState(DEFAULT_ROWS);
+  const [searchValue, setSearchValue] = useState('');
+  const [selectedFilters, setSelectedFilters] = useState({});
+  const [filterOptions, setFilterOptions] = useState({});
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [recordsPerPage, setRecordsPerPage] = useState(DEFAULT_ROWS);
 
-  const [selectedTicket,   setSelectedTicket]   = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState(null);
   const pendingUuid = useRef(initialUuid);
   const tableContainerRef = useRef(null);
-  const perPage    = isMobile ? MOBILE_PER_PAGE : recordsPerPage;
+  const perPage = isMobile ? MOBILE_PER_PAGE : recordsPerPage;
   const totalPages = Math.max(1, Math.ceil(totalRecords / perPage));
-  const safePage   = Math.min(currentPage, totalPages);
+  const safePage = Math.min(currentPage, totalPages);
 
   const tabs = useMemo(() => {
     const t = [];
     if (isSuperAdmin) {
-      t.push({ id: 'my-client',  label: 'My Client'  });
+      t.push({ id: 'my-client', label: 'My Client' });
       t.push({ id: 'my-company', label: 'My Company' });
     } else if (isAdmin) {
       t.push({ id: 'my-company', label: 'My Company' });
     }
-    if (isManager) t.push({ id: 'my-team',   label: 'My Team'   });
-    t.push(         { id: 'my-ticket', label: 'My Ticket' });
+    if (isManager) t.push({ id: 'my-team', label: 'My Team' });
+    t.push({ id: 'my-ticket', label: 'My Ticket' });
     return t;
   }, [isSuperAdmin, isAdmin, isManager]);
 
@@ -81,7 +81,7 @@ export default function TicketPage() {
   const ticketQuery = useMemo(() => {
     if (!userId || safeTab === 'my-team') return { enabled: false };
     if (safeTab === 'my-company') return { enabled: true, scope: 'my-company', entratenantid: tokenInfo?.account?.tenantId };
-    if (safeTab === 'my-client')  return { enabled: true, scope: 'my-client',  entrauserid: null };
+    if (safeTab === 'my-client') return { enabled: true, scope: 'my-client', entrauserid: null };
     return { enabled: true, scope: 'my-ticket', entrauserid: userId };
   }, [userId, safeTab, tokenInfo?.account?.tenantId]);
 
@@ -92,14 +92,14 @@ export default function TicketPage() {
     const match = tickets.find(t => t.v_ticketuuid === pendingUuid.current);
     if (match) {
       setSelectedTicket(match);
-      pendingUuid.current = null; 
+      pendingUuid.current = null;
     }
   }, [tickets, isLoading]);
 
-useEffect(() => {
-  const hasParams = searchParams.get('create') || searchParams.get('uuid') || searchParams.get('tab');
-  if (hasParams) router.replace('/ticket', undefined, { shallow: true });
-}, [router, searchParams]);
+  useEffect(() => {
+    const hasParams = searchParams.get('create') || searchParams.get('uuid') || searchParams.get('tab');
+    if (hasParams) router.replace('/ticket', undefined, { shallow: true });
+  }, [router, searchParams]);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -173,11 +173,10 @@ useEffect(() => {
           <button
             key={id}
             onClick={() => handleTabChange(id)}
-            className={`px-4 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150 rounded-t-lg border-b-2 cursor-pointer ${
-              safeTab === id
+            className={`px-4 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150 rounded-t-lg border-b-2 cursor-pointer ${safeTab === id
                 ? 'border-violet-600 text-violet-600 bg-violet-50 dark:bg-violet-950/30 dark:border-violet-400 dark:text-violet-400 font-semibold'
                 : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-white/[0.04]'
-            }`}
+              }`}
           >
             {label}
           </button>
@@ -199,93 +198,109 @@ useEffect(() => {
     }
 
     return (
-      <div className="flex-shrink-0 flex items-center py-3 border-t border-gray-200 dark:border-gray-800">
-  <span className="text-xs text-gray-500 dark:text-gray-400">
-    {totalRecords} Total Records
-  </span>
-      <div className="flex items-center gap-1 ml-auto px-4">
-        <button
-          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-          disabled={safePage === 1}
-          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        {pages.map((page, i) =>
-          page === '...' ? (
-            <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
-          ) : (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                page === safePage
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-              }`}
-            >
-              {page}
-            </button>
-          )
-        )}
-        <button
-          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-          disabled={safePage === totalPages}
-          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Next page"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
+      <div className="flex-shrink-0 flex items-center justify-between px-4 py-2 border-t border-gray-200 dark:border-gray-800">
+        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+          {totalRecords} Total Records
+        </span>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={safePage === 1}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          {pages.map((page, i) =>
+            page === '...' ? (
+              <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
+            ) : (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-8 h-8 text-xs rounded-lg transition-colors font-medium ${page === safePage
+                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                  }`}
+              >
+                {page}
+              </button>
+            )
+          )}
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={safePage === totalPages}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            aria-label="Next page"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
-    </div>
-  );
-})();
+    );
+  })();
 
   const footer = (
-    <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
+    <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 pt-7">
       <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
+
         <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
           <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
-          <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
-            Sparta Services, LLC
-          </p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">Sparta Services, LLC</p>
         </div>
-        <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3">
-          {FOOTER_LINKS.map((link, i) => (
-            <span key={link.label} className="flex items-center">
-              <a
-                href={link.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap"
-              >
-                {link.label}
-                <ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
+
+        <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3 sm:pr-14">
+          <div className="hidden sm:flex items-center gap-1">
+            {[
+              { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
+              { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
+              { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
+              { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
+            ].map((link, i, arr) => (
+              <span key={link.label} className="flex items-center">
+                <a href={link.href} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap">
+                  {link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
+                </a>
+                {i < arr.length - 1 && <span className="w-px h-3 bg-gray-300 dark:bg-gray-700 mx-0.5 shrink-0" />}
+              </span>
+            ))}
+          </div>
+
+          <div className="grid sm:hidden grid-cols-2 gap-x-0 gap-y-0">
+            {[
+              { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
+              { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
+              { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
+              { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
+            ].map((link, i) => (
+              <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
+                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap ${i % 2 === 0 ? 'justify-end' : 'justify-start'
+                  }`}>
+                {link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
               </a>
-              {i < FOOTER_LINKS.length - 1 && (
-                <span className="w-px h-3 bg-gray-300 dark:bg-gray-700 mx-0.5 shrink-0" />
-              )}
-            </span>
-          ))}
+            ))}
+          </div>
         </div>
+
         <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">
           &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
         </p>
+
       </div>
     </footer>
   );
 
   const tableProps = {
-    activeTab:             safeTab,
-    currentPage:           safePage,
-    onTotalRecordsChange:  setTotalRecords,
+    activeTab: safeTab,
+    currentPage: safePage,
+    onTotalRecordsChange: setTotalRecords,
     onFilterOptionsChange: setFilterOptions,
     searchValue,
-    filters:               selectedFilters,
+    filters: selectedFilters,
     refreshKey,
-    onTicketSelect:        handleTicketSelect,   
-    onTicketUpdated:       () => setRefreshKey(k => k + 1),
+    onTicketSelect: handleTicketSelect,
+    onTicketUpdated: () => setRefreshKey(k => k + 1),
   };
 
   // ── Mobile 
@@ -344,7 +359,7 @@ useEffect(() => {
               filterOptions={filterOptions}
             />
           </div>
-          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 mt-2" />
+          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 mt-3" />
           <div ref={tableContainerRef} className="flex-1 min-h-0 overflow-auto">
             <ComTicketTable {...tableProps} recordsPerPage={recordsPerPage} />
           </div>

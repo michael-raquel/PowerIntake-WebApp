@@ -17,9 +17,9 @@ const images = [
 
 const footerLinks = [
   { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
+  { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
   { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
   { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
-  { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
 ];
 
 const IN_PROGRESS_STATUSES = new Set([
@@ -132,7 +132,7 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
       <div className="px-3 sm:px-4 pt-2.5 sm:pt-3 pb-2">
         <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug">{ticket.v_title}</p>
       </div>
-     <div className="px-3 sm:px-4 pb-3 sm:hidden">
+      <div className="px-3 sm:px-4 pb-3 sm:hidden">
         <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-2 sm:gap-y-2.5">
           {gridData.map(({ label, value }) => (
             <div key={label} className="min-w-0">
@@ -230,7 +230,7 @@ export default function HomePage() {
 
   const { tickets: myTickets = [] } = useFetchTicket(ticketQuery);
   const { data: teamTickets = [] } = useFetchMyTeamUsers({ managerentrauserid: userId, enabled: !!userId && safeActiveTab === 'my-team' });
-  
+
   const tickets = safeActiveTab === 'my-team' && isManager ? teamTickets : myTickets;
 
   const stats = useMemo(() => {
@@ -317,18 +317,42 @@ export default function HomePage() {
         </div>
       </div>
 
-      <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
+      <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 pt-7">
         <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
-          <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1"><span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" /><p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">Sparta Services, LLC</p></div>
-          <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3">
-            {footerLinks.map((link, i) => (
-              <span key={link.label} className="flex items-center">
-                <a href={link.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap">{link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" /></a>
-                {i < footerLinks.length - 1 && <span className="w-px h-3 bg-gray-300 dark:bg-gray-700 mx-0.5 shrink-0" />}
-              </span>
-            ))}
+
+          <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
+            <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+            <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">Sparta Services, LLC</p>
           </div>
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">&copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.</p>
+
+          <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3 sm:pr-14">
+            <div className="hidden sm:flex items-center gap-1">
+              {footerLinks.map((link, i) => (
+                <span key={link.label} className="flex items-center">
+                  <a href={link.href} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap">
+                    {link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
+                  </a>
+                  {i < footerLinks.length - 1 && <span className="w-px h-3 bg-gray-300 dark:bg-gray-700 mx-0.5 shrink-0" />}
+                </span>
+              ))}
+            </div>
+
+            <div className="grid sm:hidden grid-cols-2 gap-x-0 gap-y-0">
+              {footerLinks.map((link, i) => (
+                <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap ${i % 2 === 0 ? 'justify-end' : 'justify-start'
+                    }`}
+                >
+                  {link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">
+            &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
+          </p>
+
         </div>
       </footer>
     </div>
