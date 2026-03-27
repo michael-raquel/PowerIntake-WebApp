@@ -1,3 +1,10 @@
+# [1.3.0-dev.45](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.44...v1.3.0-dev.45) (2026-03-27)
+
+
+### Bug Fixes
+
+* Dynamic Table singled Viewed ([e4fa5d3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e4fa5d334c35e4effe80d27c29c64113a7c15a60))
+
 # [1.3.0-dev.44](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.43...v1.3.0-dev.44) (2026-03-27)
 
 
