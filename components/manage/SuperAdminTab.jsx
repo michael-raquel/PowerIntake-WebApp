@@ -478,7 +478,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
+      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 pr-20">
         <div className="text-xs text-gray-500 dark:text-gray-400">{displayTotal} Total Records</div>
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-2">

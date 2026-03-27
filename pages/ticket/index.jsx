@@ -197,49 +197,51 @@ export default function TicketPage() {
       pages.push(1, '...', safePage - 1, safePage, safePage + 1, '...', totalPages);
     }
 
-   return (
-  <div className="flex items-center justify-between px-0 py-2 border-t border-gray-200 dark:border-gray-800 mt-auto">
-    <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-      {totalRecords} Total Records
-    </span>
-    <div className="flex items-center gap-1">
-      <button
-        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-        disabled={safePage === 1}
-        className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        aria-label="Previous page"
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
-      {pages.map((page, i) =>
-        page === '...' ? (
-          <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
-        ) : (
-          <button
-            key={page}
-            onClick={() => setCurrentPage(page)}
-            className={`w-8 h-8 text-xs rounded-lg transition-colors font-medium ${
-              page === safePage
-                ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-            }`}
-          >
-            {page}
-          </button>
-        )
-      )}
-      <button
-        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-        disabled={safePage === totalPages}
-        className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        aria-label="Next page"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
+  return (
+    <div className={`flex items-center justify-between py-2 border-t border-gray-200 dark:border-gray-800 mt-auto ${
+      isMobile ? 'px-5' : 'pr-15'
+    }`}>
+      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+        {totalRecords} Total Records
+      </span>
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={safePage === 1}
+          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          aria-label="Previous page"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        {pages.map((page, i) =>
+          page === '...' ? (
+            <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
+          ) : (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`w-8 h-8 text-xs rounded-lg transition-colors font-medium ${
+                page === safePage
+                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+              }`}
+            >
+              {page}
+            </button>
+          )
+        )}
+        <button
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={safePage === totalPages}
+          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          aria-label="Next page"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
-  </div>
-);
-  })();
+  );
+})();
 
   const footer = (
     <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 ">
