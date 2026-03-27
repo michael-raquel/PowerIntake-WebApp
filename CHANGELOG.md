@@ -1,3 +1,10 @@
+# [1.3.0-dev.38](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.37...v1.3.0-dev.38) (2026-03-27)
+
+
+### Bug Fixes
+
+* update form better screen size to avoid overflow ([2dece28](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2dece28918c8c9b202d261a218e218a74e459f5b))
+
 # [1.3.0-dev.37](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.36...v1.3.0-dev.37) (2026-03-27)
 
 
