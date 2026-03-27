@@ -71,31 +71,32 @@ export default function ComAttachment({
     const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
 
     if (imageFiles.length !== files.length) {
-      toast.error('Invalid file type', { description: 'Only images are allowed.' });
-      return;
+        toast.error('Invalid file type', { description: 'Only images are allowed.' });
+        return;
     }
     if (!imageFiles.length) return;
 
     try {
-      const uploads = await Promise.all(imageFiles.map(uploadImage));
-      const urls = uploads.map(u => u.url);
+        const uploads = await Promise.all(imageFiles.map(uploadImage));
+        const newUrls = uploads.map(u => u.url);  
 
-      if (attachments.length === 0) {
-        await createAttachments({ ticketuuid, attachments: urls, createdby: createdby || modifiedby });
-      } else {
-        await updateAttachments({
-          ticketuuid,
-          attachments: [...attachments.map(a => a.url), ...urls],
-          modifiedby: modifiedby || createdby
-        });
-      }
+        if (attachments.length === 0) {
+            await createAttachments({ ticketuuid, attachments: newUrls, createdby: createdby || modifiedby });
+        } else {
+            await updateAttachments({
+                ticketuuid,
+                attachments: [...attachments.map(a => a.url), ...newUrls], 
+                newAttachments: newUrls,                                   
+                modifiedby: modifiedby || createdby
+            });
+        }
 
-      await fetchAttachments();
-      toast.success('Uploaded', { description: `${imageFiles.length} file(s) uploaded` });
+        await fetchAttachments();
+        toast.success('Uploaded', { description: `${imageFiles.length} file(s) uploaded` });
     } catch (err) {
-      toast.error('Upload failed', { description: 'Please try again.' });
+        toast.error('Upload failed', { description: 'Please try again.' });
     }
-  };
+};
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files || []);

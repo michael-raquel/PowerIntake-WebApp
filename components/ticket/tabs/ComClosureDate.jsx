@@ -74,10 +74,10 @@ export default function ComClosureDate({ ticket }) {
             <div className="h-6 w-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
               <span className="text-xs text-emerald-600 dark:text-emerald-400">✅</span>
             </div>
-            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Closed</p>
+            <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Resolved Date</p>
           </div>
           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            {closed ? formatDate(closed) : 'Not closed'}
+           {closed ? formatDate(new Date(closed), true) : 'Not closed'}
           </p>
         </div>
       </div>
