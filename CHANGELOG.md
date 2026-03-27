@@ -1,3 +1,10 @@
+# [1.3.0-dev.43](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.42...v1.3.0-dev.43) (2026-03-27)
+
+
+### Bug Fixes
+
+* Total Records Text in TIcket Page ([b761996](https://github.com/michael-raquel/PowerIntake-WebApp/commit/b76199662e79f0c970266d3ca8507a0d450d610e))
+
 # [1.3.0-dev.42](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.41...v1.3.0-dev.42) (2026-03-27)
 
 
