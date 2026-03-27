@@ -1,3 +1,10 @@
+# [1.3.0-dev.42](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.41...v1.3.0-dev.42) (2026-03-27)
+
+
+### Bug Fixes
+
+* hid the recordcount feature from mobile ([8e5d2ac](https://github.com/michael-raquel/PowerIntake-WebApp/commit/8e5d2accaa57f3a4266b06df125a96c35f6a2101))
+
 # [1.3.0-dev.41](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.40...v1.3.0-dev.41) (2026-03-27)
 
 
