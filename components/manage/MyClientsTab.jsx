@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight, Copy, Check, Search, X } from "lucide-react";
 import useFetchMyClients from "@/hooks/UseFetchMyClientUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
@@ -17,8 +17,6 @@ import {
 } from "@/components/ui/select";
 
 const TABLE_HEADERS = ["Tenant ID", "Client Name", "Total Tickets", "Open Tickets"];
-const MOBILE_CARD_HEIGHT = 150;
-const MIN_RECORDS = 1;
 const DEFAULT_ROWS = 10;
 
 function CopyButton({ value }) {
@@ -44,9 +42,6 @@ function CopyButton({ value }) {
 
 export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
   const { accounts } = useMsal();
-  const [isMobile, setIsMobile] = useState(false);
-  const mobileContainerRef = useRef(null);
-  const [mobileLimit, setMobileLimit] = useState(DEFAULT_ROWS);
   const [localPage, setLocalPage] = useState(1);
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
 
@@ -66,7 +61,7 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
 
   const selectedRowsPerPage = userRowsPerPage ?? settingsRowsPerPage ?? DEFAULT_ROWS;
 
-  const effectiveLimit = isMobile ? mobileLimit : (selectedRowsPerPage ?? DEFAULT_ROWS);
+  const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
 
   const {
     data, loading, error,
@@ -86,23 +81,6 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
     onSearchChange?.(value);
   }, [onSearchChange]);
 
-  const updateMobileLimit = useCallback(() => {
-    if (!mobileContainerRef.current) return;
-    const height = mobileContainerRef.current.clientHeight;
-    if (!height) return;
-    const calculated = Math.max(DEFAULT_ROWS, Math.floor(height / MOBILE_CARD_HEIGHT));
-    setMobileLimit((prev) => (prev !== calculated ? calculated : prev));
-  }, []);
-
-  useEffect(() => {
-    if (!isMobile) return;
-    const raf = requestAnimationFrame(updateMobileLimit);
-    window.addEventListener("resize", updateMobileLimit);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", updateMobileLimit);
-    };
-  }, [isMobile, updateMobileLimit]);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
 
@@ -159,12 +137,6 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
     return filteredData.slice(start, start + effectiveLimit);
   }, [filteredData, effectiveLimit, localPage]);
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
@@ -215,7 +187,7 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto block md:hidden divide-y divide-gray-100 dark:divide-gray-800" ref={mobileContainerRef}>
+      <div className="flex-1 min-h-0 overflow-y-auto block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
         {loading ? (
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">Loading...</div>
         ) : pagedData.length === 0 ? (
@@ -276,7 +248,7 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
       </div>
 
       <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
-        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">

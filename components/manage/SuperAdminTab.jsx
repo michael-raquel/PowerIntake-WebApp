@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMsal } from "@azure/msal-react";
 import useFetchSuperAdminUsers from "@/hooks/UseFetchSystemAdminUsers";
@@ -31,43 +31,12 @@ const TABLE_HEADERS = [
   "Super Admin",
 ];
 
-const MOBILE_CARD_HEIGHT = 200;
-const MIN_RECORDS = 1;
 const DEFAULT_ROWS = 10;
 
 export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
   const { accounts } = useMsal();
-  const [isMobile, setIsMobile] = useState(false);
-  const mobileContainerRef = useRef(null);
-  const [mobileLimit, setMobileLimit] = useState(DEFAULT_ROWS);
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  const updateMobileLimit = useCallback(() => {
-    if (!mobileContainerRef.current) return;
-    const height = mobileContainerRef.current.clientHeight;
-    if (!height) return;
-    const calculated = Math.max(DEFAULT_ROWS, Math.floor(height / MOBILE_CARD_HEIGHT));
-    setMobileLimit((prev) => (prev !== calculated ? calculated : prev));
-  }, []);
-
-  useEffect(() => {
-    if (!isMobile) return;
-    const raf = requestAnimationFrame(updateMobileLimit);
-    window.addEventListener("resize", updateMobileLimit);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", updateMobileLimit);
-    };
-  }, [isMobile, updateMobileLimit]);
-
-  const effectiveLimit = isMobile ? mobileLimit : (selectedRowsPerPage ?? 0);
+  const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
 
   const {
     data,
@@ -332,7 +301,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
         </div>
       )} */}
 
-    <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800" ref={mobileContainerRef}>
+    <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
           {loading ? (
             <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
               Loading...
@@ -430,7 +399,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
       </div>
 
       <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
-        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">

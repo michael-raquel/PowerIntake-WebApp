@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useFetchMyTeam from "@/hooks/UseFetchMyTeamUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
@@ -24,21 +24,17 @@ const TABLE_HEADERS = [
   "Status",
 ];
 
-const MOBILE_CARD_HEIGHT = 230;
-const MIN_RECORDS = 1;
 const DEFAULT_ROWS = 10;
 
 export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
   const { accounts } = useMsal();
-  const [isMobile, setIsMobile] = useState(false);
-  const mobileContainerRef = useRef(null);
-  const [mobileLimit, setMobileLimit] = useState(DEFAULT_ROWS);
   const [localPage, setLocalPage] = useState(1);
+  const [userRowsPerPage, setUserRowsPerPage] = useState(null);
 
   const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
 
-  const selectedRowsPerPage = useMemo(() => {
+  const settingsRowsPerPage = useMemo(() => {
     if (userSettings && userSettings.length > 0) {
       const setting = userSettings[0];
       const recordCount = Number(setting?.v_managerecordcount);
@@ -49,7 +45,8 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
     return null;
   }, [userSettings]);
 
-  const effectiveLimit = isMobile ? mobileLimit : (selectedRowsPerPage ?? 0);
+  const selectedRowsPerPage = userRowsPerPage ?? settingsRowsPerPage ?? DEFAULT_ROWS;
+  const effectiveLimit = selectedRowsPerPage;
 
   const {
     data,
@@ -71,13 +68,6 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
     }
   }, [selectedRowsPerPage, fetchData]);
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
 
   const handleSync = async () => {
@@ -87,7 +77,8 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
 
   const handleRecordsPerPageChange = async (value) => {
     const newValue = Number(value);
-    setSelectedRowsPerPage(newValue);
+    setLocalPage(1);
+    setUserRowsPerPage(newValue);
 
     if (userSettings && userSettings.length > 0) {
       try {
@@ -197,7 +188,7 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
         </div>
       )} */}
 
-    <div className="flex-1 min-h-0 overflow-y-auto block md:hidden divide-y divide-gray-100 dark:divide-gray-800" ref={mobileContainerRef}>
+    <div className="flex-1 min-h-0 overflow-y-auto block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
         {loading ? (
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             Loading...
@@ -270,7 +261,7 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
       </div>
 
       <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
-        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
+        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 text-center dark:border-gray-800">
