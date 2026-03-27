@@ -15,61 +15,100 @@ export default function CompanyFilter({
 }) {
   const [search,     setSearch]     = useState("");
   const [manager,    setManager]    = useState("");
-  const [role,       setRole]       = useState("");
+  const [selectedRoles, setSelectedRoles] = useState([]);
   const [department, setDepartment] = useState("");
   const [status,     setStatus]     = useState("");
 
-  const activeFilterCount = [manager, role, department, status].filter(Boolean).length;
+  const activeFilterCount = [manager, selectedRoles.length > 0, department, status].filter(Boolean).length;
 
-  const emit = (overrides = {}) => {
+  const handleSearch = (e) => {
+    const newSearch = e.target.value;
+    setSearch(newSearch);
     onFilter({
-      search,
+      search: newSearch,
       manager,
-      role,
+      selectedRoles,
       department,
       status,
-      ...overrides,
     });
   };
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-    emit({ search: e.target.value });
-  };
-
   const handleManager = (e) => {
-    setManager(e.target.value);
-    emit({ manager: e.target.value });
+    const newManager = e.target.value;
+    setManager(newManager);
+    onFilter({
+      search,
+      manager: newManager,
+      selectedRoles,
+      department,
+      status,
+    });
   };
 
-  const handleRole = (val) => {
-    const v = val === "__all__" ? "" : val;
-    setRole(v);
-    emit({ role: v });
+  const handleRole = (roleValue) => {
+    const updated = selectedRoles.includes(roleValue)
+      ? selectedRoles.filter(r => r !== roleValue)
+      : [...selectedRoles, roleValue];
+    setSelectedRoles(updated);
+    onFilter({
+      search,
+      manager,
+      selectedRoles: updated,
+      department,
+      status,
+    });
   };
 
   const handleDepartment = (val) => {
-    const v = val === "__all__" ? "" : val;
-    setDepartment(v);
-    emit({ department: v });
+    const newDept = val === "__all__" ? "" : val;
+    setDepartment(newDept);
+    onFilter({
+      search,
+      manager,
+      selectedRoles,
+      department: newDept,
+      status,
+    });
   };
 
   const handleStatus = (val) => {
-    const v = val === "__all__" ? "" : val;
-    setStatus(v);
-    emit({ status: v });
+    const newStatus = val === "__all__" ? "" : val;
+    setStatus(newStatus);
+    onFilter({
+      search,
+      manager,
+      selectedRoles,
+      department,
+      status: newStatus,
+    });
   };
 
   const clearOne = (key) => {
-    if (key === "manager")    { setManager("");    emit({ manager: "" }); }
-    if (key === "role")       { setRole("");       emit({ role: "" }); }
-    if (key === "department") { setDepartment(""); emit({ department: "" }); }
-    if (key === "status")     { setStatus("");     emit({ status: "" }); }
+    if (key === "manager") {
+      setManager("");
+      onFilter({ search, manager: "", selectedRoles, department, status });
+    }
+    if (key === "role") {
+      setSelectedRoles([]);
+      onFilter({ search, manager, selectedRoles: [], department, status });
+    }
+    if (key === "department") {
+      setDepartment("");
+      onFilter({ search, manager, selectedRoles, department: "", status });
+    }
+    if (key === "status") {
+      setStatus("");
+      onFilter({ search, manager, selectedRoles, department, status: "" });
+    }
   };
 
   const clearAll = () => {
-    setSearch(""); setManager(""); setRole(""); setDepartment(""); setStatus("");
-    onFilter({ search: "", manager: "", role: "", department: "", status: "" });
+    setSearch("");
+    setManager("");
+    setSelectedRoles([]);
+    setDepartment("");
+    setStatus("");
+    onFilter({ search: "", manager: "", selectedRoles: [], department: "", status: "" });
   };
 
   return (
@@ -85,7 +124,10 @@ export default function CompanyFilter({
         />
         {search && (
           <button
-            onClick={() => { setSearch(""); emit({ search: "" }); }}
+            onClick={() => {
+              setSearch("");
+              onFilter({ search: "", manager, selectedRoles, department, status });
+            }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
             <X className="w-3.5 h-3.5" />
@@ -152,23 +194,28 @@ export default function CompanyFilter({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Role</label>
-                {role && (
+                {selectedRoles.length > 0 && (
                   <button onClick={() => clearOne("role")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
               </div>
-              <Select value={role || "__all__"} onValueChange={handleRole} className=" ">
-                <SelectTrigger className="h-9 text-sm w-full">
-                  <SelectValue placeholder="All Roles" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All Roles</SelectItem>
-                  {roles.map((r) => (
-                    <SelectItem key={r} value={r}>{r == "SuperAdmin" ? "Super Admin" : r}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {roles.map((r) => (
+                  <div key={r} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id={`role-${r}`}
+                      checked={selectedRoles.includes(r)}
+                      onChange={() => handleRole(r)}
+                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                    />
+                    <label htmlFor={`role-${r}`} className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
+                      {r}
+                    </label>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-1.5">

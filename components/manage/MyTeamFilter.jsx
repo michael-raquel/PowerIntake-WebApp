@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -6,51 +5,35 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-export default function MyTeamFilter({ onFilter, statuses = [] }) {
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSearch, statuses = [], selectedFilters = {} }) {
+  const activeFilterCount = Object.entries(selectedFilters).filter(
+    ([key, v]) => key !== "search" && v && typeof v === "string" && v.trim() !== ""
+  ).length;
 
-  const activeFilterCount = [status].filter(Boolean).length;
-
-  const emit = (overrides = {}) => {
-    onFilter({ search, status, ...overrides });
+  const handleFilterChange = (filter, value) => {
+    if (!value) return;
+    onFiltersChange({ ...selectedFilters, [filter]: value });
   };
 
-  const handleSearch = (e) => {
-    setSearch(e.target.value);
-    emit({ search: e.target.value });
-  };
-
-  const handleStatus = (val) => {
-    const v = val === "__all__" ? "" : val;
-    setStatus(v);
-    emit({ status: v });
-  };
-
-  const clearStatus = () => {
-    setStatus("");
-    emit({ status: "" });
-  };
-
-  const clearAll = () => {
-    setStatus("");
-    emit({ status: "" });
+  const clearFilter = (filter) => {
+    const next = { ...selectedFilters };
+    delete next[filter];
+    onFiltersChange(next);
   };
 
   return (
-    <div className="flex flex-row items-center gap-1 sm:gap-2 w-full px-4 py-3 border-b border-gray-200 dark:border-gray-800">
-
+    <div className="flex flex-row items-center gap-1 sm:gap-2 w-full">
       <div className="relative flex-1 min-w-[100px] sm:min-w-[150px]">
         <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
         <Input
-          value={search}
-          onChange={handleSearch}
+          value={searchValue}
+          onChange={(e) => onSearch?.(e.target.value)}
           placeholder="Search user name..."
           className="pl-7 sm:pl-9 pr-8 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 text-xs sm:text-sm h-8 sm:h-10"
         />
-        {search && (
+        {searchValue && (
           <button
-            onClick={() => { setSearch(""); emit({ search: "" }); }}
+            onClick={() => onSearch?.("")}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
             <X className="w-3.5 h-3.5" />
@@ -81,12 +64,11 @@ export default function MyTeamFilter({ onFilter, statuses = [] }) {
 
         <PopoverContent className="w-64 p-4 dark:bg-gray-900 dark:border-gray-800" align="end">
           <div className="space-y-4">
-
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-gray-900 dark:text-white">Filters</span>
               {activeFilterCount > 0 && (
                 <button
-                  onClick={clearAll}
+                  onClick={() => onFiltersChange({})}
                   className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
                 >
                   Clear all
@@ -97,29 +79,37 @@ export default function MyTeamFilter({ onFilter, statuses = [] }) {
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                {status && (
-                  <button onClick={clearStatus}>
+                {selectedFilters.status && (
+                  <button onClick={() => clearFilter("status")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
               </div>
-              <Select value={status || "__all__"} onValueChange={handleStatus}>
-                <SelectTrigger className="h-9 text-sm w-full">
+              <Select
+                value={selectedFilters.status || ""}
+                onValueChange={(value) => {
+                  if (value === "") {
+                    clearFilter("status");
+                  } else {
+                    handleFilterChange("status", value);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-9 text-sm w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All Statuses</SelectItem>
+                <SelectContent className="dark:bg-gray-900 dark:border-gray-800">
                   {statuses.map((s) => (
-                    <SelectItem key={s} value={s}>{s == "true" ? "Active" : "Inactive"}</SelectItem>
+                    <SelectItem key={s} value={s} className="dark:text-gray-200">
+                      {s === "true" ? "Active" : "Inactive"}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-
           </div>
         </PopoverContent>
       </Popover>
-
     </div>
   );
 }

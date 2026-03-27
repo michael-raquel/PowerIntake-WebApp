@@ -12,6 +12,12 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0 });
+  const [allRoleData, setAllRoleData] = useState([]);
+  const filterOptions = {
+    roles: ["Super Admin", "Admin", "Manager", "User"],
+    statuses: ["true", "false"],
+    clientnames: [],
+  };
   const lastTotalsKeyRef            = useRef("");
   const limitRef                    = useRef(initialLimit);
 
@@ -50,6 +56,9 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     if (filters.search)     params.append("search",     filters.search);
     if (filters.clientname) params.append("clientname", filters.clientname);
     if (filters.role)       params.append("role",       filters.role);
+    if (filters.selectedRoles && filters.selectedRoles.length > 0) {
+      params.append("role", filters.selectedRoles.join(","));
+    }
     if (filters.status)     params.append("status",     filters.status);
 
     const accessToken = await getAccessToken();
@@ -80,6 +89,45 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     setTotals({ totalTickets, openTickets });
   }, [getAccessToken, resolveApiUrl]);
 
+  const fetchAllRoleData = useCallback(async (filters, totalCount) => {
+    const hasRole = filters?.role || (filters?.selectedRoles && filters.selectedRoles.length > 0);
+    if (!hasRole || !totalCount) {
+      setAllRoleData([]);
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams({ page: 1, limit: totalCount });
+
+      if (filters.search)     params.append("search",     filters.search);
+      if (filters.clientname) params.append("clientname", filters.clientname);
+      if (filters.role)       params.append("role",       filters.role);
+      if (filters.selectedRoles && filters.selectedRoles.length > 0) {
+        params.append("role", filters.selectedRoles.join(","));
+      }
+      if (filters.status)     params.append("status",     filters.status);
+
+      const accessToken = await getAccessToken();
+      const url = resolveApiUrl(`/manageusers/superadmin?${params}`);
+
+      const res = await fetch(url, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      if (!res.ok) {
+        setAllRoleData([]);
+        return;
+      }
+
+      const json = await res.json();
+      setAllRoleData(json.data || []);
+    } catch (err) {
+      setAllRoleData([]);
+    }
+  }, [getAccessToken, resolveApiUrl]);
+
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
     if (!accounts?.[0]) return;
     setLoading(true);
@@ -92,6 +140,9 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
       if (filters.search)     params.append("search",     filters.search);
       if (filters.clientname) params.append("clientname", filters.clientname);
       if (filters.role)       params.append("role",       filters.role);
+      if (filters.selectedRoles && filters.selectedRoles.length > 0) {
+        params.append("role", filters.selectedRoles.join(","));
+      }
       if (filters.status)     params.append("status",     filters.status);
 
       const accessToken = await getAccessToken();
@@ -115,6 +166,8 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
       setTotalPages(json.totalPages || 1);
       setPage(currentPage);
 
+      await fetchAllRoleData(filters, totalCount);
+
       const totalsKey = JSON.stringify({ total: totalCount, filters });
       if (totalsKey !== lastTotalsKeyRef.current) {
         lastTotalsKeyRef.current = totalsKey;
@@ -131,7 +184,7 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     } finally {
       setLoading(false);
     }
-  }, [accounts, fetchTotals, getAccessToken, resolveApiUrl]);
+  }, [accounts, fetchAllRoleData, fetchTotals, getAccessToken, resolveApiUrl]);
 
   useEffect(() => {
     if (!accounts?.[0]) return;
@@ -155,9 +208,11 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     limit,
     total,
     totals,
+    allRoleData,
     totalPages,
     hasNext: page < totalPages,
     hasPrev: page > 1,
     fetchData,
+    filterOptions,
   };
 }

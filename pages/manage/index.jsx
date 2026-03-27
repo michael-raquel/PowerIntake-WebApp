@@ -16,6 +16,8 @@ export default function Manage() {
   const { isManager, loading } = useManagerCheck();
   const { tokenInfo } = useAuth();
   const [activeTab, setActiveTab] = useState("admin");
+  const [searchValue, setSearchValue] = useState("");
+  const [selectedFilters, setSelectedFilters] = useState({});
   const tableContainerRef = useRef(null);
   const [recordsPerPage, setRecordsPerPage] = useState(DEFAULT_ROWS);
 
@@ -70,14 +72,18 @@ export default function Manage() {
         <ManageTabs
           tabs={tabs}
           activeTab={validTab}
-          onTabChange={setActiveTab}
+          onTabChange={(tab) => {
+            setActiveTab(tab);
+            setSearchValue("");
+            setSelectedFilters({});
+          }}
         />
 
         <div className="flex-1 min-h-0 flex flex-col">
-          {validTab === "admin"   && <SuperAdminTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} />}
-          {validTab === "clients" && <MyClientsTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} />}
-          {validTab === "company" && <MyCompanyTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} />}
-          {validTab === "team"    && <MyTeamTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} />}
+          {validTab === "admin"   && <SuperAdminTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
+          {validTab === "clients" && <MyClientsTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
+          {validTab === "company" && <MyCompanyTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
+          {validTab === "team"    && <MyTeamTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
         </div>
       </div>
 

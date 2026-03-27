@@ -1,9 +1,19 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useFetchMyTeam from "@/hooks/UseFetchMyTeamUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
+import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
+import { useUpdateRecordCount } from "@/hooks/UseUpdateRecordCount";
+import { useMsal } from "@azure/msal-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import MyTeamFilter from "@/components/manage/MyTeamFilter";
 
 const TABLE_HEADERS = [
@@ -18,37 +28,28 @@ const MOBILE_CARD_HEIGHT = 230;
 const MIN_RECORDS = 1;
 const DEFAULT_ROWS = 10;
 
-export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
+export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
+  const { accounts } = useMsal();
   const [isMobile, setIsMobile] = useState(false);
   const mobileContainerRef = useRef(null);
   const [mobileLimit, setMobileLimit] = useState(DEFAULT_ROWS);
+  const [localPage, setLocalPage] = useState(1);
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
+  const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
+  const { updateRecordCount, loading: updating } = useUpdateRecordCount();
 
-  const updateMobileLimit = useCallback(() => {
-    if (!mobileContainerRef.current) return;
-    const height = mobileContainerRef.current.clientHeight;
-    if (!height) return;
-    const calculated = Math.max(DEFAULT_ROWS, Math.floor(height / MOBILE_CARD_HEIGHT));
-    setMobileLimit((prev) => (prev !== calculated ? calculated : prev));
-  }, []);
+  const selectedRowsPerPage = useMemo(() => {
+    if (userSettings && userSettings.length > 0) {
+      const setting = userSettings[0];
+      const recordCount = Number(setting?.v_managerecordcount);
+      if (recordCount > 0) {
+        return recordCount;
+      }
+    }
+    return null;
+  }, [userSettings]);
 
-  useEffect(() => {
-    if (!isMobile) return;
-    const raf = requestAnimationFrame(updateMobileLimit);
-    window.addEventListener("resize", updateMobileLimit);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", updateMobileLimit);
-    };
-  }, [isMobile, updateMobileLimit]);
-
-  const effectiveLimit = isMobile ? mobileLimit : (parentRecordsPerPage || DEFAULT_ROWS);
+  const effectiveLimit = isMobile ? mobileLimit : (selectedRowsPerPage ?? 0);
 
   const {
     data,
@@ -61,32 +62,109 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
     hasPrev,
     fetchData,
     totals,
+    filterOptions,
   } = useFetchMyTeam(1, effectiveLimit);
+
+  useEffect(() => {
+    if (selectedRowsPerPage !== null) {
+      fetchData(1, {});
+    }
+  }, [selectedRowsPerPage, fetchData]);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
 
   const handleSync = async () => {
     await syncUsers();
-    fetchData(page);
+    fetchData(1, {});
   };
 
-  const handleFilter = (newFilters) => {
-    fetchData(1, newFilters);
+  const handleRecordsPerPageChange = async (value) => {
+    const newValue = Number(value);
+    setSelectedRowsPerPage(newValue);
+
+    if (userSettings && userSettings.length > 0) {
+      try {
+        await updateRecordCount({
+          entrauserid: userSettings[0]?.v_entrauserid,
+          ticketrecordcount: userSettings[0]?.v_ticketrecordcount ?? null,
+          managerecordcount: newValue,
+          modifiedby: accounts?.[0]?.username ?? null,
+        });
+      } catch (err) {
+        console.error("Failed to update record count:", err);
+      }
+    }
   };
 
-  const statuses = [...new Set(data.map((r) => r.v_status).filter(Boolean))];
+  const statuses = filterOptions?.statuses ?? [];
+
+  const filteredData = useMemo(() => {
+    if (!data || data.length === 0) return [];
+
+    return data.filter((row) => {
+      // Text search
+      if (searchValue && searchValue.trim()) {
+        const searchLower = searchValue.toLowerCase();
+        if (
+          !String(row.v_username || "").toLowerCase().includes(searchLower) &&
+          !String(row.v_jobtitle || "").toLowerCase().includes(searchLower)
+        ) {
+          return false;
+        }
+      }
+
+      // Status filter
+      if (selectedFilters.status && selectedFilters.status.trim()) {
+        if (row.v_status !== selectedFilters.status) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [data, searchValue, selectedFilters]);
+
+  const displayTotal = filteredData.length;
+  const displayTotalPages = effectiveLimit > 0 ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit)) : 1;
+  const displayHasPrev = localPage > 1;
+  const displayHasNext = localPage < displayTotalPages;
+
+  const pagedData = useMemo(() => {
+    const start = (localPage - 1) * effectiveLimit;
+    return filteredData.slice(start, start + effectiveLimit);
+  }, [filteredData, effectiveLimit, localPage]);
+
+  const handleFiltersChange = useCallback((nextFilters) => {
+    setLocalPage(1);
+    onFiltersChange?.(nextFilters);
+  }, [onFiltersChange]);
+
+  const handleSearchChange = useCallback((value) => {
+    setLocalPage(1);
+    onSearchChange?.(value);
+  }, [onSearchChange]);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
 
       <MyTeamFilter
-        onFilter={handleFilter}
+        onFiltersChange={handleFiltersChange}
+        searchValue={searchValue}
+        onSearch={handleSearchChange}
         statuses={statuses}
+        selectedFilters={selectedFilters}
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          {(total ?? 0)} Total Records
+          {displayTotal} Total Records
         </div>
         <div className="ml-auto flex items-center gap-3">
           {syncing && (
@@ -124,13 +202,13 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             Loading...
           </div>
-        ) : data.length === 0 ? (
+        ) : pagedData.length === 0 ? (
           <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             No records found.
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
-            {data.map((row, i) => (
+            {pagedData.map((row, i) => (
               <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
                 
                 <div className="flex items-center justify-between">
@@ -220,7 +298,7 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
                 </td>
               </tr>
             ) : (
-              data.map((row, i) => (
+              pagedData.map((row, i) => (
                 <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_jobtitle || "N/A"}</td>
@@ -258,48 +336,65 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800">
         <div className="text-xs text-gray-500 dark:text-gray-400">
-          {(total ?? 0)} Total Records
+          {displayTotal} Total Records
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => fetchData(page - 1)}
-            disabled={!hasPrev || loading}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-600 dark:text-gray-400 font-medium">Rows per page:</label>
+            <Select value={String(selectedRowsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
+              <SelectTrigger className="w-20 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setLocalPage(Math.max(1, localPage - 1))}
+              disabled={!displayHasPrev || loading}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
 
-          {[...Array(totalPages)].map((_, i) => {
-            const pageNum = i + 1;
-            if (pageNum === 1 || pageNum === totalPages || Math.abs(pageNum - page) <= 1) {
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => fetchData(pageNum)}
-                  disabled={loading}
-                  className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                    pageNum === page
-                      ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
-                      : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            }
-            if (Math.abs(pageNum - page) === 2) {
-              return <span key={pageNum} className="text-xs text-gray-400 px-1">...</span>;
-            }
-            return null;
-          })}
+            {[...Array(displayTotalPages)].map((_, i) => {
+              const pageNum = i + 1;
+              if (pageNum === 1 || pageNum === displayTotalPages || Math.abs(pageNum - localPage) <= 1) {
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setLocalPage(pageNum)}
+                    disabled={loading}
+                    className={`w-8 h-8 text-xs rounded-lg transition-colors ${
+                      pageNum === localPage
+                        ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
+                        : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              }
+              if (Math.abs(pageNum - localPage) === 2) {
+                return <span key={pageNum} className="text-xs text-gray-400 px-1">...</span>;
+              }
+              return null;
+            })}
 
-          <button
-            onClick={() => fetchData(page + 1)}
-            disabled={!hasNext || loading}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+            <button
+              onClick={() => setLocalPage(Math.min(displayTotalPages, localPage + 1))}
+              disabled={!displayHasNext || loading}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
