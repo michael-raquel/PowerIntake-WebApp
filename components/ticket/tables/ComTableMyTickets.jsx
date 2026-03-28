@@ -6,6 +6,8 @@ import ComCard from './ComCard';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
 import socket from "@/lib/socket";
+import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
+import { useUpdateRecordCount } from "@/hooks/UseUpdateRecordCount";
 
 const cardFields = [
   { key: 'v_source',         label: 'Source'     },

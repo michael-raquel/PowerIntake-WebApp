@@ -24,6 +24,8 @@ export default function ComTableCompany({
   filters = {},
   refreshKey,
   onTicketUpdated,
+  hideCompleted = false,
+
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -55,9 +57,12 @@ export default function ComTableCompany({
       const matchesCategory   = !filters.Category   || t.v_ticketcategory === filters.Category;
       const matchesStatus     = !filters.Status     || t.v_status === filters.Status;
 
-      return matchesSearch && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus;
+       const matchesCompleted = !hideCompleted || 
+          (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+
+      return matchesSearch && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
     }),
-  [tickets, searchValue, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status]
+  [tickets, searchValue, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
 );
 
   const paginated = useMemo(

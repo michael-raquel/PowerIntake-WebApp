@@ -25,6 +25,7 @@ export default function ComTableTeam({
   filters = {},
   refreshKey,
   onTicketUpdated,
+  hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -55,9 +56,12 @@ export default function ComTableTeam({
       const matchesCategory = !filters.Category || t.v_ticketcategory === filters.Category;
       const matchesStatus   = !filters.Status   || t.v_status === filters.Status;
 
-      return matchesSearch && matchesSource && matchesPriority && matchesCategory && matchesStatus;
+      const matchesCompleted = !hideCompleted || 
+          (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+
+      return matchesSearch && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
     }),
-  [teamTickets, searchValue, filters.Source, filters.Priority, filters.Category, filters.Status]
+  [teamTickets, searchValue, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
 );
   const paginated = useMemo(
     () => filteredTickets.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage),
