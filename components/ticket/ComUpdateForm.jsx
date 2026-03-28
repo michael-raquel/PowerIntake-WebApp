@@ -349,7 +349,15 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                             onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}
                           >
                             <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-9 text-sm dark:border-gray-600 dark:hover:bg-gray-800 px-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full justify-start text-left font-normal h-9 text-sm px-2
+                                  bg-white text-gray-900 border-gray-300
+                                  dark:bg-gray-800 dark:text-white dark:border-gray-600
+                                  dark:hover:bg-gray-800 hover:bg-gray-100
+                                  appearance-none"
+                              >
                                 <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0" />
                                 <span className="truncate flex-1">{call.date ? format(call.date, "MMM d, yyyy") : "Select date"}</span>
                               </Button>
