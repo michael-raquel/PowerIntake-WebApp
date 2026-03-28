@@ -111,6 +111,11 @@ export function AuthProvider({ children }) {
           socket.connect();
           socket.emit("join", user.v_entrauserid);
           console.log("[WS] Joined room:", user.v_entrauserid);
+
+           if (user?.v_entratenantid) {
+              socket.emit("join", user.v_entratenantid);
+              console.log("[WS] Joined tenant room:", user.v_entratenantid);
+            }
         }
 
       } catch (err) {

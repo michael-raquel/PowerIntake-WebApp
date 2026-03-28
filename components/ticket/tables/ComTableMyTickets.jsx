@@ -49,7 +49,6 @@ export default function ComTableMyTickets({
 
       setTickets(prev => {
         const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
-
         if (exists) {
           return prev.map(t =>
             t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t
@@ -64,22 +63,21 @@ export default function ComTableMyTickets({
       console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
     };
 
-   const handleTicketDeleted = ({ ticketuuid }) => {
+    const handleTicketDeleted = ({ ticketuuid }) => {
       setSelectedTicket(prev => prev?.v_ticketuuid === ticketuuid ? null : prev);
       onTicketUpdated?.();
     };
 
-
     socket.on("ticket:synced",      handleTicketSynced);
     socket.on("ticket:sync_failed", handleTicketSyncFailed);
-    socket.on("ticket:deleted",     handleTicketDeleted); 
+    socket.on("ticket:deleted",     handleTicketDeleted);
 
     return () => {
       socket.off("ticket:synced",      handleTicketSynced);
       socket.off("ticket:sync_failed", handleTicketSyncFailed);
-      socket.off("ticket:deleted",     handleTicketDeleted); 
+      socket.off("ticket:deleted",     handleTicketDeleted);
     };
-  }, [setTickets]);
+  }, [setTickets, onTicketUpdated]); 
 
   const filteredTickets = useMemo(
   () =>
