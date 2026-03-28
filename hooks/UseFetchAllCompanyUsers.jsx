@@ -81,8 +81,23 @@ export default function useFetchAllCompanyUsers(initialPage = 1, initialLimit = 
       (sum, row) => sum + Number(row?.v_openticket ?? 0),
       0
     );
+    
+    const completedTickets = rows.reduce(
+      (sum, row) => sum + Number(row?.v_completed ?? 0),
+      0
+    );
 
-    setTotals({ totalTickets, openTickets });
+    const cancelledTickets = rows.reduce(
+      (sum, row) => sum + Number(row?.v_cancelled ?? 0),
+      0
+    );
+
+    let completionRate = 0;
+    if (totalTickets > 0) {
+      completionRate = Number(((completedTickets / totalTickets) * 100).toFixed(1));
+    }
+
+    setTotals({ totalTickets, openTickets, completedTickets, cancelledTickets, completionRate });
   }, [getAccessToken, tokenInfo?.account?.tenantId]);
 
   const fetchAllRoleData = useCallback(async (filters, totalCount) => {

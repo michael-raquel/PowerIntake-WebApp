@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const TABLE_HEADERS = ["Tenant ID", "Client Name", "Total Tickets", "Open Tickets"];
+const TABLE_HEADERS = ["Tenant ID", "Client Name", "Tickets", "Completed Tickets", "In Progress", "Cancelled Tickets", "Completion Rate"];
 const DEFAULT_ROWS = 10;
 
 function CopyButton({ value }) {
@@ -213,12 +213,20 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                 <div className="border-t border-gray-100 dark:border-gray-700" />
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completed ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</p>
                   </div>
                 </div>
               </div>
@@ -228,17 +236,35 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">Totals</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">All records</span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-3 gap-2">
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                     {totals?.totalTickets ?? 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.completedTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                     {totals?.openTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.cancelledTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.completionRate ?? 0}%
                   </p>
                 </div>
               </div>
@@ -283,7 +309,10 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                   </td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket ?? 0}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completed ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket ?? 0}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_cancelled ?? 0}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completion ?? 0}%</td>
                 </tr>
               ))
             )}
@@ -296,7 +325,16 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                 {totals?.totalTickets ?? 0}
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.completedTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.openTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.cancelledTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.completionRate ?? 0}%
               </td>
             </tr>
           </tfoot>

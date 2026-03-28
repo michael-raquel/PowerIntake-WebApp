@@ -19,8 +19,11 @@ import MyTeamFilter from "@/components/manage/MyTeamFilter";
 const TABLE_HEADERS = [
   "User Name",
   "Job Title",
-  "Total Ticket",
-  "Open Ticket",
+  "Tickets",
+  "Completed Ticket",
+  "In Progress",
+  "Canceled Ticket",
+  "Completion Rate",
   "Status",
 ];
 
@@ -225,12 +228,20 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completed ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Canceled</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</p>
                   </div>
                 </div>
 
@@ -241,17 +252,35 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">Totals</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">All records</span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-3 gap-2">
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                     {totals?.totalTickets ?? 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.completedTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                     {totals?.openTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Canceled</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.cancelledTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.completionRate ?? 0}%
                   </p>
                 </div>
               </div>
@@ -294,7 +323,10 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_jobtitle || "N/A"}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completed ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_cancelled ?? 0}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completion ?? 0}%</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       row.v_status === "true"
@@ -316,7 +348,16 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
                 {totals?.totalTickets ?? 0}
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.completedTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.openTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.cancelledTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.completionRate ?? 0}%
               </td>
               <td className="px-4 py-3" />
             </tr>

@@ -25,8 +25,11 @@ const TABLE_HEADERS = [
   "User Name",
   "Role",
   "Department",
-  "Total Ticket",
-  "Open Ticket",
+  "Tickets",
+  "Completed Tickets",
+  "In Progress",
+  "Cancelled Tickets",
+  "Completion Rate",
   "Status",
   "Super Admin",
 ];
@@ -179,7 +182,6 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
     fetchData(page, activeFilters);
   };
 
-  // Handle dropdown change and update database
   const handleRecordsPerPageChange = async (value) => {
     const newValue = Number(value);
     setSelectedRowsPerPage(newValue);
@@ -356,8 +358,20 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                             <span className="font-semibold text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</span>
                           </div>
                           <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Open</span>
+                            <span>Completed</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{row.v_completed ?? 0}</span>
+                          </div>
+                           <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <span>In Progress</span>
                             <span className="font-semibold text-gray-900 dark:text-white">{row.v_openticket ?? 0}</span>
+                          </div>
+                           <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <span>Cancelled</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</span>
+                          </div>
+                            <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                            <span>Completion</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{row.v_completion ?? 0}%</span>
                           </div>
                         </div>
                         <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between">
@@ -381,15 +395,33 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                   </div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                         {totals?.totalTickets ?? 0}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Completed Tickets</p>
+                      <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                        {totals?.completedTickets ?? 0}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                         {totals?.openTickets ?? 0}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled Tickets</p>
+                      <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                        {totals?.cancelledTickets ?? 0}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                      <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                        {totals?.completionRate ?? 0}%
                       </p>
                     </div>
                   </div>
@@ -438,7 +470,10 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                     {row.v_department || "N/A"}
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completed ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_cancelled ?? 0}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completion ?? 0}%</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       row.v_status === "true"
@@ -468,7 +503,16 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                 {totals?.totalTickets ?? 0}
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.completedTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.openTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.cancelledTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.completionRate ?? 0}%
               </td>
               <td className="px-4 py-3" />
               <td className="px-4 py-3" />
