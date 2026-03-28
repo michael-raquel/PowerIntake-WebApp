@@ -1,3 +1,10 @@
+# [1.3.0-dev.59](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.58...v1.3.0-dev.59) (2026-03-28)
+
+
+### Bug Fixes
+
+* swapped tabs in manage ([83c528d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/83c528d302ba320b743b3818e6e4ed7e00fcac38))
+
 # [1.3.0-dev.58](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.57...v1.3.0-dev.58) (2026-03-28)
 
 
