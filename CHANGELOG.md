@@ -1,3 +1,10 @@
+# [1.3.0-dev.53](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.52...v1.3.0-dev.53) (2026-03-28)
+
+
+### Bug Fixes
+
+* added hide work completed ([11e78f6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/11e78f6cb555e7476c03a22ed10919f9c6cf30c6))
+
 # [1.3.0-dev.52](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.51...v1.3.0-dev.52) (2026-03-28)
 
 
