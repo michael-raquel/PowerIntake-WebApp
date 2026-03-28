@@ -1,3 +1,10 @@
+# [1.3.0-dev.51](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.50...v1.3.0-dev.51) (2026-03-28)
+
+
+### Features
+
+* ST-user save first time user on login ([b0720da](https://github.com/michael-raquel/PowerIntake-WebApp/commit/b0720da50ccdbc723a64b9acaca92c98c7b183dc))
+
 # [1.3.0-dev.50](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.49...v1.3.0-dev.50) (2026-03-27)
 
 
