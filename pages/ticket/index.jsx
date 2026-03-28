@@ -11,6 +11,7 @@ import useManagerCheck from '@/hooks/UseManagerCheck';
 import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateRecordCount } from '@/hooks/UseUpdateRecordCount';
+import { useUpdateHideTickets } from '@/hooks/UseUpdateHideTickets';
 import { ExternalLink, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -69,6 +70,7 @@ export default function TicketPage() {
 
   const { userSettings } = useFetchUserSettings({ entrauserid: userId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
+  const { updateHideTickets } = useUpdateHideTickets();
 
   const settingsRowsPerPage = useMemo(() => {
     if (userSettings && userSettings.length > 0) {
@@ -81,17 +83,17 @@ export default function TicketPage() {
     return null;
   }, [userSettings]);
 
-  
   const effectiveRecordsPerPage = userRowsPerPage ?? settingsRowsPerPage ?? recordsPerPage;
   const perPage = isMobile ? MOBILE_PER_PAGE : effectiveRecordsPerPage;
   const totalPages = Math.max(1, Math.ceil(totalRecords / perPage));
   const safePage = Math.min(currentPage, totalPages);
+
   const initialHideCompleted = useMemo(() => {
-  if (userSettings && userSettings.length > 0) {
-    return Boolean(userSettings[0]?.v_hidecompletedtickets);
-  }
-  return false;
-}, [userSettings]);
+    if (userSettings && userSettings.length > 0) {
+      return Boolean(userSettings[0]?.v_hidecompletedtickets);
+    }
+    return false;
+  }, [userSettings]);
 
   const [hideCompleted, setHideCompleted] = useState(initialHideCompleted);
 
@@ -123,8 +125,8 @@ export default function TicketPage() {
   const { tickets = [], isLoading } = useFetchTicket({ ...ticketQuery, refreshKey });
 
   useEffect(() => {
-  setHideCompleted(initialHideCompleted);
-}, [initialHideCompleted]);
+    setHideCompleted(initialHideCompleted);
+  }, [initialHideCompleted]);
 
   useEffect(() => {
     if (!pendingUuid.current || isLoading || !tickets.length) return;
@@ -186,6 +188,21 @@ export default function TicketPage() {
     setRefreshKey(k => k + 1);
     setSelectedTicket(null);
   }, []);
+
+  const handleHideCompletedChange = useCallback(async (val) => {
+    setHideCompleted(val);
+    if (userSettings?.[0]?.v_entrauserid) {
+      try {
+        await updateHideTickets({
+          entrauserid: userSettings[0].v_entrauserid,
+          hideCompleted: val,
+          modifiedby: tokenInfo?.account?.username ?? null,
+        });
+      } catch (err) {
+        console.error('Failed to save hide completed setting:', err);
+      }
+    }
+  }, [userSettings, updateHideTickets, tokenInfo]);
 
   const handleRecordsPerPageChange = async (value) => {
     const newValue = Number(value);
@@ -398,7 +415,7 @@ export default function TicketPage() {
                 onFiltersChange={handleFiltersChange}
                 filterOptions={filterOptions}
                 hideCompleted={hideCompleted}
-                onHideCompletedChange={setHideCompleted}
+                onHideCompletedChange={handleHideCompletedChange}
               />
             </div>
             <div className="border-t border-gray-200 dark:border-gray-800" />
@@ -420,25 +437,27 @@ export default function TicketPage() {
       </div>
     );
   }
+
   // ── Desktop 
   return (
     <div className="h-[100dvh] flex flex-col p-4 pb-0 overflow-hidden">
       <div className="flex flex-col gap-4 flex-1 min-h-0">
         {header}
         {tabBar}
-        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 pb-0 flex flex-col flex-1 min-h-0">          <div className="flex-shrink-0">
-          <ComFilters
-            onCreateTicket={() => setShowCreateTicket(true)}
-            activeTab={safeTab}
-            searchValue={searchValue}
-            onSearch={setSearchValue}
-            selectedFilters={selectedFilters}
-            onFiltersChange={handleFiltersChange}
-            filterOptions={filterOptions}
-            hideCompleted={hideCompleted}
-            onHideCompletedChange={setHideCompleted}
-          />
-        </div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 pb-0 flex flex-col flex-1 min-h-0">
+          <div className="flex-shrink-0">
+            <ComFilters
+              onCreateTicket={() => setShowCreateTicket(true)}
+              activeTab={safeTab}
+              searchValue={searchValue}
+              onSearch={setSearchValue}
+              selectedFilters={selectedFilters}
+              onFiltersChange={handleFiltersChange}
+              filterOptions={filterOptions}
+              hideCompleted={hideCompleted}
+              onHideCompletedChange={handleHideCompletedChange}
+            />
+          </div>
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 mt-3" />
           <div ref={tableContainerRef} className="flex-1 min-h-0 overflow-auto">
             <ComTicketTable {...tableProps} recordsPerPage={effectiveRecordsPerPage} hideCompleted={hideCompleted} />
