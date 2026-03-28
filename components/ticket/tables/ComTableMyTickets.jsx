@@ -64,12 +64,20 @@ export default function ComTableMyTickets({
       console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
     };
 
+   const handleTicketDeleted = ({ ticketuuid }) => {
+      setSelectedTicket(prev => prev?.v_ticketuuid === ticketuuid ? null : prev);
+      onTicketUpdated?.();
+    };
+
+
     socket.on("ticket:synced",      handleTicketSynced);
     socket.on("ticket:sync_failed", handleTicketSyncFailed);
+    socket.on("ticket:deleted",     handleTicketDeleted); 
 
     return () => {
       socket.off("ticket:synced",      handleTicketSynced);
       socket.off("ticket:sync_failed", handleTicketSyncFailed);
+      socket.off("ticket:deleted",     handleTicketDeleted); 
     };
   }, [setTickets]);
 
