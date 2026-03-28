@@ -3,7 +3,7 @@ import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
 export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenantid = null, refreshKey = 0, enabled = true } = {}) {
-  const { instance, accounts } = useMsal();
+  const {instance, accounts } = useMsal();
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -61,5 +61,5 @@ export function useFetchTicket({ ticketuuid = '', entrauserid = null, entratenan
     fetchTickets();
   }, [ticketuuid, entrauserid, entratenantid, refreshKey, enabled, getAccessToken]);
 
-  return { tickets, loading, error };
+   return { tickets, setTickets, loading, error }; 
 }

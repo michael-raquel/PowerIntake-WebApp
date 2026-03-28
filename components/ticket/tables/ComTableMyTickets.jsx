@@ -5,6 +5,7 @@ import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
+import socket from "@/lib/socket";
 
 const cardFields = [
   { key: 'v_source',         label: 'Source'     },
@@ -27,7 +28,7 @@ export default function ComTableMyTickets({
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const { tickets, loading, error } = useFetchTicket({
+  const { tickets, loading, error, setTickets } = useFetchTicket({ 
     entrauserid: tokenInfo?.account?.localAccountId,
     refreshKey,
   });
@@ -41,6 +42,36 @@ export default function ComTableMyTickets({
     () => tickets.filter(t => t.v_entrauserid === tokenInfo?.account?.localAccountId),
     [tickets, tokenInfo?.account?.localAccountId]
   );
+
+  useEffect(() => {
+    const handleTicketSynced = ({ ticketuuid, ticket }) => {
+      if (!ticket) return;
+
+      setTickets(prev => {
+        const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
+
+        if (exists) {
+          return prev.map(t =>
+            t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t
+          );
+        } else {
+          return [ticket, ...prev];
+        }
+      });
+    };
+
+    const handleTicketSyncFailed = ({ ticketuuid }) => {
+      console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
+    };
+
+    socket.on("ticket:synced",      handleTicketSynced);
+    socket.on("ticket:sync_failed", handleTicketSyncFailed);
+
+    return () => {
+      socket.off("ticket:synced",      handleTicketSynced);
+      socket.off("ticket:sync_failed", handleTicketSyncFailed);
+    };
+  }, [setTickets]);
 
   const filteredTickets = useMemo(
   () =>
