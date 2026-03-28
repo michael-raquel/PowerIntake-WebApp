@@ -1,3 +1,10 @@
+# [1.3.0-dev.52](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.51...v1.3.0-dev.52) (2026-03-28)
+
+
+### Bug Fixes
+
+* UI overflow for create time insert ([0c725dd](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0c725ddf10c29ab4476ec716e4bd1b1d54d985d1))
+
 # [1.3.0-dev.51](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.50...v1.3.0-dev.51) (2026-03-28)
 
 
