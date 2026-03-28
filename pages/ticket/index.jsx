@@ -86,6 +86,7 @@ export default function TicketPage() {
   const totalPages = Math.max(1, Math.ceil(totalRecords / perPage));
   const safePage = Math.min(currentPage, totalPages);
   const [hideCompleted, setHideCompleted] = useState(false);
+  const [pendingSyncUuid, setPendingSyncUuid] = useState(null);
 
   const tabs = useMemo(() => {
     const t = [];
@@ -195,8 +196,17 @@ export default function TicketPage() {
   };
 
   if (showCreateTicket) {
-    return <ComCreateTicket onClose={() => setShowCreateTicket(false)} />;
-  }
+  return (
+    <ComCreateTicket
+      onClose={() => setShowCreateTicket(false)}
+      onTicketCreated={(ticketuuid) => {
+        setPendingSyncUuid(ticketuuid);
+        setRefreshKey(k => k + 1);
+        setShowCreateTicket(false);
+      }}
+    />
+  );
+}
 
   const header = (
     <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
@@ -357,16 +367,18 @@ export default function TicketPage() {
   );
 
   const tableProps = {
-    activeTab: safeTab,
-    currentPage: safePage,
-    onTotalRecordsChange: setTotalRecords,
-    onFilterOptionsChange: setFilterOptions,
-    searchValue,
-    filters: selectedFilters,
-    refreshKey,
-    onTicketSelect: handleTicketSelect,
-    onTicketUpdated: () => setRefreshKey(k => k + 1),
-  };
+  activeTab: safeTab,
+  currentPage: safePage,
+  onTotalRecordsChange: setTotalRecords,
+  onFilterOptionsChange: setFilterOptions,
+  searchValue,
+  filters: selectedFilters,
+  refreshKey,
+  onTicketSelect: handleTicketSelect,
+  onTicketUpdated: () => setRefreshKey(k => k + 1),
+  pendingSyncUuid,                          
+  onSynced: () => setPendingSyncUuid(null), 
+};
 
   // ── Mobile 
   if (isMobile) {

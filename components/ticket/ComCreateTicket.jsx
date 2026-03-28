@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, Fragment } from 'react';
-import { X, Plus, Upload, Clock, MapPin, Calendar as CalendarIcon, AlertCircle, FileText } from 'lucide-react';
+import { X, Plus, Upload, Clock, MapPin, Calendar as CalendarIcon, AlertCircle, FileText, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,10 +12,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
-import { useCreateTicket } from "@/hooks/useCreateTicket";
 import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
 import { toast } from "sonner";
 import useUploadImage from '@/hooks/UseUploadImage';
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 const LOCATIONS = ['Remote', 'Hybrid', 'Office'];
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
@@ -130,10 +131,10 @@ function UserInfoPanel({ profile, profileLoading }) {
   );
 }
 
-export default function ComCreateTicket({ onClose }) {
-  const { account } = useAuth();
+export default function ComCreateTicket({ onClose, onTicketCreated }) {
+  const { account, tokenInfo } = useAuth();
+  const { instance, accounts } = useMsal();
   const { profile, loading: profileLoading } = useFetchUserProfile(account?.localAccountId);
-  const { createTicket, loading: submitting } = useCreateTicket({ account, onSuccess: onClose });
   const { uploadImage } = useUploadImage();
 
   const [formData, setFormData] = useState(DEFAULT_FORM);
@@ -141,9 +142,16 @@ export default function ComCreateTicket({ onClose }) {
   const [attachments, setAttachments] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState({});
+  const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
   const [openPopovers, setOpenPopovers] = useState({});
+
+  const getAccessToken = async () => {
+    if (!accounts?.[0]) return null;
+    const token = await instance.acquireTokenSilent({ ...apiRequest, account: accounts[0] });
+    return token?.accessToken ?? null;
+  };
 
   const handleInputChange = ({ target: { name, value } }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -239,6 +247,8 @@ export default function ComCreateTicket({ onClose }) {
 
   const handleSubmit = async () => {
     if (!validateAll()) return;
+    setSubmitting(true);
+
     try {
       const uploadedAttachments = await Promise.all(
         attachments.map(async file => {
@@ -246,13 +256,39 @@ export default function ComCreateTicket({ onClose }) {
           return { name: result.url, blobName: result.blobName, url: result.url };
         })
       );
-      await createTicket({
-        formData,
-        supportCalls: supportCalls.map(({ date, fromTime, toTime, timezone, location }) => ({ date, fromTime, toTime, timezone, location })),
-        attachments: uploadedAttachments,
+
+      const accessToken = await getAccessToken();
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        body: JSON.stringify({
+          entrauserid:    tokenInfo?.account?.localAccountId,
+          entratenantid:  tokenInfo?.account?.tenantId,
+          title:          formData.title,
+          description:    formData.description,
+          usertimezone:   formData.timezone,
+          officelocation: formData.location?.toLowerCase(),
+          date:           supportCalls.map(c => format(c.date, 'yyyy-MM-dd')),
+          starttime:      supportCalls.map(c => c.fromTime),
+          endtime:        supportCalls.map(c => c.toTime),
+          attachments:    uploadedAttachments.map(a => a.url),
+          createdby:      tokenInfo?.account?.name,
+        }),
       });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to submit ticket');
+
+      toast.success('Ticket submitted successfully!');
+      onTicketCreated?.(data.ticketuuid);
       onClose?.();
+
     } catch (err) {
+      setSubmitting(false);
       toast.error(err.message || 'Failed to submit ticket');
     }
   };
@@ -265,7 +301,7 @@ export default function ComCreateTicket({ onClose }) {
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Submit Incident</h1>
             <p className="text-sm text-gray-500 mt-1">Fill out the details below to report a new issue and schedule a follow-up.</p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
+          <Button variant="ghost" size="icon" onClick={onClose} disabled={submitting}>
             <X className="w-5 h-5" />
           </Button>
         </div>
@@ -273,6 +309,7 @@ export default function ComCreateTicket({ onClose }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
 
+            {/* Title & Description */}
             <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
               <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg flex gap-2 mb-4">
                 <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
@@ -285,11 +322,24 @@ export default function ComCreateTicket({ onClose }) {
                   </Label>
                   <div ref={el => fieldRefs.current[field] = el}>
                     {field === 'description' ? (
-                      <Textarea name={field} value={formData[field]} onChange={handleInputChange} rows={4}
-                        placeholder={`Provide ${field}...`} className={errors[field] ? 'border-red-500' : ''} />
+                      <Textarea
+                        name={field}
+                        value={formData[field]}
+                        onChange={handleInputChange}
+                        rows={4}
+                        placeholder={`Provide ${field}...`}
+                        className={errors[field] ? 'border-red-500' : ''}
+                        disabled={submitting}
+                      />
                     ) : (
-                      <Input name={field} value={formData[field]} onChange={handleInputChange}
-                        placeholder={`Brief ${field} of the issue`} className={errors[field] ? 'border-red-500' : ''} />
+                      <Input
+                        name={field}
+                        value={formData[field]}
+                        onChange={handleInputChange}
+                        placeholder={`Brief ${field} of the issue`}
+                        className={errors[field] ? 'border-red-500' : ''}
+                        disabled={submitting}
+                      />
                     )}
                     {errors[field] && <p className="text-xs text-red-500 mt-1">This field is required.</p>}
                   </div>
@@ -297,13 +347,14 @@ export default function ComCreateTicket({ onClose }) {
               ))}
             </div>
 
+            {/* Support Call Schedule */}
             <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h2 className="text-lg font-medium">Support Call Schedule</h2>
                   <p className="text-xs text-gray-500">Add one or more available date/time slots.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleAddCall} className="gap-1">
+                <Button variant="outline" size="sm" onClick={handleAddCall} className="gap-1" disabled={submitting}>
                   <Plus className="w-4 h-4" /> Add
                 </Button>
               </div>
@@ -311,9 +362,13 @@ export default function ComCreateTicket({ onClose }) {
               {supportCalls.map(call => (
                 <div key={call.id} className="relative p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border mb-4 last:mb-0">
                   {supportCalls.length > 1 && (
-                    <Button variant="ghost" size="icon"
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setSupportCalls(prev => prev.filter(c => c.id !== call.id))}
-                      className="absolute top-2 right-2 h-8 w-8">
+                      className="absolute top-2 right-2 h-8 w-8"
+                      disabled={submitting}
+                    >
                       <X className="w-4 h-4" />
                     </Button>
                   )}
@@ -326,7 +381,7 @@ export default function ComCreateTicket({ onClose }) {
                         onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}
                       >
                         <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left">
+                          <Button variant="outline" className="w-full justify-start text-left" disabled={submitting}>
                             <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
                             <span>{call.date ? format(call.date, "MM/dd/yyyy") : "Select date"}</span>
                           </Button>
@@ -368,6 +423,7 @@ export default function ComCreateTicket({ onClose }) {
                                 onChange={e => handleCallChange(call.id, key, e.target.value)}
                                 step="900"
                                 className="pl-8 w-full text-sm"
+                                disabled={submitting}
                               />
                               <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
                             </div>
@@ -380,7 +436,7 @@ export default function ComCreateTicket({ onClose }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label className="text-xs mb-1 block">Timezone <span className="text-red-500">*</span></Label>
-                      <Select value={call.timezone} onValueChange={v => handleCallChange(call.id, 'timezone', v)}>
+                      <Select value={call.timezone} onValueChange={v => handleCallChange(call.id, 'timezone', v)} disabled={submitting}>
                         <SelectTrigger className="w-full">
                           <Clock className="mr-2 h-4 w-4 shrink-0" />
                           <SelectValue placeholder="Select timezone" />
@@ -395,7 +451,7 @@ export default function ComCreateTicket({ onClose }) {
 
                     <div>
                       <Label className="text-xs mb-1 block">Location <span className="text-red-500">*</span></Label>
-                      <Select value={call.location} onValueChange={v => handleCallChange(call.id, 'location', v)}>
+                      <Select value={call.location} onValueChange={v => handleCallChange(call.id, 'location', v)} disabled={submitting}>
                         <SelectTrigger className="w-full">
                           <MapPin className="mr-2 h-4 w-4 shrink-0" />
                           <SelectValue placeholder="Select location" />
@@ -412,22 +468,32 @@ export default function ComCreateTicket({ onClose }) {
               ))}
             </div>
 
+            {/* Attachments */}
             <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
               <h2 className="text-lg font-medium mb-4">Attachments</h2>
               <div
-                onClick={() => fileInputRef.current?.click()}
-                onDrop={e => { e.preventDefault(); setDragOver(false); processFiles(e.dataTransfer.files); }}
+                onClick={() => !submitting && fileInputRef.current?.click()}
+                onDrop={e => { e.preventDefault(); setDragOver(false); if (!submitting) processFiles(e.dataTransfer.files); }}
                 onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                 onDragLeave={() => setDragOver(false)}
                 className={cn(
-                  "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-                  dragOver ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : "hover:border-blue-400"
-                )}>
+                  "border-2 border-dashed rounded-lg p-6 text-center transition-colors",
+                  submitting ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-blue-400",
+                  dragOver ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20" : ""
+                )}
+              >
                 <Upload className="mx-auto w-8 h-8 text-gray-400 mb-2" />
                 <p className="text-sm text-gray-600"><span className="font-medium text-blue-600">Click to upload</span> or drag and drop</p>
                 <p className="text-xs text-gray-500 mt-1">PNG, JPG, GIF, WEBP (max. 10MB)</p>
-                <input ref={fileInputRef} type="file" multiple accept="image/*"
-                  onChange={e => { processFiles(e.target.files); e.target.value = ''; }} className="hidden" />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={e => { processFiles(e.target.files); e.target.value = ''; }}
+                  className="hidden"
+                  disabled={submitting}
+                />
               </div>
 
               {attachments.map(file => (
@@ -437,32 +503,52 @@ export default function ComCreateTicket({ onClose }) {
                     <span className="truncate text-sm">{file.name}</span>
                     <span className="text-xs text-gray-400">({(file.size / 1024).toFixed(1)} KB)</span>
                   </div>
-                  <Button variant="ghost" size="icon"
-                    onClick={() => setAttachments(p => p.filter(f => f.name !== file.name))} className="h-6 w-6">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setAttachments(p => p.filter(f => f.name !== file.name))}
+                    className="h-6 w-6"
+                    disabled={submitting}
+                  >
                     <X className="w-3 h-3" />
                   </Button>
                 </div>
               ))}
 
               <div className="flex justify-end gap-3 mt-6">
-                <Button variant="outline" onClick={() => {
-                  setFormData(DEFAULT_FORM);
-                  setSupportCalls([newCall()]);
-                  setAttachments([]);
-                  setErrors({});
-                }} disabled={submitting}>Clear</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setFormData(DEFAULT_FORM);
+                    setSupportCalls([newCall()]);
+                    setAttachments([]);
+                    setErrors({});
+                  }}
+                  disabled={submitting}
+                >
+                  Clear
+                </Button>
+
                 <Button onClick={handleSubmit} disabled={submitting}>
-                  {submitting ? 'Submitting...' : 'Submit Request'}
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <RefreshCw className="w-4 h-4 animate-spin" /> Submitting...
+                    </span>
+                  ) : (
+                    'Submit Request'
+                  )}
                 </Button>
               </div>
             </div>
 
+            {/* Mobile User Info */}
             <div className="block lg:hidden bg-white dark:bg-gray-900 rounded-lg border p-6">
               <h2 className="text-lg font-medium mb-4">User Information</h2>
               <UserInfoPanel profile={profile} profileLoading={profileLoading} />
             </div>
           </div>
 
+          {/* Desktop User Info */}
           <div className="hidden lg:block bg-white dark:bg-gray-900 rounded-lg border p-6 sticky top-6 h-fit">
             <h2 className="text-lg font-medium mb-4">User Information</h2>
             <UserInfoPanel profile={profile} profileLoading={profileLoading} />
