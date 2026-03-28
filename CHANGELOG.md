@@ -1,3 +1,10 @@
+# [1.3.0-dev.55](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.54...v1.3.0-dev.55) (2026-03-28)
+
+
+### Bug Fixes
+
+* hidecompleted ticket application ([ebe835a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ebe835a6be866a0d1f4b1503d010e8f12df3a448))
+
 # [1.3.0-dev.54](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.53...v1.3.0-dev.54) (2026-03-28)
 
 
