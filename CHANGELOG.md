@@ -1,3 +1,10 @@
+# [1.3.0-dev.57](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.56...v1.3.0-dev.57) (2026-03-28)
+
+
+### Bug Fixes
+
+* Add ticket breakdown columns and totals ([122227f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/122227fe41d95bdcbc1f18193ce627b756a0cf6e))
+
 # [1.3.0-dev.56](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.55...v1.3.0-dev.56) (2026-03-28)
 
 
