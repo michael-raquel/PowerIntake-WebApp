@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { useAuth } from '@/context/AuthContext';
+import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
@@ -32,9 +33,13 @@ export default function ComTableClients({
   const [selectedTicket, setSelectedTicket] = useState(null);
   const { tickets, loading, error } = useFetchTicket({ refreshKey });
   const { runSync, loading: syncing, error: syncError } = useAutoSyncDynamics();
+  const { userSettings } = useFetchUserSettings();
+  const [selectedRowsPerPage, setSelectedRowsPerPage] = useState();
 
   const prevTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
+  const lastSettingsValueRef = useRef();
+  const hasUserSelectionRef = useRef(false);
 
   const filteredTickets = useMemo(
   () =>
@@ -86,6 +91,20 @@ export default function ComTableClients({
       onTotalRecordsChange(filteredTickets.length);
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
+
+    useEffect(() => {
+    if (userSettings && userSettings.length > 0) {
+      const setting = userSettings[0];
+      const recordCount = Number(setting?.v_ticketrecordcount);
+      if (recordCount > 0) {
+        const settingsChanged = recordCount !== lastSettingsValueRef.current;
+        lastSettingsValueRef.current = recordCount;
+        if ((settingsChanged || !hasUserSelectionRef.current) && recordCount !== selectedRowsPerPage) {
+          setSelectedRowsPerPage(recordCount);
+        }
+      }
+    }
+  }, [userSettings]);
 
   const handleSync = async () => {
   await runSync();

@@ -9,8 +9,17 @@ import ComCard from '@/components/ticket/tables/ComCard';
 import { useAuth } from '@/context/AuthContext';
 import useManagerCheck from '@/hooks/UseManagerCheck';
 import { useFetchTicket } from '@/hooks/UseFetchTicket';
+import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
+import { useUpdateRecordCount } from '@/hooks/UseUpdateRecordCount';
 import { ExternalLink, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const MOBILE_PER_PAGE = 10;
 const ROW_HEIGHT = 50;
@@ -52,11 +61,28 @@ export default function TicketPage() {
   const [filterOptions, setFilterOptions] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
   const [recordsPerPage, setRecordsPerPage] = useState(DEFAULT_ROWS);
+  const [userRowsPerPage, setUserRowsPerPage] = useState(null);
 
   const [selectedTicket, setSelectedTicket] = useState(null);
   const pendingUuid = useRef(initialUuid);
   const tableContainerRef = useRef(null);
-  const perPage = isMobile ? MOBILE_PER_PAGE : recordsPerPage;
+  
+  const { userSettings } = useFetchUserSettings({ entrauserid: userId });
+  const { updateRecordCount, loading: updating } = useUpdateRecordCount();
+  
+  const settingsRowsPerPage = useMemo(() => {
+    if (userSettings && userSettings.length > 0) {
+      const setting = userSettings[0];
+      const recordCount = Number(setting?.v_ticketrecordcount);
+      if (recordCount > 0) {
+        return recordCount;
+      }
+    }
+    return null;
+  }, [userSettings]);
+  
+  const effectiveRecordsPerPage = userRowsPerPage ?? settingsRowsPerPage ?? recordsPerPage;
+  const perPage = isMobile ? MOBILE_PER_PAGE : effectiveRecordsPerPage;
   const totalPages = Math.max(1, Math.ceil(totalRecords / perPage));
   const safePage = Math.min(currentPage, totalPages);
 
@@ -147,6 +173,25 @@ export default function TicketPage() {
     setRefreshKey(k => k + 1);
     setSelectedTicket(null);
   }, []);
+  
+  const handleRecordsPerPageChange = async (value) => {
+    const newValue = Number(value);
+    setCurrentPage(1);
+    setUserRowsPerPage(newValue);
+
+    if (userSettings && userSettings.length > 0) {
+      try {
+        await updateRecordCount({
+          entrauserid: userSettings[0]?.v_entrauserid,
+          ticketrecordcount: newValue,
+          managerecordcount: userSettings[0]?.v_managerecordcount ?? null,
+          modifiedby: tokenInfo?.account?.username ?? null,
+        });
+      } catch (err) {
+        console.error('Failed to update record count:', err);
+      }
+    }
+  };
 
   if (showCreateTicket) {
     return <ComCreateTicket onClose={() => setShowCreateTicket(false)} />;
@@ -198,46 +243,64 @@ export default function TicketPage() {
     }
 
   return (
-    <div className={`flex items-center justify-between py-2 border-t border-gray-200 dark:border-gray-800 mt-auto ${
-      isMobile ? 'px-5' : 'pr-15'
+    <div className={`flex items-center justify-between gap-4 py-2 border-t border-gray-200 dark:border-gray-800 mt-auto ${
+      isMobile ? 'px-5 flex-col' : 'pr-15 flex-row'
     }`}>
       <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
         {totalRecords} Total Records
       </span>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-          disabled={safePage === 1}
-          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        {pages.map((page, i) =>
-          page === '...' ? (
-            <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
-          ) : (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`w-8 h-8 text-xs rounded-lg transition-colors font-medium ${
-                page === safePage
-                  ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                  : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-              }`}
-            >
-              {page}
-            </button>
-          )
-        )}
-        <button
-          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-          disabled={safePage === totalPages}
-          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Next page"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </button>
+      <div className="flex items-center gap-3">
+        <div className="hidden md:flex items-center gap-2">
+          <label className="text-xs text-gray-600 dark:text-gray-400 font-medium">Rows per page:</label>
+          <Select value={String(effectiveRecordsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
+            <SelectTrigger className="w-20 h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={safePage === 1}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          {pages.map((page, i) =>
+            page === '...' ? (
+              <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
+            ) : (
+              <button
+                key={page}
+                onClick={() => setCurrentPage(page)}
+                className={`w-8 h-8 text-xs rounded-lg transition-colors font-medium ${
+                  page === safePage
+                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                }`}
+              >
+                {page}
+              </button>
+            )
+          )}
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={safePage === totalPages}
+            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            aria-label="Next page"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -363,7 +426,7 @@ export default function TicketPage() {
           </div>
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 mt-3" />
           <div ref={tableContainerRef} className="flex-1 min-h-0 overflow-auto">
-            <ComTicketTable {...tableProps} recordsPerPage={recordsPerPage} />
+            <ComTicketTable {...tableProps} recordsPerPage={effectiveRecordsPerPage} />
           </div>
           {pagination}
         </div>
