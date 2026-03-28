@@ -1,3 +1,38 @@
+# [1.3.0-dev.58](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.57...v1.3.0-dev.58) (2026-03-28)
+
+
+### Bug Fixes
+
+* IOS problem in viewing ([fc02f7f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fc02f7f6ab6455715320faf75618aab78f22da00))
+
+# [1.3.0-dev.57](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.56...v1.3.0-dev.57) (2026-03-28)
+
+
+### Bug Fixes
+
+* Add ticket breakdown columns and totals ([122227f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/122227fe41d95bdcbc1f18193ce627b756a0cf6e))
+
+# [1.3.0-dev.56](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.55...v1.3.0-dev.56) (2026-03-28)
+
+
+### Bug Fixes
+
+* HIDECOMPLETED TICKET WORKING ([5bd32b7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5bd32b734ab30c96103a5b4ac66de269e65f551d))
+
+# [1.3.0-dev.55](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.54...v1.3.0-dev.55) (2026-03-28)
+
+
+### Bug Fixes
+
+* hidecompleted ticket application ([ebe835a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ebe835a6be866a0d1f4b1503d010e8f12df3a448))
+
+# [1.3.0-dev.54](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.53...v1.3.0-dev.54) (2026-03-28)
+
+
+### Bug Fixes
+
+* ST-ticket and attachment save the annotaionid on attachement ([fbae6f6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fbae6f6773a5a0354c2163bd15af48ade8584c70))
+
 # [1.3.0-dev.53](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.52...v1.3.0-dev.53) (2026-03-28)
 
 

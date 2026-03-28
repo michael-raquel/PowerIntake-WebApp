@@ -11,7 +11,7 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
   const [limit, setLimit]           = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0 });
+  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0, completedTickets: 0, cancelledTickets: 0, completionRate: 0 });
   const [allRoleData, setAllRoleData] = useState([]);
   const filterOptions = {
     roles: ["Super Admin", "Admin", "Manager", "User"],
@@ -47,7 +47,7 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
 
   const fetchTotals = useCallback(async (filters, totalCount) => {
     if (!totalCount) {
-      setTotals({ totalTickets: 0, openTickets: 0 });
+      setTotals({ totalTickets: 0, openTickets: 0, completedTickets: 0, cancelledTickets: 0, completionRate: 0 });
       return;
     }
 
@@ -86,7 +86,22 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
       0
     );
 
-    setTotals({ totalTickets, openTickets });
+    const completedTickets = rows.reduce(
+      (sum, row) => sum + Number(row?.v_completed ?? 0),
+      0
+    );
+
+    const cancelledTickets = rows.reduce(
+      (sum, row) => sum + Number(row?.v_cancelled ?? 0),
+      0
+    );
+
+    let completionRate = 0;
+    if (totalTickets > 0) {
+      completionRate = Number(((completedTickets / totalTickets) * 100).toFixed(1));
+    }
+
+    setTotals({ totalTickets, openTickets, completedTickets, cancelledTickets, completionRate });
   }, [getAccessToken, resolveApiUrl]);
 
   const fetchAllRoleData = useCallback(async (filters, totalCount) => {
