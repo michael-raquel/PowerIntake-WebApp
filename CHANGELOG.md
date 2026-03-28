@@ -1,3 +1,10 @@
+# [1.3.0-dev.58](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.57...v1.3.0-dev.58) (2026-03-28)
+
+
+### Bug Fixes
+
+* IOS problem in viewing ([fc02f7f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fc02f7f6ab6455715320faf75618aab78f22da00))
+
 # [1.3.0-dev.57](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.56...v1.3.0-dev.57) (2026-03-28)
 
 
