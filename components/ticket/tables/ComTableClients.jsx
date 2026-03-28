@@ -6,6 +6,7 @@ import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
+import { se } from 'date-fns/locale';
 
 const cardFields = [
   { key: 'v_tenantname',     label: 'Client'     },
@@ -28,6 +29,7 @@ export default function ComTableClients({
   filters = {},
   refreshKey,
   onTicketUpdated,
+  hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -60,9 +62,12 @@ export default function ComTableClients({
       const matchesCategory   = !filters.Category   || t.v_ticketcategory === filters.Category;
       const matchesStatus     = !filters.Status     || t.v_status === filters.Status;
 
-      return matchesSearch && matchesClient && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus;
+       const matchesCompleted = !hideCompleted || 
+          (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+
+      return matchesSearch && matchesClient && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
     }),
-  [tickets, searchValue, filters.Client, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status]
+  [tickets, searchValue, filters.Client, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
 );
 
   const paginated = useMemo(
@@ -92,19 +97,24 @@ export default function ComTableClients({
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
 
-    useEffect(() => {
-    if (userSettings && userSettings.length > 0) {
-      const setting = userSettings[0];
-      const recordCount = Number(setting?.v_ticketrecordcount);
-      if (recordCount > 0) {
-        const settingsChanged = recordCount !== lastSettingsValueRef.current;
-        lastSettingsValueRef.current = recordCount;
-        if ((settingsChanged || !hasUserSelectionRef.current) && recordCount !== selectedRowsPerPage) {
-          setSelectedRowsPerPage(recordCount);
+useEffect(() => {
+  if (userSettings && userSettings.length > 0) {
+    const setting = userSettings[0];
+    const recordCount = Number(setting?.v_ticketrecordcount);
+    if (recordCount > 0) {
+      setSelectedRowsPerPage(prevSelectedRowsPerPage => {
+        if (
+          recordCount !== prevSelectedRowsPerPage &&
+          (recordCount !== lastSettingsValueRef.current || !hasUserSelectionRef.current)
+        ) {
+          lastSettingsValueRef.current = recordCount;
+          return recordCount;
         }
-      }
+        return prevSelectedRowsPerPage;
+      });
     }
-  }, [userSettings]);
+  }
+}, [userSettings]);
 
   const handleSync = async () => {
   await runSync();

@@ -66,10 +66,10 @@ export default function TicketPage() {
   const [selectedTicket, setSelectedTicket] = useState(null);
   const pendingUuid = useRef(initialUuid);
   const tableContainerRef = useRef(null);
-  
+
   const { userSettings } = useFetchUserSettings({ entrauserid: userId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
-  
+
   const settingsRowsPerPage = useMemo(() => {
     if (userSettings && userSettings.length > 0) {
       const setting = userSettings[0];
@@ -80,11 +80,12 @@ export default function TicketPage() {
     }
     return null;
   }, [userSettings]);
-  
+
   const effectiveRecordsPerPage = userRowsPerPage ?? settingsRowsPerPage ?? recordsPerPage;
   const perPage = isMobile ? MOBILE_PER_PAGE : effectiveRecordsPerPage;
   const totalPages = Math.max(1, Math.ceil(totalRecords / perPage));
   const safePage = Math.min(currentPage, totalPages);
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   const tabs = useMemo(() => {
     const t = [];
@@ -173,7 +174,7 @@ export default function TicketPage() {
     setRefreshKey(k => k + 1);
     setSelectedTicket(null);
   }, []);
-  
+
   const handleRecordsPerPageChange = async (value) => {
     const newValue = Number(value);
     setCurrentPage(1);
@@ -219,8 +220,8 @@ export default function TicketPage() {
             key={id}
             onClick={() => handleTabChange(id)}
             className={`px-4 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150 rounded-t-lg border-b-2 cursor-pointer ${safeTab === id
-                ? 'border-violet-600 text-violet-600 bg-violet-50 dark:bg-violet-950/30 dark:border-violet-400 dark:text-violet-400 font-semibold'
-                : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-white/[0.04]'
+              ? 'border-violet-600 text-violet-600 bg-violet-50 dark:bg-violet-950/30 dark:border-violet-400 dark:text-violet-400 font-semibold'
+              : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-white/[0.04]'
               }`}
           >
             {label}
@@ -242,69 +243,67 @@ export default function TicketPage() {
       pages.push(1, '...', safePage - 1, safePage, safePage + 1, '...', totalPages);
     }
 
-  return (
-    <div className={`flex items-center justify-between gap-4 py-2 border-t border-gray-200 dark:border-gray-800 mt-auto ${
-      isMobile ? 'px-5 flex-col' : 'pr-15 flex-row'
-    }`}>
-      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-        {totalRecords} Total Records
-      </span>
-      <div className="flex items-center gap-3">
-        <div className="hidden md:flex items-center gap-2">
-          <label className="text-xs text-gray-600 dark:text-gray-400 font-medium">Rows per page:</label>
-          <Select value={String(effectiveRecordsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
-            <SelectTrigger className="w-20 h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="15">15</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={safePage === 1}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Previous page"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          {pages.map((page, i) =>
-            page === '...' ? (
-              <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
-            ) : (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 text-xs rounded-lg transition-colors font-medium ${
-                  page === safePage
-                    ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
-                }`}
-              >
-                {page}
-              </button>
-            )
-          )}
-          <button
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={safePage === totalPages}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            aria-label="Next page"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
+    return (
+      <div className={`flex items-center justify-between gap-4 py-2 border-t border-gray-200 dark:border-gray-800 mt-auto ${isMobile ? 'px-5 flex-col' : 'pr-15 flex-row'
+        }`}>
+        <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+          {totalRecords} Total Records
+        </span>
+        <div className="flex items-center gap-3">
+          <div className="hidden md:flex items-center gap-2">
+            <label className="text-xs text-gray-600 dark:text-gray-400 font-medium">Rows per page:</label>
+            <Select value={String(effectiveRecordsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
+              <SelectTrigger className="w-20 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {pages.map((page, i) =>
+              page === '...' ? (
+                <span key={`e${i}`} className="text-xs text-gray-400 px-1">...</span>
+              ) : (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 text-xs rounded-lg transition-colors font-medium ${page === safePage
+                      ? 'bg-gray-900 text-white dark:bg-white dark:text-gray-900'
+                      : 'text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800'
+                    }`}
+                >
+                  {page}
+                </button>
+              )
+            )}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              aria-label="Next page"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-})();
+    );
+  })();
 
   const footer = (
     <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 ">
@@ -386,6 +385,8 @@ export default function TicketPage() {
                 selectedFilters={selectedFilters}
                 onFiltersChange={handleFiltersChange}
                 filterOptions={filterOptions}
+                hideCompleted={hideCompleted}
+                onHideCompletedChange={setHideCompleted}
               />
             </div>
             <div className="border-t border-gray-200 dark:border-gray-800" />
@@ -413,20 +414,22 @@ export default function TicketPage() {
       <div className="flex flex-col gap-4 flex-1 min-h-0">
         {header}
         {tabBar}
-<div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 pb-0 flex flex-col flex-1 min-h-0">          <div className="flex-shrink-0">
-            <ComFilters
-              onCreateTicket={() => setShowCreateTicket(true)}
-              activeTab={safeTab}
-              searchValue={searchValue}
-              onSearch={setSearchValue}
-              selectedFilters={selectedFilters}
-              onFiltersChange={handleFiltersChange}
-              filterOptions={filterOptions}
-            />
-          </div>
+        <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 pb-0 flex flex-col flex-1 min-h-0">          <div className="flex-shrink-0">
+          <ComFilters
+            onCreateTicket={() => setShowCreateTicket(true)}
+            activeTab={safeTab}
+            searchValue={searchValue}
+            onSearch={setSearchValue}
+            selectedFilters={selectedFilters}
+            onFiltersChange={handleFiltersChange}
+            filterOptions={filterOptions}
+            hideCompleted={hideCompleted}
+            onHideCompletedChange={setHideCompleted}
+          />
+        </div>
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 mt-3" />
           <div ref={tableContainerRef} className="flex-1 min-h-0 overflow-auto">
-            <ComTicketTable {...tableProps} recordsPerPage={effectiveRecordsPerPage} />
+            <ComTicketTable {...tableProps} recordsPerPage={effectiveRecordsPerPage} hideCompleted={hideCompleted} />
           </div>
           {pagination}
         </div>
