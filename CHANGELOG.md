@@ -1,3 +1,10 @@
+# [1.3.0-dev.56](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.55...v1.3.0-dev.56) (2026-03-28)
+
+
+### Bug Fixes
+
+* HIDECOMPLETED TICKET WORKING ([5bd32b7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5bd32b734ab30c96103a5b4ac66de269e65f551d))
+
 # [1.3.0-dev.55](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.54...v1.3.0-dev.55) (2026-03-28)
 
 
