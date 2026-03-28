@@ -1,3 +1,10 @@
+# [1.3.0-dev.54](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.53...v1.3.0-dev.54) (2026-03-28)
+
+
+### Bug Fixes
+
+* ST-ticket and attachment save the annotaionid on attachement ([fbae6f6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fbae6f6773a5a0354c2163bd15af48ade8584c70))
+
 # [1.3.0-dev.53](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.0-dev.52...v1.3.0-dev.53) (2026-03-28)
 
 
