@@ -81,11 +81,19 @@ export default function TicketPage() {
     return null;
   }, [userSettings]);
 
+  
   const effectiveRecordsPerPage = userRowsPerPage ?? settingsRowsPerPage ?? recordsPerPage;
   const perPage = isMobile ? MOBILE_PER_PAGE : effectiveRecordsPerPage;
   const totalPages = Math.max(1, Math.ceil(totalRecords / perPage));
   const safePage = Math.min(currentPage, totalPages);
-  const [hideCompleted, setHideCompleted] = useState(false);
+  const initialHideCompleted = useMemo(() => {
+  if (userSettings && userSettings.length > 0) {
+    return Boolean(userSettings[0]?.v_hidecompletedtickets);
+  }
+  return false;
+}, [userSettings]);
+
+  const [hideCompleted, setHideCompleted] = useState(initialHideCompleted);
 
   const tabs = useMemo(() => {
     const t = [];
@@ -113,6 +121,10 @@ export default function TicketPage() {
   }, [userId, safeTab, tokenInfo?.account?.tenantId]);
 
   const { tickets = [], isLoading } = useFetchTicket({ ...ticketQuery, refreshKey });
+
+  useEffect(() => {
+  setHideCompleted(initialHideCompleted);
+}, [initialHideCompleted]);
 
   useEffect(() => {
     if (!pendingUuid.current || isLoading || !tickets.length) return;
