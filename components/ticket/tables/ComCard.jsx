@@ -91,7 +91,7 @@ export default function ComCard({ ticket = {}, onClick, isSyncing = false }) {
         {isSyncing ? (
           <span className="inline-flex items-center gap-1.5 text-violet-500 dark:text-violet-400 text-xs font-medium">
             <RefreshCw className="w-3 h-3 animate-spin" />
-            Syncing...
+            Finalizing...
           </span>
         ) : (
           <span className="text-[11px] sm:text-xs font-mono font-semibold text-violet-600 dark:text-violet-400 shrink-0">

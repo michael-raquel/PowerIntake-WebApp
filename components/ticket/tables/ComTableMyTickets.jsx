@@ -226,7 +226,7 @@ export default function ComTableMyTickets({
                     <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
                         {isSyncing ? (
                         <span className="inline-flex items-center gap-1.5 text-violet-500 dark:text-violet-400 text-xs font-medium">
-                          <RefreshCw className="w-3 h-3 animate-spin" />Processing...
+                          <RefreshCw className="w-3 h-3 animate-spin" /> Finalizing...
                         </span>
                       ) : (
                         <span className="text-gray-600 dark:text-gray-300"> {t.v_ticketnumber}</span>
