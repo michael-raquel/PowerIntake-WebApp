@@ -1,3 +1,10 @@
+# [1.4.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.1...v1.4.0-dev.2) (2026-03-29)
+
+
+### Bug Fixes
+
+* ST-ticket create background syncing process ([1c637d3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/1c637d3cfa3384fc33bf1af9665320ed44634a04))
+
 # [1.4.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.1...v1.4.0-dev.1) (2026-03-29)
 
 
