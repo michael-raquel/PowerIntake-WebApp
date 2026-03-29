@@ -47,7 +47,6 @@ export default function ComTableTeam({
     const handleTicketSynced = ({ ticketuuid, ticket }) => {
       if (!ticket) return;
 
-      // Update in place if setTeamTickets is available
       if (setTeamTickets) {
         setTeamTickets(prev => {
           const exists = prev.some(t => t.v_ticketuuid === ticketuuid);

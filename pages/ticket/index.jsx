@@ -231,7 +231,6 @@ export default function TicketPage() {
       onClose={() => setShowCreateTicket(false)}
       onTicketCreated={(ticketuuid) => {
         setPendingSyncUuid(ticketuuid);
-        setRefreshKey(k => k + 1);
         setShowCreateTicket(false);
       }}
     />
@@ -397,18 +396,18 @@ export default function TicketPage() {
   );
 
   const tableProps = {
-  activeTab: safeTab,
-  currentPage: safePage,
-  onTotalRecordsChange: setTotalRecords,
-  onFilterOptionsChange: setFilterOptions,
-  searchValue,
-  filters: selectedFilters,
-  refreshKey,
-  onTicketSelect: handleTicketSelect,
-  onTicketUpdated: () => setRefreshKey(k => k + 1),
-  pendingSyncUuid,                          
-  onSynced: () => setPendingSyncUuid(null), 
-};
+    activeTab: safeTab,
+    currentPage: safePage,
+    onTotalRecordsChange: setTotalRecords,
+    onFilterOptionsChange: setFilterOptions,
+    searchValue,
+    filters: selectedFilters,
+    refreshKey,
+    onTicketSelect: handleTicketSelect,
+    onTicketUpdated: () => setRefreshKey(k => k + 1),
+    pendingSyncUuid,                          
+    onSynced: () => setPendingSyncUuid(null), 
+  };
 
   // ── Mobile 
   if (isMobile) {
