@@ -5,8 +5,8 @@ import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
-// import { toast } from "sonner";
-// import socket from "@/lib/socket";
+import { toast } from "sonner";
+import socket from "@/lib/socket";
 
 const cardFields = [
   { key: 'v_source',         label: 'Source'     },
@@ -27,9 +27,8 @@ export default function ComTableMyTickets({
   refreshKey,
   onTicketUpdated,
   pendingSyncUuid,
-  // onSynced,
-  // onSyncComplete,
-  hideCompleted = false,
+  onSynced,
+   hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -40,7 +39,6 @@ export default function ComTableMyTickets({
 
   const prevMyTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
-  // const syncedCalledRef = useRef(false);
 
   const { runSync, loading: syncing } = useAutoSyncDynamics();
 
@@ -49,67 +47,37 @@ export default function ComTableMyTickets({
     [tickets, tokenInfo?.account?.localAccountId]
   );
 
-//   useEffect(() => {
-//      const handleTicketSynced = ({ ticketuuid, ticket }) => {
-//       if (!ticket) return;
+  useEffect(() => {
+    const handleTicketSynced = ({ ticketuuid, ticket }) => {
+      if (!ticket) return;
 
-//       setTickets(prev => {
-//           const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
-//           if (exists) {
-//               return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
-//           } else {
-//               return [ticket, ...prev];
-//           }
-//       });
+      setTickets(prev => {
+        const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
+        if (exists) {
+          return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
+        } else {
+          return [ticket, ...prev];
+        }
+      });
 
-//       if (!syncedCalledRef.current) {
-//           syncedCalledRef.current = true;
-//           toast.success('Ticket synced to Dynamics successfully');
-//           onSynced?.();   
-//           onSyncComplete?.();
-//       }
-// };
+      toast.success('Ticket synced to Dynamics successfully');
+      onSynced?.();
+    };
 
-//     const handleTicketSyncFailed = ({ ticketuuid }) => {
-//       console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
-//       toast.warning('Ticket created but Dynamics sync failed');
-//       onSynced?.();
-//     };
+    const handleTicketSyncFailed = ({ ticketuuid }) => {
+      console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
+      toast.warning('Ticket created but Dynamics sync failed');
+      onSynced?.();
+    };
 
-//     socket.on("ticket:synced",      handleTicketSynced);
-//     socket.on("ticket:sync_failed", handleTicketSyncFailed);
+    socket.on("ticket:synced",      handleTicketSynced);
+    socket.on("ticket:sync_failed", handleTicketSyncFailed);
 
-//     return () => {
-//       socket.off("ticket:synced",      handleTicketSynced);
-//       socket.off("ticket:sync_failed", handleTicketSyncFailed);
-//     };
-//   }, [setTickets, onSynced]);
-
-  // useEffect(() => {
-  //     if (!pendingSyncUuid) {
-  //         syncedCalledRef.current = false;
-  //         return;
-  //     }
-
-  //     if (syncedCalledRef.current) return;
-
-  //     const found = tickets.some(t => t.v_ticketuuid === pendingSyncUuid);
-  //     if (found) {
-  //         syncedCalledRef.current = true;
-  //         onSynced?.(); // ✅ trigger refetch to get Dynamics data
-  //         // Don't call onSyncComplete yet — wait for next refetch
-  //     }
-  // }, [tickets, pendingSyncUuid, onSynced]);
-
-  //  useEffect(() => {
-  //     if (!pendingSyncUuid || !syncedCalledRef.current) return;
-
-  //     const ticket = tickets.find(t => t.v_ticketuuid === pendingSyncUuid);
-  //     // Clear spinner only when ticket has a Dynamics ticket number (fully synced)
-  //     if (ticket?.v_ticketnumber) {
-  //         onSyncComplete?.();
-  //     }
-  // }, [tickets, pendingSyncUuid, onSyncComplete]);
+    return () => {
+      socket.off("ticket:synced",      handleTicketSynced);
+      socket.off("ticket:sync_failed", handleTicketSyncFailed);
+    };
+  }, [setTickets, onSynced]);
 
   const filteredTickets = useMemo(
     () => myTickets.filter(t => {
@@ -261,12 +229,13 @@ export default function ComTableMyTickets({
                           <RefreshCw className="w-3 h-3 animate-spin" /> Syncing...
                         </span>
                       ) : (
-                        <span className="text-gray-600 dark:text-gray-300">{t.v_ticketnumber}</span>
+                        <span className="text-gray-600 dark:text-gray-300"> {t.v_ticketnumber}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                       {t.v_source || '—'}
                     </td>
+               
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
                       {t.v_title}
                     </td>
@@ -278,7 +247,6 @@ export default function ComTableMyTickets({
                         {t.v_priority || '—'}
                       </span>
                     </td>
-                     
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                       {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
                     </td>
@@ -286,7 +254,7 @@ export default function ComTableMyTickets({
                       {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      {t.v_status}
+                    {t.v_status}
                     </td>
                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                       {t.v_technicianname || '—'}

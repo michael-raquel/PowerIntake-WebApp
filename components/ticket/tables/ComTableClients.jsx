@@ -1,12 +1,12 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { useAuth } from '@/context/AuthContext';
-import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
-import { se } from 'date-fns/locale';
+import { toast } from "sonner";
+import socket from "@/lib/socket";
 
 const cardFields = [
   { key: 'v_tenantname',     label: 'Client'     },
@@ -29,23 +29,52 @@ export default function ComTableClients({
   filters = {},
   refreshKey,
   onTicketUpdated,
+  pendingSyncUuid,
+  onSynced,
   hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const { tickets, loading, error } = useFetchTicket({ refreshKey });
-  const { runSync, loading: syncing, error: syncError } = useAutoSyncDynamics();
-  const { userSettings } = useFetchUserSettings();
-  const [selectedRowsPerPage, setSelectedRowsPerPage] = useState();
+  const { tickets, loading, error, setTickets } = useFetchTicket({ refreshKey });
+  const { runSync, loading: syncing } = useAutoSyncDynamics();
 
   const prevTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
-  const lastSettingsValueRef = useRef();
-  const hasUserSelectionRef = useRef(false);
+
+  useEffect(() => {
+    const handleTicketSynced = ({ ticketuuid, ticket }) => {
+      if (!ticket) return;
+
+      setTickets(prev => {
+        const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
+        if (exists) {
+          return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
+        } else {
+          return [ticket, ...prev];
+        }
+      });
+
+      toast.success('Ticket synced to Dynamics successfully');
+      onSynced?.();
+    };
+
+    const handleTicketSyncFailed = ({ ticketuuid }) => {
+      console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
+      toast.warning('Ticket created but Dynamics sync failed');
+      onSynced?.();
+    };
+
+    socket.on("ticket:synced",      handleTicketSynced);
+    socket.on("ticket:sync_failed", handleTicketSyncFailed);
+
+    return () => {
+      socket.off("ticket:synced",      handleTicketSynced);
+      socket.off("ticket:sync_failed", handleTicketSyncFailed);
+    };
+  }, [setTickets, onSynced]);
 
   const filteredTickets = useMemo(
-  () =>
-    tickets.filter(t => {
+    () => tickets.filter(t => {
       const search = searchValue.toLowerCase().trim();
       const matchesSearch =
         !search ||
@@ -61,14 +90,13 @@ export default function ComTableClients({
       const matchesPriority   = !filters.Priority   || t.v_priority === filters.Priority;
       const matchesCategory   = !filters.Category   || t.v_ticketcategory === filters.Category;
       const matchesStatus     = !filters.Status     || t.v_status === filters.Status;
-
-       const matchesCompleted = !hideCompleted || 
-          (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+      const matchesCompleted  = !hideCompleted ||
+        (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
 
       return matchesSearch && matchesClient && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
     }),
-  [tickets, searchValue, filters.Client, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
-);
+    [tickets, searchValue, filters.Client, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
+  );
 
   const paginated = useMemo(
     () => filteredTickets.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage),
@@ -76,19 +104,19 @@ export default function ComTableClients({
   );
 
   useEffect(() => {
-  const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(tickets);
-  if (ticketsChanged) {
-    prevTicketsRef.current = tickets;
-    onFilterOptionsChange?.({
-      Client:     [...new Set(tickets.map(t => t.v_tenantname).filter(Boolean))],
-      Department: [...new Set(tickets.map(t => t.v_department).filter(Boolean))],
-      Source:     [...new Set(tickets.map(t => t.v_source).filter(Boolean))],
-      Priority:   [...new Set(tickets.map(t => t.v_priority).filter(Boolean))],
-      Category:   [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))],
-      Status:     [...new Set(tickets.map(t => t.v_status).filter(Boolean))],
-    });
-  }
-}, [tickets, onFilterOptionsChange]);
+    const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(tickets);
+    if (ticketsChanged) {
+      prevTicketsRef.current = tickets;
+      onFilterOptionsChange?.({
+        Client:     [...new Set(tickets.map(t => t.v_tenantname).filter(Boolean))],
+        Department: [...new Set(tickets.map(t => t.v_department).filter(Boolean))],
+        Source:     [...new Set(tickets.map(t => t.v_source).filter(Boolean))],
+        Priority:   [...new Set(tickets.map(t => t.v_priority).filter(Boolean))],
+        Category:   [...new Set(tickets.map(t => t.v_ticketcategory).filter(Boolean))],
+        Status:     [...new Set(tickets.map(t => t.v_status).filter(Boolean))],
+      });
+    }
+  }, [tickets, onFilterOptionsChange]);
 
   useEffect(() => {
     if (prevFilteredLengthRef.current !== filteredTickets.length) {
@@ -97,29 +125,9 @@ export default function ComTableClients({
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
 
-useEffect(() => {
-  if (userSettings && userSettings.length > 0) {
-    const setting = userSettings[0];
-    const recordCount = Number(setting?.v_ticketrecordcount);
-    if (recordCount > 0) {
-      setSelectedRowsPerPage(prevSelectedRowsPerPage => {
-        if (
-          recordCount !== prevSelectedRowsPerPage &&
-          (recordCount !== lastSettingsValueRef.current || !hasUserSelectionRef.current)
-        ) {
-          lastSettingsValueRef.current = recordCount;
-          return recordCount;
-        }
-        return prevSelectedRowsPerPage;
-      });
-    }
-  }
-}, [userSettings]);
-
   const handleSync = async () => {
-  await runSync();
-
-    onTicketUpdated?.(); 
+    await runSync();
+    onTicketUpdated?.();
   };
 
   const getPriorityClass = (priority) => {
@@ -158,6 +166,7 @@ useEffect(() => {
               fields={cardFields}
               onClick={() => setSelectedTicket(ticket)}
               priorityClass={getPriorityClass(ticket.v_priority)}
+              isSyncing={pendingSyncUuid === ticket.v_ticketuuid}
             />
           ))}
           {!paginated.length && (
@@ -165,7 +174,7 @@ useEffect(() => {
           )}
         </div>
       </div>
-        
+
       {/* Desktop */}
       <div className="hidden sm:block overflow-x-auto">
         <div className="flex justify-between items-center mb-2 border-b py-2">
@@ -183,20 +192,7 @@ useEffect(() => {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              {[
-                'TICKET ID',
-                'SOURCE',
-                'CLIENT NAME',
-                'DEPARTMENT',
-                'USER NAME',
-                'TITLE',
-                'CATEGORY',
-                'PRIORITY',
-                'CREATED AT',
-                'TARGET',
-                'STATUS',
-                'TECHNICIAN',
-              ].map(header => (
+              {['TICKET ID', 'SOURCE', 'CLIENT NAME', 'DEPARTMENT', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY', 'CREATED AT', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
                 <th
                   key={header}
                   className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
@@ -204,7 +200,7 @@ useEffect(() => {
                   {header}
                 </th>
               ))}
-             </tr>
+            </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {paginated.length === 0 ? (
@@ -214,52 +210,66 @@ useEffect(() => {
                 </td>
               </tr>
             ) : (
-              paginated.map(t => (
-                <tr
-                  key={t.v_ticketuuid}
-                  onClick={() => setSelectedTicket(t)}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors text-center"
-                >
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
-                    {t.v_ticketnumber}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_source || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_tenantname || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_department || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_username || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
-                    {t.v_title}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
-                    {t.v_ticketcategory}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
-                      {t.v_priority || '—'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_status}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_technicianname || '—'}
-                  </td>
-                </tr>
-              ))
+              paginated.map(t => {
+                const isSyncing = pendingSyncUuid === t.v_ticketuuid;
+                return (
+                  <tr
+                    key={t.v_ticketuuid}
+                    onClick={() => !isSyncing && setSelectedTicket(t)}
+                    className={`transition-colors text-center ${
+                      isSyncing
+                        ? 'bg-violet-50 dark:bg-violet-950/20 cursor-wait'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
+                    }`}
+                  >
+                   
+                    <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
+                      {isSyncing ? (
+                        <span className="inline-flex items-center gap-1.5 text-violet-500 dark:text-violet-400 text-xs font-medium">
+                          <RefreshCw className="w-3 h-3 animate-spin" /> Syncing...
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 dark:text-gray-300">{t.v_ticketnumber}</span>
+                      )}
+                    </td>
+                     <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_source || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_tenantname || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_department || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_username || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
+                      {t.v_title || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
+                      {t.v_ticketcategory || '—'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
+                        {t.v_priority || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_status || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_technicianname || '—'}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
