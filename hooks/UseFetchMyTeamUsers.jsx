@@ -14,6 +14,9 @@ export default function useFetchMyTeam(initialPage = 1, initialLimit = null) {
   const [total,      setTotal]     = useState(0);
   const [totalPages, setTotalPages]= useState(1);
   const [totals,     setTotals]    = useState({ totalTickets: 0, openTickets: 0 });
+  const filterOptions = {
+    statuses: ["true", "false"],
+  };
   const lastTotalsKeyRef           = useRef("");
   const limitRef                   = useRef(initialLimit);
 
@@ -154,5 +157,6 @@ export default function useFetchMyTeam(initialPage = 1, initialLimit = null) {
     hasNext: page < totalPages,
     hasPrev: page > 1,
     fetchData,
+    filterOptions,
   };
 }

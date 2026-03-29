@@ -24,6 +24,8 @@ export default function ComTableCompany({
   filters = {},
   refreshKey,
   onTicketUpdated,
+  hideCompleted = false,
+
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -55,9 +57,12 @@ export default function ComTableCompany({
       const matchesCategory   = !filters.Category   || t.v_ticketcategory === filters.Category;
       const matchesStatus     = !filters.Status     || t.v_status === filters.Status;
 
-      return matchesSearch && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus;
+       const matchesCompleted = !hideCompleted || 
+          (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+
+      return matchesSearch && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
     }),
-  [tickets, searchValue, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status]
+  [tickets, searchValue, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
 );
 
   const paginated = useMemo(
@@ -137,23 +142,23 @@ export default function ComTableCompany({
       </div>
 
       {/* Desktop Table */}
-       <div className="hidden sm:block overflow-x-auto">
+      <div className="hidden sm:block overflow-x-auto">
         <div className="flex justify-between items-center mb-2 border-b py-2">
-           <span className="text-xs text-gray-500 dark:text-gray-400">
-           {filteredTickets.length} Total Records
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {filteredTickets.length} Total Records
           </span>
-            <button
-              onClick={handleSync}
-              disabled={loading || syncing}
-              className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-            </button>
+          <button
+            onClick={handleSync}
+            disabled={loading || syncing}
+            className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
+          </button>
         </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              {['Source','TICKET ID', 'DEPARTMENT', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY','CREATED AT', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
+              {['TICKET ID', 'SOURCE', 'DEPARTMENT', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY', 'CREATED AT', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
                 <th
                   key={header}
                   className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
@@ -161,54 +166,62 @@ export default function ComTableCompany({
                   {header}
                 </th>
               ))}
-             </tr>
+              </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {paginated.map(t => (
-              <tr
-                key={t.v_ticketuuid}
-                onClick={() => setSelectedTicket(t)}
-                className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
-              >
+          <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-center">
+            {paginated.length === 0 ? (
+              <tr>
+                <td colSpan={11} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                  No tickets found.
+                </td>
+              </tr>
+            ) : (
+              paginated.map(t => (
+                <tr
+                  key={t.v_ticketuuid}
+                  onClick={() => setSelectedTicket(t)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors text-center"
+                >
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
-                  {t.v_source}
-                 </td>
-                <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
-                  {t.v_ticketnumber}
-                 </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_department}
-                 </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_username}
-                 </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
-                  {t.v_title}
-                 </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
-                  {t.v_ticketcategory}
-                 </td>
-                <td className="px-4 py-3 whitespace-nowrap">
-                  <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
-                    {t.v_priority}
-                  </span>
-                 </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_ticketnumber}
+                  </td>
+                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_source || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_department || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_username || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
+                    {t.v_title || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
+                    {t.v_ticketcategory || '—'}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
+                      {t.v_priority || '—'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
-                   </td>
+                  </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
-                   </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_status}
-                 </td>
-                <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                  {t.v_technicianname}
-                 </td>
-               </tr>
-            ))}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_status || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_technicianname || '—'}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
-         </table>
+        </table>
       </div>
 
       {selectedTicket && (

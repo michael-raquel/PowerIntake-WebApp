@@ -18,7 +18,7 @@ export default function useUpdateAttachments() {
     return token?.accessToken ?? null;
   }, [accounts, instance]);
 
-  const updateAttachments = useCallback(async ({ ticketuuid, attachments, modifiedby }) => {
+  const updateAttachments = useCallback(async ({ ticketuuid, attachments, newAttachments, removedAnnotationIds, modifiedby }) => {
     setLoading(true);
     setError(null);
 
@@ -37,6 +37,8 @@ export default function useUpdateAttachments() {
         body: JSON.stringify({
           ticketuuid,
           attachments: attachments || [],
+          newAttachments: newAttachments || [],
+          removedAnnotationIds: removedAnnotationIds || [],
           modifiedby,
         }),
       });

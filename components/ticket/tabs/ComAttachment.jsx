@@ -37,7 +37,7 @@ export default function ComAttachment({
     'Merged',
     'Technician Rejected'
   ];
-  
+
   const isReadOnly = readOnlyStatuses.includes(ticket?.v_status);
   const canModify = canEdit && !isReadOnly;
   const isLoading = createLoading || updateLoading || fetchLoading;
@@ -62,40 +62,42 @@ export default function ComAttachment({
       blobName: a.v_attachment?.split('/').pop()?.split('?')[0] || '',
       url: a.v_attachment,
       createdAt: a.v_createdat,
-      attachmentuuid: a.v_attachmentuuid
+      attachmentuuid: a.v_attachmentuuid,
+      annotationid:   a.v_annotationid ?? null,
     }));
     onChange(formatted.length ? formatted : []);
   }, [fetchedAttachments, onChange]);
 
   const processUpload = async (files) => {
     const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
-    
+
     if (imageFiles.length !== files.length) {
-      toast.error('Invalid file type', { description: 'Only images are allowed.' });
-      return;
+        toast.error('Invalid file type', { description: 'Only images are allowed.' });
+        return;
     }
     if (!imageFiles.length) return;
 
     try {
-      const uploads = await Promise.all(imageFiles.map(uploadImage));
-      const urls = uploads.map(u => u.url);
+        const uploads = await Promise.all(imageFiles.map(uploadImage));
+        const newUrls = uploads.map(u => u.url);  
 
-      if (attachments.length === 0) {
-        await createAttachments({ ticketuuid, attachments: urls, createdby: createdby || modifiedby });
-      } else {
-        await updateAttachments({ 
-          ticketuuid, 
-          attachments: [...attachments.map(a => a.url), ...urls],
-          modifiedby: modifiedby || createdby 
-        });
-      }
+        if (attachments.length === 0) {
+            await createAttachments({ ticketuuid, attachments: newUrls, createdby: createdby || modifiedby });
+        } else {
+            await updateAttachments({
+                ticketuuid,
+                attachments: [...attachments.map(a => a.url), ...newUrls], 
+                newAttachments: newUrls,                                   
+                modifiedby: modifiedby || createdby
+            });
+        }
 
-      await fetchAttachments();
-      toast.success('Uploaded', { description: `${imageFiles.length} file(s) uploaded` });
+        await fetchAttachments();
+        toast.success('Uploaded', { description: `${imageFiles.length} file(s) uploaded` });
     } catch (err) {
-      toast.error('Upload failed', { description: 'Please try again.' });
+        toast.error('Upload failed', { description: 'Please try again.' });
     }
-  };
+};
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -113,12 +115,12 @@ export default function ComAttachment({
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     if (!canModify) {
       toast.error('Read-only', { description: `Cannot modify when ticket is ${ticket?.v_status}` });
       return;
     }
-    
+
     const files = Array.from(e.dataTransfer.files);
     if (files.length) await processUpload(files);
   };
@@ -126,15 +128,28 @@ export default function ComAttachment({
   const handleRemove = async (attachment, index) => {
     if (!canModify) return;
 
+    console.log("[REMOVE] attachment object:", attachment);
+    console.log("[REMOVE] annotationid:", attachment.annotationid);
+    console.log("[REMOVE] removedAnnotationIds being sent:", attachment.annotationid ? [attachment.annotationid] : []);
+
     try {
       const blobName = attachment.url.split('/').pop()?.split('?')[0];
       if (blobName) await deleteImage(blobName);
 
       const remaining = attachments.filter((_, i) => i !== index).map(a => a.url);
-      await updateAttachments({ ticketuuid, attachments: remaining, modifiedby: modifiedby || createdby });
+
+      await updateAttachments({
+        ticketuuid,
+        attachments:          remaining,
+        newAttachments:       [],
+        removedAnnotationIds: attachment.annotationid ? [attachment.annotationid] : [],
+        modifiedby:           modifiedby || createdby,
+      });
+
       await fetchAttachments();
       toast.success('Removed', { description: attachment.name });
     } catch (err) {
+      console.error('[REMOVE] error:', err);
       toast.error('Failed to remove', { description: 'Please try again.' });
     }
   };
@@ -159,15 +174,13 @@ export default function ComAttachment({
         </div>
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Attachments</p>
-          {isReadOnly && (
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <Lock className="w-3 h-3 text-gray-500 dark:text-gray-400" />
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Read-only mode - ticket is {ticket.v_status}
-              </p>
-            </div>
+          {/* {canModify && !isReadOnly && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Upload, view, download or remove files</p>
           )}
-          {isLoading && <p className="text-xs text-gray-500 dark:text-gray-400">Loading...</p>}
+          {isReadOnly && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Read-only - Ticket is {ticket.v_status}</p>
+          )}
+          {isLoading && <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Loading...</p>} */}
         </div>
       </div>
 
@@ -176,8 +189,8 @@ export default function ComAttachment({
           className={`
             flex flex-col items-center justify-center cursor-pointer
             border-2 border-dashed rounded-xl p-8 transition-all duration-200
-            ${dragActive 
-              ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30' 
+            ${dragActive
+              ? 'border-purple-500 bg-purple-50 dark:bg-purple-950/30'
               : 'border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:border-gray-400 dark:hover:border-gray-600'
             }
           `}
@@ -210,7 +223,7 @@ export default function ComAttachment({
           <div className="flex items-center gap-2">
             <Lock className="w-4 h-4 text-gray-500 dark:text-gray-400 shrink-0" />
             <p className="text-xs text-gray-600 dark:text-gray-400">
-              This ticket is <span className="font-medium text-gray-700 dark:text-gray-300">{ticket?.v_status}</span>. 
+              {/* This ticket is <span className="font-medium text-gray-700 dark:text-gray-300">{ticket?.v_status}</span>. */}
               Attachments are in read-only mode. You can view and download existing files, but cannot upload or remove them.
             </p>
           </div>
@@ -274,19 +287,19 @@ export default function ComAttachment({
               </div>
 
               <div className="px-4 py-3 flex justify-end gap-2 border-t border-gray-100 dark:border-gray-800">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => window.open(a.url, '_blank')}
                   className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
                   <Eye className="w-3.5 h-3.5 sm:mr-1.5" />
                   <span className="hidden sm:inline">View</span>
                 </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleDownload(a, idx)} 
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDownload(a, idx)}
                   disabled={downloadingId === idx}
                   className="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
@@ -294,10 +307,10 @@ export default function ComAttachment({
                   <span className="hidden sm:inline">{downloadingId === idx ? '...' : 'Download'}</span>
                 </Button>
                 {canModify && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleRemove(a, idx)} 
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleRemove(a, idx)}
                     className="text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
                   >
                     <X className="w-3.5 h-3.5 sm:mr-1.5" />

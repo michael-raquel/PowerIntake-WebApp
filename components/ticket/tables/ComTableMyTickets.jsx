@@ -5,6 +5,8 @@ import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
+// import { toast } from "sonner";
+// import socket from "@/lib/socket";
 
 const cardFields = [
   { key: 'v_source',         label: 'Source'     },
@@ -24,27 +26,93 @@ export default function ComTableMyTickets({
   filters = {},
   refreshKey,
   onTicketUpdated,
+  pendingSyncUuid,
+  // onSynced,
+  // onSyncComplete,
+  hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const { tickets, loading, error } = useFetchTicket({
+  const { tickets, loading, error, setTickets } = useFetchTicket({
     entrauserid: tokenInfo?.account?.localAccountId,
     refreshKey,
   });
 
   const prevMyTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
+  // const syncedCalledRef = useRef(false);
 
-  const { runSync, loading: syncing, error: syncError } = useAutoSyncDynamics();
+  const { runSync, loading: syncing } = useAutoSyncDynamics();
 
   const myTickets = useMemo(
     () => tickets.filter(t => t.v_entrauserid === tokenInfo?.account?.localAccountId),
     [tickets, tokenInfo?.account?.localAccountId]
   );
 
+//   useEffect(() => {
+//      const handleTicketSynced = ({ ticketuuid, ticket }) => {
+//       if (!ticket) return;
+
+//       setTickets(prev => {
+//           const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
+//           if (exists) {
+//               return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
+//           } else {
+//               return [ticket, ...prev];
+//           }
+//       });
+
+//       if (!syncedCalledRef.current) {
+//           syncedCalledRef.current = true;
+//           toast.success('Ticket synced to Dynamics successfully');
+//           onSynced?.();   
+//           onSyncComplete?.();
+//       }
+// };
+
+//     const handleTicketSyncFailed = ({ ticketuuid }) => {
+//       console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
+//       toast.warning('Ticket created but Dynamics sync failed');
+//       onSynced?.();
+//     };
+
+//     socket.on("ticket:synced",      handleTicketSynced);
+//     socket.on("ticket:sync_failed", handleTicketSyncFailed);
+
+//     return () => {
+//       socket.off("ticket:synced",      handleTicketSynced);
+//       socket.off("ticket:sync_failed", handleTicketSyncFailed);
+//     };
+//   }, [setTickets, onSynced]);
+
+  // useEffect(() => {
+  //     if (!pendingSyncUuid) {
+  //         syncedCalledRef.current = false;
+  //         return;
+  //     }
+
+  //     if (syncedCalledRef.current) return;
+
+  //     const found = tickets.some(t => t.v_ticketuuid === pendingSyncUuid);
+  //     if (found) {
+  //         syncedCalledRef.current = true;
+  //         onSynced?.(); // ✅ trigger refetch to get Dynamics data
+  //         // Don't call onSyncComplete yet — wait for next refetch
+  //     }
+  // }, [tickets, pendingSyncUuid, onSynced]);
+
+  //  useEffect(() => {
+  //     if (!pendingSyncUuid || !syncedCalledRef.current) return;
+
+  //     const ticket = tickets.find(t => t.v_ticketuuid === pendingSyncUuid);
+  //     // Clear spinner only when ticket has a Dynamics ticket number (fully synced)
+  //     if (ticket?.v_ticketnumber) {
+  //         onSyncComplete?.();
+  //     }
+  // }, [tickets, pendingSyncUuid, onSyncComplete]);
+
   const filteredTickets = useMemo(
-  () =>
-    myTickets.filter(t => {
+    () => myTickets.filter(t => {
       const s = searchValue.toLowerCase().trim();
       const matchesSearch =
         !s ||
@@ -57,9 +125,12 @@ export default function ComTableMyTickets({
       const matchesCategory = !filters.Category || t.v_ticketcategory === filters.Category;
       const matchesStatus   = !filters.Status   || t.v_status === filters.Status;
 
-      return matchesSearch && matchesSource && matchesPriority && matchesCategory && matchesStatus;
+       const matchesCompleted = !hideCompleted || 
+          (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+
+      return matchesSearch && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
     }),
-  [myTickets, searchValue, filters.Source, filters.Priority, filters.Category, filters.Status]
+  [myTickets, searchValue, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
 );
 
   const paginated = useMemo(
@@ -74,7 +145,7 @@ export default function ComTableMyTickets({
       onFilterOptionsChange?.({
         Source:   [...new Set(myTickets.map(t => t.v_source).filter(Boolean))],
         Category: [...new Set(myTickets.map(t => t.v_ticketcategory).filter(Boolean))],
-        Priority:  [...new Set(myTickets.map(t => t.v_priority).filter(Boolean))],
+        Priority: [...new Set(myTickets.map(t => t.v_priority).filter(Boolean))],
         Status:   [...new Set(myTickets.map(t => t.v_status).filter(Boolean))],
       });
     }
@@ -89,8 +160,7 @@ export default function ComTableMyTickets({
 
   const handleSync = async () => {
     await runSync();
-
-    onTicketUpdated?.(); 
+    onTicketUpdated?.();
   };
 
   const getPriorityClass = (priority) => {
@@ -129,6 +199,7 @@ export default function ComTableMyTickets({
               fields={cardFields}
               onClick={() => setSelectedTicket(ticket)}
               priorityClass={getPriorityClass(ticket.v_priority)}
+              isSyncing={pendingSyncUuid === ticket.v_ticketuuid}
             />
           ))}
           {!paginated.length && (
@@ -138,33 +209,23 @@ export default function ComTableMyTickets({
       </div>
 
       {/* Desktop */}
-        <div className="hidden sm:block overflow-x-auto">
+      <div className="hidden sm:block overflow-x-auto">
         <div className="flex justify-between items-center mb-2 border-b py-2">
-           <span className="text-xs text-gray-500 dark:text-gray-400">
-           {filteredTickets.length} Total Records
+          <span className="text-xs text-gray-500 dark:text-gray-400">
+            {filteredTickets.length} Total Records
           </span>
-            <button
-              onClick={handleSync}
-              disabled={loading || syncing}
-              className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
-            >
-              <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-            </button>
+          <button
+            onClick={handleSync}
+            disabled={loading || syncing}
+            className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
+          </button>
         </div>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              {[
-                'SOURCE',
-                'TICKET ID',
-                'TITLE',
-                'CATEGORY',
-                'PRIORITY',
-                'CREATED AT',
-                'TARGET',
-                'STATUS',
-                'TECHNICIAN',
-              ].map(header => (
+              {['TICKET ID','SOURCE','TITLE','CATEGORY','PRIORITY','CREATED AT','TARGET','STATUS','TECHNICIAN'].map(header => (
                 <th
                   key={header}
                   className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
@@ -172,53 +233,67 @@ export default function ComTableMyTickets({
                   {header}
                 </th>
               ))}
-             </tr>
+            </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {paginated.length === 0 ? (
-               <tr>
+              <tr>
                 <td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
                   No tickets found.
                 </td>
-               </tr>
+              </tr>
             ) : (
-              paginated.map(t => (
-                <tr
-                  key={t.v_ticketuuid}
-                  onClick={() => setSelectedTicket(t)}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors text-center"
-                >
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_source || '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
-                    {t.v_ticketnumber}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
-                    {t.v_title}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
-                    {t.v_ticketcategory}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
-                      {t.v_priority || '—'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_status}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_technicianname || '—'}
-                  </td>
-                </tr>
-              ))
+              paginated.map(t => {
+                const isSyncing = pendingSyncUuid === t.v_ticketuuid;
+                return (
+                  <tr
+                    key={t.v_ticketuuid}
+                    onClick={() => !isSyncing && setSelectedTicket(t)}
+                    className={`transition-colors text-center ${
+                      isSyncing
+                        ? 'bg-violet-50 dark:bg-violet-950/20 cursor-wait'
+                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
+                    }`}
+                  >
+                    <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
+                        {isSyncing ? (
+                        <span className="inline-flex items-center gap-1.5 text-violet-500 dark:text-violet-400 text-xs font-medium">
+                          <RefreshCw className="w-3 h-3 animate-spin" /> Syncing...
+                        </span>
+                      ) : (
+                        <span className="text-gray-600 dark:text-gray-300">{t.v_ticketnumber}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_source || '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
+                      {t.v_title}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
+                      {t.v_ticketcategory}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
+                        {t.v_priority || '—'}
+                      </span>
+                    </td>
+                     
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {t.v_status}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                      {t.v_technicianname || '—'}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

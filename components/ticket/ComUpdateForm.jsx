@@ -21,7 +21,7 @@ import ComTimelineView from './tabs/ComTimelineView';
 const TABS = [
   { id: 'notes', icon: StickyNote, label: 'Notes' },
   { id: 'user', icon: User, label: 'User Information' },
-  { id: 'closure', icon: CalendarCheck, label: 'Closure Date' },
+  { id: 'closure', icon: CalendarCheck, label: 'Resolution' },
   { id: 'attachments', icon: Paperclip, label: 'Attachments' },
   { id: 'timeline', icon: GitBranch, label: 'Timeline' },
 ];
@@ -30,7 +30,7 @@ const STATUS_COLORS = {
   'New': 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900',
   'Assigned': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
   'Information Provided': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
-  'Escalate to Onsite': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
+  'Escalate To Onsite': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
   'Client Responded': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
   'Rescheduled': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
   'Scheduling Required': 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-400 dark:border-blue-900',
@@ -50,48 +50,41 @@ const PRIORITY_COLORS = {
   Low: 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400',
 };
 
-
-const SLOT_MINUTES = 30;
 const CALL_DURATION_MS = 2 * 60 * 60 * 1000;
 
 const toHHMM = (date) => `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
-const roundToNextSlot = (date) => {
-  const minutes = date.getMinutes();
-  const remainder = minutes % SLOT_MINUTES;
-
-  if (remainder === 0) {
-    return new Date(date.getTime() + SLOT_MINUTES * 60 * 1000);
-  } else {
-    const minutesToAdd = SLOT_MINUTES - remainder;
-    return new Date(date.getTime() + minutesToAdd * 60 * 1000);
-  }
+const formatTo12Hour = (time24) => {
+  if (!time24) return '';
+  const [hours, minutes] = time24.split(':').map(Number);
+  const period = hours >= 12 ? 'PM' : 'AM';
+  const hours12 = hours % 12 || 12;
+  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
 };
 
 const getNextStartTime = () => {
   const now = new Date();
-  const futureTime = new Date(now.getTime() + 30 * 60 * 1000);
-  const roundedTime = roundToNextSlot(futureTime);
-  return roundedTime;
-};
-
-const addDuration = (date) => {
-  const endDate = new Date(date.getTime() + CALL_DURATION_MS);
-  return toHHMM(endDate);
-};
-
-const minTimeForDate = (date) => {
-  if (!date) return '';
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-
-  if (d.getTime() === today.getTime()) {
-    const nextStart = getNextStartTime();
-    return toHHMM(nextStart);
+  now.setMinutes(now.getMinutes() + 30);
+  const minutes = now.getMinutes();
+  if (minutes % 30 !== 0) now.setMinutes(Math.ceil(minutes / 30) * 30);
+  now.setSeconds(0, 0);
+  if (now.getMinutes() === 60) {
+    now.setHours(now.getHours() + 1);
+    now.setMinutes(0);
   }
-  return '';
+  if (now.getHours() > 23 || (now.getHours() === 23 && now.getMinutes() > 30)) return null;
+  return now;
+};
+
+const calcEndTime = (date, startTime) => {
+  if (!date || !startTime) return '';
+  const [h, m] = startTime.split(':').map(Number);
+  const end = new Date(date);
+  end.setHours(h, m, 0, 0);
+  end.setTime(end.getTime() + CALL_DURATION_MS);
+  if (end.getDate() > new Date(date).getDate()) return '23:59';
+  if (end.getHours() > 23 || (end.getHours() === 23 && end.getMinutes() > 30)) return '23:30';
+  return toHHMM(end);
 };
 
 export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
@@ -99,6 +92,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const { updateTicket, loading } = useUpdateTicket({ account });
   const [activeTab, setActiveTab] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
+  const [openPopovers, setOpenPopovers] = useState({});
   const [title, setTitle] = useState(ticket?.v_title || '');
   const [description, setDescription] = useState(ticket?.v_description || '');
   const [attachments, setAttachments] = useState(
@@ -139,12 +133,19 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     return false;
   }, [title, description, supportCalls, original]);
 
+  const closedStatuses = ['Work Completed', 'Problem Solved', 'Technician Rejected', 'Cancelled', 'Merged'];
+  const isEditableStatus = ticket ? !closedStatuses.includes(ticket.v_status) : false;
+  const canEdit = ticket ? (ticket.v_entrauserid === account?.localAccountId && ticket.v_status === 'New') : false;
+  const canEditAttachments = isEditableStatus;
+
+  const selectedDates = useMemo(() => supportCalls.map(c => c.date?.toDateString()).filter(Boolean), [supportCalls]);
+
   if (!ticket) return null;
 
-  const isEditableStatus = ticket.v_status !== 'Work Completed' && ticket.v_status !== 'Problem Solved' && ticket.v_status !== 'Technician Rejected' && ticket.v_status !== 'Cancelled' && ticket.v_status !== 'Merged';
-  const canEdit = ticket.v_entrauserid === account?.localAccountId && isEditableStatus;
-  const selectedDates = supportCalls.map(c => c.date?.toDateString()).filter(Boolean);
-  const canEditAttachments = isEditableStatus;
+  const isToday = (date) => {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    return new Date(date).toDateString() === today.toDateString();
+  };
 
   const handleCallChange = (id, field, value) => {
     if (!canEdit) return;
@@ -152,55 +153,41 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
       const call = prev.find(c => c.id === id);
       if (!call) return prev;
 
-      if (field === 'date' && value) {
+      if (field === 'date') {
         if (prev.some(c => c.id !== id && c.date?.toDateString() === new Date(value).toDateString())) {
           toast.error("Date already selected", { description: "Only one support call per day." });
           return prev;
         }
-
         const newDate = new Date(value);
         let fromTime = call.fromTime;
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const isToday = newDate.toDateString() === today.toDateString();
-
-        if (isToday) {
+        let toTime = call.toTime;
+        if (isToday(newDate)) {
           const nextStart = getNextStartTime();
-          fromTime = toHHMM(nextStart);
+          if (nextStart) {
+            fromTime = toHHMM(nextStart);
+            toTime = calcEndTime(newDate, fromTime);
+          }
         }
-
-        const [hours, minutes] = fromTime.split(':').map(Number);
-        const startDateObj = new Date(newDate);
-        startDateObj.setHours(hours, minutes, 0, 0);
-        const toTime = addDuration(startDateObj);
-
         return prev.map(c => c.id === id ? { ...c, date: value, fromTime, toTime } : c);
       }
 
       if (field === 'fromTime') {
-        const min = minTimeForDate(call.date);
-        if (min && value < min) {
-          toast.error('Cannot select a past time.', { description: `Earliest slot is ${min}.` });
+        const currentTime = toHHMM(new Date());
+        if (isToday(call.date) && value < currentTime) {
+          toast.error('Invalid start time', { description: `Start time cannot be in the past. Current time is ${formatTo12Hour(currentTime)}` });
           return prev;
         }
-
-        const [hours, minutes] = value.split(':').map(Number);
-        const startDateObj = new Date(call.date);
-        startDateObj.setHours(hours, minutes, 0, 0);
-        const newToTime = addDuration(startDateObj);
-
-        return prev.map(c => c.id === id ? { ...c, fromTime: value, toTime: newToTime } : c);
+        return prev.map(c => c.id === id ? { ...c, fromTime: value, toTime: calcEndTime(call.date, value) } : c);
       }
 
       if (field === 'toTime') {
-        const min = minTimeForDate(call.date);
-        if (min && value < min) {
-          toast.error('Cannot select a past time.', { description: `Earliest slot is ${min}.` });
+        const currentTime = toHHMM(new Date());
+        if (isToday(call.date) && value < currentTime) {
+          toast.error('Invalid end time', { description: `End time cannot be in the past. Current time is ${formatTo12Hour(currentTime)}` });
           return prev;
         }
-        if (value <= call.fromTime) {
-          toast.error('End time must be after start time.');
+        if (value <= call.fromTime && value !== '23:59') {
+          toast.error('Start time must be earlier than end time');
           return prev;
         }
         return prev.map(c => c.id === id ? { ...c, toTime: value } : c);
@@ -212,28 +199,29 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const handleAddCall = () => {
     if (!canEdit) return;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    let newDate = new Date(today);
+    let newDate = new Date();
+    newDate.setHours(0, 0, 0, 0);
     while (selectedDates.includes(newDate.toDateString())) newDate.setDate(newDate.getDate() + 1);
-
-    const startDateObj = getNextStartTime();
-    const fromTime = toHHMM(startDateObj);
-    const toTime = addDuration(startDateObj);
-
-    setSupportCalls(prev => [...prev, {
-      id: Date.now(),
-      date: newDate,
-      fromTime,
-      toTime
-    }]);
-
+    const nextStart = getNextStartTime();
+    const fromTime = nextStart ? toHHMM(nextStart) : '09:00';
+    const toTime = nextStart ? calcEndTime(newDate, fromTime) : '17:00';
+    setSupportCalls(prev => [...prev, { id: Date.now(), date: newDate, fromTime, toTime }]);
     toast.success("Support call added", { description: `Scheduled for ${format(newDate, 'MMM d, yyyy')}` });
   };
 
-
   const handleUpdate = async () => {
     if (!ticket.v_ticketuuid || !canEdit || !hasChanges) return;
+    const currentTime = toHHMM(new Date());
+    for (const call of supportCalls) {
+      if (isToday(call.date) && call.fromTime < currentTime) {
+        toast.error('Invalid start time', { description: `Start time cannot be in the past. Current time is ${formatTo12Hour(currentTime)}` });
+        return;
+      }
+      if (call.fromTime >= call.toTime && call.toTime !== '23:59') {
+        toast.error('Start time must be earlier than end time');
+        return;
+      }
+    }
     await updateTicket({
       ticketuuid: ticket.v_ticketuuid,
       formData: { title, description, timezone: ticket.v_usertimezone, location: ticket.v_officelocation },
@@ -251,11 +239,12 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const inputClass = "text-sm lg:text-base bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 px-3 py-2 lg:px-4 lg:py-3";
   const readonlyClass = "bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700 text-sm lg:text-base text-gray-900 dark:text-white px-3 py-2 lg:px-4 lg:py-3";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70"
       style={{ padding: 'env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px)' }}>
       <div
-        className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-[95vw] lg:max-w-[70vw] xl:max-w-[60vw] 2xl:max-w-[50vw] flex flex-col overflow-hidden relative"
+        className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-[95vw] lg:max-w-[75vw] xl:max-w-[65vw] 2xl:max-w-[55vw] flex flex-col overflow-hidden relative"
         style={{ height: 'min(95dvh, 95vh)', maxHeight: 'min(95dvh, 95vh)' }}>
 
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
@@ -284,7 +273,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
             <div className="space-y-3 lg:space-y-4">
               <h3 className="text-xs lg:text-sm font-semibold text-gray-500 dark:text-gray-400">Ticket Details</h3>
-              <div className="grid grid-cols-2 gap-2 lg:gap-3 md:flex md:flex-wrap md:gap-3 lg:gap-4">
+              <div className="grid grid-cols-2 gap-2 lg:gap-3 md:flex md:flex-wrap md:gap-3 lg:gap-4 sm:space-y-0">
                 {[
                   { label: 'Source', value: ticket.v_source },
                   { label: 'Category', value: ticket.v_ticketcategory },
@@ -319,17 +308,10 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                 <div className="space-y-1.5 lg:space-y-2">
                   <label className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 block mb-1 lg:mb-2">Description</label>
                   {canEdit ? (
-                    <Textarea
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                      placeholder="Enter ticket description"
-                      rows={4}
-                      className={cn("resize-none max-h-[220px] lg:max-h-[280px] overflow-y-auto", inputClass)}
-                    />
+                    <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Enter ticket description" rows={4}
+                      className={cn("resize-none max-h-[220px] lg:max-h-[280px] overflow-y-auto", inputClass)} />
                   ) : (
-                    <div className={cn(readonlyClass, "max-h-[220px] lg:max-h-[280px] overflow-y-auto")}>
-                      {description}
-                    </div>
+                    <div className={cn(readonlyClass, "max-h-[220px] lg:max-h-[280px] overflow-y-auto")}>{description}</div>
                   )}
                 </div>
               </div>
@@ -338,7 +320,16 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
             <div className="space-y-3 lg:space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs lg:text-sm font-semibold text-gray-500 dark:text-gray-400">Support Calls</h3>
-                {canEdit && <Button variant="outline" size="sm" onClick={handleAddCall} className="gap-1 h-8 lg:h-9 dark:border-gray-600 dark:hover:bg-gray-800"><Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> Add</Button>}
+                {canEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddCall}
+                    className="gap-1 h-8 lg:h-9 border-gray-300 bg-white text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-800"
+                  >
+                    <Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> Add
+                  </Button>
+                )}
               </div>
               <div className="space-y-3 lg:space-y-4">
                 {supportCalls.map(call => (
@@ -349,48 +340,70 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                         <X className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                       </Button>
                     )}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 lg:gap-4">
-                      <div>
+                    <div className="flex flex-col space-y-3 sm:grid sm:grid-cols-3 sm:gap-3 lg:gap-4 sm:space-y-0">
+                      <div className="w-full">
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">Date</p>
                         {canEdit ? (
-                          <Popover>
+                          <Popover
+                            open={openPopovers[call.id] || false}
+                            onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}
+                          >
                             <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-8 lg:h-9 text-sm lg:text-base dark:border-gray-600 dark:hover:bg-gray-800">
-                                <CalendarIcon className="mr-2 h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                                <span>{call.date ? format(call.date, "PPP") : "Select date"}</span>
+                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-9 text-sm dark:border-gray-600 dark:hover:bg-gray-800 px-2">
+                                <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate flex-1">{call.date ? format(call.date, "MMM d, yyyy") : "Select date"}</span>
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                              <Calendar mode="single" selected={call.date} onSelect={date => date && handleCallChange(call.id, 'date', date)}
+                              <Calendar
+                                mode="single"
+                                selected={call.date}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    handleCallChange(call.id, 'date', date);
+                                    setOpenPopovers(prev => ({ ...prev, [call.id]: false }));
+                                  }
+                                }}
                                 disabled={date => {
                                   const today = new Date(); today.setHours(0, 0, 0, 0);
                                   return date < today || selectedDates.includes(date.toDateString());
-                                }} initialFocus />
+                                }}
+                                initialFocus
+                              />
                             </PopoverContent>
                           </Popover>
                         ) : (
-                          <p className="text-sm lg:text-base text-gray-900 dark:text-white">{call.date ? format(call.date, "PPP") : '—'}</p>
+                          <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{call.date ? format(call.date, "MMM d, yyyy") : '—'}</span>
                         )}
                       </div>
-                      <div>
+                      <div className="w-full">
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">Start</p>
                         {canEdit ? (
-                          <Input type="time" value={call.fromTime} min={minTimeForDate(call.date) || undefined}
-                            onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)} className="h-8 lg:h-9 text-sm lg:text-base" />
+                          <Input
+                            type="time"
+                            value={call.fromTime}
+                            onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
+                            className="h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none"
+                          />
                         ) : (
-                          <p className="text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</p>
+                          <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</span>
                         )}
                       </div>
-                      <div>
+                      <div className="w-full">
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">End</p>
                         {canEdit ? (
-                          <Input type="time" value={call.toTime} min={minTimeForDate(call.date) || undefined}
-                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)} className="h-8 lg:h-9 text-sm lg:text-base" />
+                          <Input
+                            type="time"
+                            value={call.toTime}
+                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
+                            className="h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none"
+                          />
                         ) : (
-                          <p className="text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</p>
+                          <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</span>
                         )}
                       </div>
                     </div>
+
                   </div>
                 ))}
                 {!supportCalls.length && <p className="text-sm lg:text-base text-gray-500 dark:text-gray-400 italic text-center py-4">No support calls scheduled.</p>}
@@ -408,25 +421,16 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
           <div className="w-12 sm:w-14 lg:w-16 border-l border-gray-200 dark:border-gray-800 flex flex-col items-center py-4 gap-2 shrink-0 bg-gray-50/50 dark:bg-gray-800/50">
             {TABS.map(({ id, icon: Icon, label }) => (
-              <button
-                key={id}
+              <button key={id}
                 onClick={() => {
-                  if (activeTab === id) {
-                    setPanelOpen(false);
-                    setTimeout(() => setActiveTab(null), 200);
-                  } else {
-                    setActiveTab(id);
-                    setPanelOpen(true);
-                  }
+                  if (activeTab === id) { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); }
+                  else { setActiveTab(id); setPanelOpen(true); }
                 }}
                 title={label}
                 className={cn(
                   'w-8 h-8 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center transition-all',
-                  activeTab === id
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200'
-                )}
-              >
+                  activeTab === id ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200'
+                )}>
                 <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
               </button>
             ))}
@@ -435,23 +439,15 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
         <div className={cn(
           'absolute top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl transition-all duration-300 overflow-hidden z-30',
-          panelOpen ? 'w-[85vw] sm:w-80 lg:w-1/2' : 'w-0'
+          panelOpen ? 'w-[83vw] sm:w-80 md:w-96 lg:w-1/2' : 'w-0'
         )}>
           {panelOpen && (
             <div className="w-full h-full flex flex-col">
               <div className="flex items-center justify-between px-4 py-4 lg:px-5 lg:py-5 border-b border-gray-200 dark:border-gray-800">
-                <h3 className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">
-                  {TABS.find(t => t.id === activeTab)?.label}
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setPanelOpen(false);
-                    setTimeout(() => setActiveTab(null), 200);
-                  }}
-                  className="h-7 w-7 lg:h-8 lg:w-8 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800"
-                >
+                <h3 className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">{TABS.find(t => t.id === activeTab)?.label}</h3>
+                <Button variant="ghost" size="icon"
+                  onClick={() => { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); }}
+                  className="h-7 w-7 lg:h-8 lg:w-8 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800">
                   <ChevronLeft className="w-3.5 h-3.5 lg:w-4 lg:h-4" />
                 </Button>
               </div>
@@ -460,15 +456,8 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                 {activeTab === 'user' && <ComUserInformation ticket={ticket} />}
                 {activeTab === 'closure' && <ComClosureDate ticket={ticket} />}
                 {activeTab === 'attachments' && (
-                  <ComAttachment
-                    ticketuuid={ticket.v_ticketuuid}
-                    ticket={ticket}
-                    attachments={attachments}
-                    onChange={setAttachments}
-                    canEdit={canEditAttachments}
-                    createdby={ticket.v_entrauserid}
-                    modifiedby={account?.localAccountId}
-                  />
+                  <ComAttachment ticketuuid={ticket.v_ticketuuid} ticket={ticket} attachments={attachments}
+                    onChange={setAttachments} canEdit={canEditAttachments} createdby={ticket.v_entrauserid} modifiedby={account?.localAccountId} />
                 )}
                 {activeTab === 'timeline' && <ComTimelineView ticket={ticket} />}
               </div>
@@ -477,13 +466,8 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
         </div>
 
         {panelOpen && (
-          <div
-            className="absolute inset-y-0 left-0 right-[85vw] sm:right-80 lg:right-96 xl:right-[400px] bg-transparent z-20"
-            onClick={() => {
-              setPanelOpen(false);
-              setTimeout(() => setActiveTab(null), 200);
-            }}
-          />
+          <div className="absolute inset-y-0 left-0 right-[85vw] sm:right-80 lg:right-96 xl:right-[400px] bg-transparent z-20"
+            onClick={() => { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); }} />
         )}
       </div>
     </div>

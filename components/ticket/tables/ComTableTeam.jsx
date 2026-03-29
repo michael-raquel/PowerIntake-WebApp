@@ -25,6 +25,7 @@ export default function ComTableTeam({
   filters = {},
   refreshKey,
   onTicketUpdated,
+  hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -55,9 +56,12 @@ export default function ComTableTeam({
       const matchesCategory = !filters.Category || t.v_ticketcategory === filters.Category;
       const matchesStatus   = !filters.Status   || t.v_status === filters.Status;
 
-      return matchesSearch && matchesSource && matchesPriority && matchesCategory && matchesStatus;
+      const matchesCompleted = !hideCompleted || 
+          (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+
+      return matchesSearch && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
     }),
-  [teamTickets, searchValue, filters.Source, filters.Priority, filters.Category, filters.Status]
+  [teamTickets, searchValue, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
 );
   const paginated = useMemo(
     () => filteredTickets.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage),
@@ -151,8 +155,8 @@ export default function ComTableTeam({
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
               {[
-                'SOURCE',
                 'TICKET ID',
+                'SOURCE',
                 'USER NAME',
                 'TITLE',
                 'CATEGORY',
@@ -186,11 +190,11 @@ export default function ComTableTeam({
                   onClick={() => setSelectedTicket(t)}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors text-center"
                 >
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_source || '—'}
-                  </td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
                     {t.v_ticketnumber}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_source || '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {t.v_username}

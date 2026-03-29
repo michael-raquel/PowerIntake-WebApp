@@ -1,10 +1,12 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { useAuth } from '@/context/AuthContext';
+import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
+import { se } from 'date-fns/locale';
 
 const cardFields = [
   { key: 'v_tenantname',     label: 'Client'     },
@@ -27,14 +29,19 @@ export default function ComTableClients({
   filters = {},
   refreshKey,
   onTicketUpdated,
+  hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
   const { tickets, loading, error } = useFetchTicket({ refreshKey });
   const { runSync, loading: syncing, error: syncError } = useAutoSyncDynamics();
+  const { userSettings } = useFetchUserSettings();
+  const [selectedRowsPerPage, setSelectedRowsPerPage] = useState();
 
   const prevTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
+  const lastSettingsValueRef = useRef();
+  const hasUserSelectionRef = useRef(false);
 
   const filteredTickets = useMemo(
   () =>
@@ -55,9 +62,12 @@ export default function ComTableClients({
       const matchesCategory   = !filters.Category   || t.v_ticketcategory === filters.Category;
       const matchesStatus     = !filters.Status     || t.v_status === filters.Status;
 
-      return matchesSearch && matchesClient && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus;
+       const matchesCompleted = !hideCompleted || 
+          (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+
+      return matchesSearch && matchesClient && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
     }),
-  [tickets, searchValue, filters.Client, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status]
+  [tickets, searchValue, filters.Client, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
 );
 
   const paginated = useMemo(
@@ -86,6 +96,25 @@ export default function ComTableClients({
       onTotalRecordsChange(filteredTickets.length);
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
+
+useEffect(() => {
+  if (userSettings && userSettings.length > 0) {
+    const setting = userSettings[0];
+    const recordCount = Number(setting?.v_ticketrecordcount);
+    if (recordCount > 0) {
+      setSelectedRowsPerPage(prevSelectedRowsPerPage => {
+        if (
+          recordCount !== prevSelectedRowsPerPage &&
+          (recordCount !== lastSettingsValueRef.current || !hasUserSelectionRef.current)
+        ) {
+          lastSettingsValueRef.current = recordCount;
+          return recordCount;
+        }
+        return prevSelectedRowsPerPage;
+      });
+    }
+  }
+}, [userSettings]);
 
   const handleSync = async () => {
   await runSync();
@@ -155,8 +184,8 @@ export default function ComTableClients({
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
               {[
-                'SOURCE',
                 'TICKET ID',
+                'SOURCE',
                 'CLIENT NAME',
                 'DEPARTMENT',
                 'USER NAME',
@@ -191,11 +220,11 @@ export default function ComTableClients({
                   onClick={() => setSelectedTicket(t)}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors text-center"
                 >
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_source || '—'}
-                  </td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
                     {t.v_ticketnumber}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_source || '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {t.v_tenantname || '—'}

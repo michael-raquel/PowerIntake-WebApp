@@ -79,6 +79,7 @@ export function NotificationsSection({ localSettings, onToggle, loadingToggles =
   );
 }
 
+
 export function AssistSection({ localSettings, onToggle, loadingToggles = {}, isLoading = false }) {
   return (
     <div>
