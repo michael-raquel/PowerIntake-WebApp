@@ -1,3 +1,10 @@
+# [1.4.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.2...v1.4.0-dev.3) (2026-03-29)
+
+
+### Bug Fixes
+
+* ST-ticket change syncing label to finalizing ([ff786ce](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ff786cecbc89ff12d5ce9fa3c4edd24043829d2a))
+
 # [1.4.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.1...v1.4.0-dev.2) (2026-03-29)
 
 
