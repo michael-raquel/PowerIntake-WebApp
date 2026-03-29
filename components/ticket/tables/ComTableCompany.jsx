@@ -158,7 +158,7 @@ export default function ComTableCompany({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
-              {['Source', 'TICKET ID', 'DEPARTMENT', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY', 'CREATED AT', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
+              {['TICKET ID', 'SOURCE', 'DEPARTMENT', 'USER NAME', 'TITLE', 'CATEGORY', 'PRIORITY', 'CREATED AT', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
                 <th
                   key={header}
                   className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
@@ -182,11 +182,11 @@ export default function ComTableCompany({
                   onClick={() => setSelectedTicket(t)}
                   className="hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors text-center"
                 >
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {t.v_source || '—'}
-                  </td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
                     {t.v_ticketnumber}
+                  </td>
+                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                    {t.v_source || '—'}
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
                     {t.v_department || '—'}
