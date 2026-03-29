@@ -103,14 +103,14 @@ useEffect(() => {
       }
       
       const data = await res.json();
-      console.log("[AUTH] login-sync data:", data);
+      // console.log("[AUTH] login-sync data:", data);
       
       const user = data.user ?? null;
       console.log("[AUTH] user:", user);
       setUserInfo(user);
 
       if (user?.v_entrauserid) {
-        console.log("[WS] socket.connected:", socket.connected);
+        // console.log("[WS] socket.connected:", socket.connected);
         
         if (!socket.connected) {
           socket.connect();
@@ -118,10 +118,10 @@ useEffect(() => {
 
         const joinRooms = () => {
           socket.emit("join", user.v_entrauserid);
-          console.log("[WS] Joined room:", user.v_entrauserid);
+          // console.log("[WS] Joined room:", user.v_entrauserid);
           if (user?.v_entratenantid) {
             socket.emit("join", user.v_entratenantid);
-            console.log("[WS] Joined tenant room:", user.v_entratenantid);
+            // console.log("[WS] Joined tenant room:", user.v_entratenantid);
           }
         };
 
