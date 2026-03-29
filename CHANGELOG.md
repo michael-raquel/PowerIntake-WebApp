@@ -1,3 +1,10 @@
+# [1.4.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.3...v1.4.0-dev.4) (2026-03-29)
+
+
+### Bug Fixes
+
+* ST-ticket no v_entrauserid ([c96381b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c96381b0720c27eaaefa4a7421888758ef1b4ee6))
+
 # [1.4.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.2...v1.4.0-dev.3) (2026-03-29)
 
 
