@@ -84,59 +84,100 @@ export function AuthProvider({ children }) {
     acquire();
   }, [account, instance]);
 
-  useEffect(() => {
-    if (!accessToken) return;
+useEffect(() => {
+  if (!accessToken) return;
+  const syncUser = async () => {
+    try {
+      console.log("[AUTH] syncUser running, accessToken present");
+      
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login-sync`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
-    const syncUser = async () => {
-      try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login-sync`,
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }
-        );
+      console.log("[AUTH] login-sync response status:", res.status);
 
-        if (!res.ok) {
-          const err = await res.json();
-          console.error("Login sync failed:", err);
-          return;
+      if (!res.ok) {
+        console.warn("[AUTH] login-sync failed:", res.status);
+        return;
+      }
+      
+      const data = await res.json();
+      console.log("[AUTH] login-sync data:", data);
+      
+      const user = data.user ?? null;
+      console.log("[AUTH] user:", user);
+      setUserInfo(user);
+
+      if (user?.v_entrauserid) {
+        console.log("[WS] socket.connected:", socket.connected);
+        
+        if (!socket.connected) {
+          socket.connect();
         }
 
-        const data = await res.json();
-        const user = data.user ?? null;
-        setUserInfo(user);
-
-        if (user?.v_entrauserid) {
-          socket.connect();
+        const joinRooms = () => {
           socket.emit("join", user.v_entrauserid);
           console.log("[WS] Joined room:", user.v_entrauserid);
+          if (user?.v_entratenantid) {
+            socket.emit("join", user.v_entratenantid);
+            console.log("[WS] Joined tenant room:", user.v_entratenantid);
+          }
+        };
 
-           if (user?.v_entratenantid) {
-              socket.emit("join", user.v_entratenantid);
-              console.log("[WS] Joined tenant room:", user.v_entratenantid);
-            }
+        if (socket.connected) {
+          joinRooms();
+        } else {
+          socket.once("connect", joinRooms);
         }
-
-      } catch (err) {
-        console.error("Failed to sync user on login:", err);
+      } else {
+        console.warn("[WS] No v_entrauserid on user — skipping socket join");
       }
-    };
-
-    syncUser();
-  }, [accessToken]);
-
-  useEffect(() => {
-    if (!account) {
-      socket.disconnect();
+    } catch (err) {
+      console.error("[AUTH] syncUser error:", err);
     }
-  }, [account]);
+  };
+  syncUser();
+}, [accessToken]);
+
+useEffect(() => {
+  socket.on("connect", () => console.log("[WS] socket connected:", socket.id));
+  socket.on("disconnect", (reason) => console.log("[WS] socket disconnected:", reason));
+  socket.on("connect_error", (err) => console.error("[WS] connect_error:", err.message));
+
+  return () => {
+    socket.off("connect");
+    socket.off("disconnect");
+    socket.off("connect_error");
+  };
+}, []);
+
+useEffect(() => {
+  if (!userInfo?.v_entrauserid) return;
+
+  const handleReconnect = () => {
+    console.log("[WS] Reconnected — re-joining rooms");
+    socket.emit("join", userInfo.v_entrauserid);
+    if (userInfo?.v_entratenantid) {
+      socket.emit("join", userInfo.v_entratenantid);
+    }
+  };
+
+  socket.on("connect", handleReconnect);
+  return () => socket.off("connect", handleReconnect);
+}, [userInfo?.v_entrauserid, userInfo?.v_entratenantid]);
+
+useEffect(() => {
+  if (!account) {
+    socket.disconnect();
+  }
+}, [account]);
 
   return (
     <AuthContext.Provider value={{ account, accessToken, tokenInfo, userInfo }}>
       {children}
-    </AuthContext.Provider>
-  );
+    </AuthContext.Provider> 
+  ); 
 }
 
 export function useAuth() {

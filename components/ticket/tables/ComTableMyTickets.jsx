@@ -5,8 +5,8 @@ import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
-import { toast } from "sonner";
-import socket from "@/lib/socket";
+// import { toast } from "sonner";
+// import socket from "@/lib/socket";
 
 const cardFields = [
   { key: 'v_source',         label: 'Source'     },
@@ -27,8 +27,9 @@ export default function ComTableMyTickets({
   refreshKey,
   onTicketUpdated,
   pendingSyncUuid,
-  onSynced,
-   hideCompleted = false,
+  // onSynced,
+  // onSyncComplete,
+  hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -39,6 +40,7 @@ export default function ComTableMyTickets({
 
   const prevMyTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
+  // const syncedCalledRef = useRef(false);
 
   const { runSync, loading: syncing } = useAutoSyncDynamics();
 
@@ -47,37 +49,67 @@ export default function ComTableMyTickets({
     [tickets, tokenInfo?.account?.localAccountId]
   );
 
-  useEffect(() => {
-    const handleTicketSynced = ({ ticketuuid, ticket }) => {
-      if (!ticket) return;
+//   useEffect(() => {
+//      const handleTicketSynced = ({ ticketuuid, ticket }) => {
+//       if (!ticket) return;
 
-      setTickets(prev => {
-        const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
-        if (exists) {
-          return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
-        } else {
-          return [ticket, ...prev];
-        }
-      });
+//       setTickets(prev => {
+//           const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
+//           if (exists) {
+//               return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
+//           } else {
+//               return [ticket, ...prev];
+//           }
+//       });
 
-      toast.success('Ticket synced to Dynamics successfully');
-      onSynced?.();
-    };
+//       if (!syncedCalledRef.current) {
+//           syncedCalledRef.current = true;
+//           toast.success('Ticket synced to Dynamics successfully');
+//           onSynced?.();   
+//           onSyncComplete?.();
+//       }
+// };
 
-    const handleTicketSyncFailed = ({ ticketuuid }) => {
-      console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
-      toast.warning('Ticket created but Dynamics sync failed');
-      onSynced?.();
-    };
+//     const handleTicketSyncFailed = ({ ticketuuid }) => {
+//       console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
+//       toast.warning('Ticket created but Dynamics sync failed');
+//       onSynced?.();
+//     };
 
-    socket.on("ticket:synced",      handleTicketSynced);
-    socket.on("ticket:sync_failed", handleTicketSyncFailed);
+//     socket.on("ticket:synced",      handleTicketSynced);
+//     socket.on("ticket:sync_failed", handleTicketSyncFailed);
 
-    return () => {
-      socket.off("ticket:synced",      handleTicketSynced);
-      socket.off("ticket:sync_failed", handleTicketSyncFailed);
-    };
-  }, [setTickets, onSynced]);
+//     return () => {
+//       socket.off("ticket:synced",      handleTicketSynced);
+//       socket.off("ticket:sync_failed", handleTicketSyncFailed);
+//     };
+//   }, [setTickets, onSynced]);
+
+  // useEffect(() => {
+  //     if (!pendingSyncUuid) {
+  //         syncedCalledRef.current = false;
+  //         return;
+  //     }
+
+  //     if (syncedCalledRef.current) return;
+
+  //     const found = tickets.some(t => t.v_ticketuuid === pendingSyncUuid);
+  //     if (found) {
+  //         syncedCalledRef.current = true;
+  //         onSynced?.(); // ✅ trigger refetch to get Dynamics data
+  //         // Don't call onSyncComplete yet — wait for next refetch
+  //     }
+  // }, [tickets, pendingSyncUuid, onSynced]);
+
+  //  useEffect(() => {
+  //     if (!pendingSyncUuid || !syncedCalledRef.current) return;
+
+  //     const ticket = tickets.find(t => t.v_ticketuuid === pendingSyncUuid);
+  //     // Clear spinner only when ticket has a Dynamics ticket number (fully synced)
+  //     if (ticket?.v_ticketnumber) {
+  //         onSyncComplete?.();
+  //     }
+  // }, [tickets, pendingSyncUuid, onSyncComplete]);
 
   const filteredTickets = useMemo(
     () => myTickets.filter(t => {
