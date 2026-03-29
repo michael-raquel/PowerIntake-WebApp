@@ -21,6 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import socket from "@/lib/socket";
+import { toast } from "sonner";
 
 const MOBILE_PER_PAGE = 10;
 const ROW_HEIGHT = 50;
@@ -97,7 +99,30 @@ export default function TicketPage() {
     return false;
   }, [userSettings]);
 
-  // const [hideCompleted, setHideCompleted] = useState(initialHideCompleted);
+
+useEffect(() => {
+  const handleTicketSynced = ({ ticketuuid, ticket }) => {
+    console.log("[WS] ticket:synced received:", { ticketuuid, ticket });
+    // Always clear the sync state regardless of ticket data
+    setRefreshKey(k => k + 1);
+    setPendingSyncUuid(null);
+    toast.success('Ticket synced to Dynamics successfully');
+  };
+
+  const handleSyncFailed = ({ ticketuuid }) => {
+    console.log("[WS] ticket:sync_failed received:", { ticketuuid });
+    setPendingSyncUuid(null);
+    toast.warning('Ticket created but Dynamics sync failed');
+  };
+
+  socket.on("ticket:synced", handleTicketSynced);
+  socket.on("ticket:sync_failed", handleSyncFailed);
+
+  return () => {
+    socket.off("ticket:synced", handleTicketSynced);
+    socket.off("ticket:sync_failed", handleSyncFailed);
+  };
+}, []);
 
   const tabs = useMemo(() => {
     const t = [];
@@ -231,7 +256,7 @@ export default function TicketPage() {
       onClose={() => setShowCreateTicket(false)}
       onTicketCreated={(ticketuuid) => {
         setPendingSyncUuid(ticketuuid);
-        setRefreshKey(k => k + 1);
+        // setRefreshKey(k => k + 1);
         setShowCreateTicket(false);
       }}
     />
@@ -396,18 +421,24 @@ export default function TicketPage() {
     </footer>
   );
 
-  const tableProps = {
-  activeTab: safeTab,
-  currentPage: safePage,
-  onTotalRecordsChange: setTotalRecords,
-  onFilterOptionsChange: setFilterOptions,
-  searchValue,
-  filters: selectedFilters,
-  refreshKey,
-  onTicketSelect: handleTicketSelect,
-  onTicketUpdated: () => setRefreshKey(k => k + 1),
-  pendingSyncUuid,                          
-  onSynced: () => setPendingSyncUuid(null), 
+  
+ const tableProps = {
+    activeTab: safeTab,
+    currentPage: safePage,
+    onTotalRecordsChange: setTotalRecords,
+    onFilterOptionsChange: setFilterOptions,
+    searchValue,
+    filters: selectedFilters,
+    refreshKey,
+    onTicketSelect: handleTicketSelect,
+    onTicketUpdated: () => setRefreshKey(k => k + 1),
+    pendingSyncUuid,
+    // onSynced: () => {
+    //     setRefreshKey(k => k + 1); 
+    // },
+    // onSyncComplete: () => {
+    //     setPendingSyncUuid(null);
+    // },
 };
 
   // ── Mobile 
