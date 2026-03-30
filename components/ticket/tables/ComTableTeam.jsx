@@ -78,26 +78,34 @@ export default function ComTableTeam({
   }, [setTeamTickets, onSynced]);
 
   const filteredTickets = useMemo(
-    () => teamTickets.filter(t => {
-      const s = searchValue.toLowerCase().trim();
-      const matchesSearch =
-        !s ||
-        t.v_ticketnumber?.toLowerCase().includes(s) ||
-        t.v_username?.toLowerCase().includes(s) ||
-        t.v_title?.toLowerCase().includes(s) ||
-        t.v_ticketcategory?.toLowerCase().includes(s);
+  () => myTickets.filter(t => {
+    const s = searchValue.toLowerCase().trim();
+    const matchesSearch =
+      !s ||
+      t.v_title?.toLowerCase().includes(s) ||
+      t.v_ticketnumber?.toLowerCase().includes(s) ||
+      t.v_ticketcategory?.toLowerCase().includes(s);
 
-      const matchesSource   = !filters.Source   || t.v_source === filters.Source;
-      const matchesPriority = !filters.Priority || t.v_priority === filters.Priority;
-      const matchesCategory = !filters.Category || t.v_ticketcategory === filters.Category;
-      const matchesStatus   = !filters.Status   || t.v_status === filters.Status;
-      const matchesCompleted = !hideCompleted ||
-        (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+    const matchesFilter = (filterValue, ticketValue) => {
+      if (!filterValue) return true;
+      if (Array.isArray(filterValue)) {
+        return filterValue.length === 0 || filterValue.includes(ticketValue);
+      }
+      return String(ticketValue).toLowerCase().includes(String(filterValue).toLowerCase().trim());
+    };
 
-      return matchesSearch && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
-    }),
-    [teamTickets, searchValue, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
-  );
+    const matchesSource   = matchesFilter(filters.Source, t.v_source);
+    const matchesPriority = matchesFilter(filters.Priority, t.v_priority);
+    const matchesCategory = matchesFilter(filters.Category, t.v_ticketcategory);
+    const matchesStatus   = matchesFilter(filters.Status, t.v_status);
+    const matchesCompleted = !hideCompleted ||
+      (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+
+    return matchesSearch && matchesSource && matchesPriority && matchesCategory && 
+           matchesStatus && matchesCompleted;
+  }),
+  [myTickets, searchValue, filters, hideCompleted]
+);
 
   const paginated = useMemo(
     () => filteredTickets.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage),
