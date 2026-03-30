@@ -29,7 +29,7 @@ const TABLE_HEADERS = [
 
 const DEFAULT_ROWS = 10;
 
-export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
+export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {}, onRowSelect = () => {} }) {
   const { accounts } = useMsal();
   const [localPage, setLocalPage] = useState(1);
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
@@ -203,7 +203,11 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
             {pagedData.map((row, i) => (
-              <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+              <div
+                key={i}
+                onClick={() => onRowSelect?.(row)}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3 cursor-pointer"
+              >
                 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -319,7 +323,11 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
               </tr>
             ) : (
               pagedData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
+                <tr
+                  key={i}
+                  onClick={() => onRowSelect?.(row)}
+                  className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                >
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_jobtitle || "N/A"}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>

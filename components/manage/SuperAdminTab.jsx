@@ -36,7 +36,7 @@ const TABLE_HEADERS = [
 
 const DEFAULT_ROWS = 10;
 
-export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
+export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, onRowSelect = () => {} }) {
   const { accounts } = useMsal();
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
   const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
@@ -315,7 +315,11 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           ) : (
            <div className="grid grid-cols-1 gap-3 p-4">
               {pagedData.map((row, i) => (
-                  <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+                  <div
+                    key={i}
+                    onClick={() => onRowSelect?.(row)}
+                    className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden cursor-pointer"
+                  >
 
                     <div className="flex items-center gap-2 px-3 py-2.5 bg-violet-50 dark:bg-violet-900/20 border-b border-violet-100 dark:border-violet-800/40">
                       <div className="w-6 h-6 rounded-md bg-violet-600 dark:bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -374,7 +378,10 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                             <span className="font-semibold text-gray-900 dark:text-white">{row.v_completion ?? 0}%</span>
                           </div>
                         </div>
-                        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between">
+                        <div
+                          className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between"
+                          onClick={(event) => event.stopPropagation()}
+                        >
                           <span className="text-xs text-gray-500 dark:text-gray-400">Super Admin</span>
                           <Switch
                             className="data-[state=checked]:bg-blue-500 cursor-pointer"
@@ -460,7 +467,11 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
               </tr>
             ) : (
               pagedData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
+                <tr
+                  key={i}
+                  onClick={() => onRowSelect?.(row)}
+                  className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                >
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
@@ -483,7 +494,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                       {row.v_status === "true" ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
                     <Switch
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
                       checked={hasRole(getRoleValue(row), "SuperAdmin")}

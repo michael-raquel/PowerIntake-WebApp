@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useRouter } from "next/router";
 import ManageTabs from "@/components/manage/ManageTabs";
 import MyClientsTab from "@/components/manage/MyClientsTab";
 import MyCompanyTab from "@/components/manage/MyCompanyTab";
@@ -15,7 +16,8 @@ const DEFAULT_ROWS = 10;
 export default function Manage() {
   const { isManager, loading } = useManagerCheck();
   const { tokenInfo } = useAuth();
-  const [activeTab, setActiveTab] = useState("admin");
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState("clients");
   const [searchValue, setSearchValue] = useState("");
   const [selectedFilters, setSelectedFilters] = useState({});
   const tableContainerRef = useRef(null);
@@ -44,6 +46,12 @@ export default function Manage() {
   const validTab = tabs.find((t) => t.id === activeTab)
     ? activeTab
     : tabs[0]?.id ?? "company";
+
+  const handleRowSelect = useCallback((tabId, searchTerm) => {
+    const trimmed = String(searchTerm ?? "").trim();
+    if (!trimmed) return;
+    router.push({ pathname: "/ticket", query: { tab: tabId, search: trimmed } });
+  }, [router]);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -90,10 +98,10 @@ export default function Manage() {
           />
 
           <div className="flex-1 min-h-0 flex flex-col">
-            {validTab === "clients" && <MyClientsTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-            {validTab === "admin" && <SuperAdminTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-            {validTab === "company" && <MyCompanyTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-            {validTab === "team" && <MyTeamTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
+            {validTab === "clients" && <MyClientsTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} onRowSelect={(row) => handleRowSelect("my-client", row?.v_tenantname ?? row?.v_tenantid)} />}
+            {validTab === "admin" && <SuperAdminTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} onRowSelect={(row) => handleRowSelect("my-client", row?.v_username)} />}
+            {validTab === "company" && <MyCompanyTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} onRowSelect={(row) => handleRowSelect("my-company", row?.v_username)} />}
+            {validTab === "team" && <MyTeamTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} onRowSelect={(row) => handleRowSelect("my-team", row?.v_username)} />}
           </div>
         </div>
 
@@ -175,10 +183,10 @@ export default function Manage() {
         />
 
         <div className="flex-1 min-h-0 flex flex-col">
-          {validTab === "clients" && <MyClientsTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-          {validTab === "admin" && <SuperAdminTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-          {validTab === "company" && <MyCompanyTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-          {validTab === "team" && <MyTeamTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
+          {validTab === "clients" && <MyClientsTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} onRowSelect={(row) => handleRowSelect("my-client", row?.v_tenantname ?? row?.v_tenantid)} />}
+          {validTab === "admin" && <SuperAdminTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} onRowSelect={(row) => handleRowSelect("my-client", row?.v_username)} />}
+          {validTab === "company" && <MyCompanyTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} onRowSelect={(row) => handleRowSelect("my-company", row?.v_username)} />}
+          {validTab === "team" && <MyTeamTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} onRowSelect={(row) => handleRowSelect("my-team", row?.v_username)} />}
         </div>
       </div>
 
