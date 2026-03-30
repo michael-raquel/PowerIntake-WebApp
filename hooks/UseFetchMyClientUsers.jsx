@@ -19,7 +19,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
   const [limit, setLimit]           = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0 });
+  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0, completionRate: 0, cancelledTickets: 0, completedTickets: 0 });
   const filterOptions = {
     tenantnames: [],
     statuses: ["true", "false"],
@@ -40,7 +40,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
 
   const fetchTotals = useCallback(async (filters, totalCount) => {
     if (!totalCount) {
-      setTotals({ totalTickets: 0, openTickets: 0 });
+      setTotals({ totalTickets: 0, openTickets: 0, completion: 0 });
       return;
     }
 
@@ -75,8 +75,17 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
       (sum, row) => sum + Number(row?.v_openticket ?? 0),
       0
     );
+    const completionRate = totalTickets > 0 ? Math.round((openTickets / totalTickets) * 100) : 0;
+    const cancelledTickets = rows.reduce(   
+    (sum, row) => sum + Number(row?.v_cancelled ?? 0),
+      0
+    );
+    const completedTickets = rows.reduce(   
+    (sum, row) => sum + Number(row?.v_completed ?? 0),
+      0
+    );
 
-    setTotals({ totalTickets, openTickets });
+    setTotals({ totalTickets, openTickets, completionRate, cancelledTickets, completedTickets });
   }, [getAccessToken]);
 
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
@@ -121,7 +130,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
       }
     } catch (err) {
       setError(err.message);
-      setTotals({ totalTickets: 0, openTickets: 0 });
+      setTotals({ totalTickets: 0, openTickets: 0, completionRate: 0, cancelledTickets: 0, completedTickets: 0 });
     } finally {
       setLoading(false);
     }

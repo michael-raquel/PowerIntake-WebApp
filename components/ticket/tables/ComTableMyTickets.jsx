@@ -32,6 +32,7 @@ export default function ComTableMyTickets({
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const selectedTicketRef = useRef(null);
   const { tickets, loading, error, setTickets } = useFetchTicket({
     entrauserid: tokenInfo?.account?.localAccountId,
     refreshKey,
@@ -41,6 +42,10 @@ export default function ComTableMyTickets({
   const prevFilteredLengthRef = useRef();
 
   const { runSync, loading: syncing } = useAutoSyncDynamics();
+
+  useEffect(() => {
+    selectedTicketRef.current = selectedTicket;
+  }, [selectedTicket]);
 
   const myTickets = useMemo(
     () => tickets.filter(t => t.v_entrauserid === tokenInfo?.account?.localAccountId),
@@ -73,7 +78,8 @@ export default function ComTableMyTickets({
       setTickets(prev => prev.filter(t => t.v_ticketuuid !== ticketuuid));
       toast.info('A ticket has been removed');
 
-        if (selectedTicket && String(selectedTicket.v_ticketuuid) === String(ticketuuid)) {
+        const currentTicket = selectedTicketRef.current;
+        if (currentTicket && String(currentTicket.v_ticketuuid) === String(ticketuuid)) {
             setSelectedTicket(null);
         }
     };
