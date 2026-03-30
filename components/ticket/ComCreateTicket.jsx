@@ -354,7 +354,13 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                   <h2 className="text-lg font-medium">Support Call Schedule</h2>
                   <p className="text-xs text-gray-500">Add one or more available date/time slots.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleAddCall} className="gap-1" disabled={submitting}>
+                <Button
+                  variant="outline" size="sm" onClick={handleAddCall}
+                  className="gap-1 bg-white text-gray-900 border-gray-300 hover:bg-gray-100
+    dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800
+    appearance-none"
+                  disabled={submitting}
+                >
                   <Plus className="w-4 h-4" /> Add
                 </Button>
               </div>
@@ -363,9 +369,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                 <div key={call.id} className="relative p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border mb-4 last:mb-0">
                   {supportCalls.length > 1 && (
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSupportCalls(prev => prev.filter(c => c.id !== call.id))}
+                      variant="ghost" size="icon" onClick={() => setSupportCalls(prev => prev.filter(c => c.id !== call.id))}
                       className="absolute top-2 right-2 h-8 w-8"
                       disabled={submitting}
                     >
