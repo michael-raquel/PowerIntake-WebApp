@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -22,22 +22,18 @@ export default function SuperAdminFilter({
 }) {
   const [search,     setSearch]     = useState("");
   const [clientname, setClientname] = useState("");
-  const [selectedRoles, setSelectedRoles] = useState([]);
-  const [selectedStatuses, setSelectedStatuses] = useState([]);
-  const initializedRolesRef = useRef(false);
-  const initializedStatusesRef = useRef(false);
+  const [roleSelection, setRoleSelection] = useState(null);
+  const [statusSelection, setStatusSelection] = useState(null);
 
-  useEffect(() => {
-    if (initializedRolesRef.current || roles.length === 0) return;
-    setSelectedRoles(roles);
-    initializedRolesRef.current = true;
-  }, [roles]);
+  const selectedRoles = useMemo(() => {
+    if (roleSelection === null) return roles;
+    return roleSelection.filter((role) => roles.includes(role));
+  }, [roleSelection, roles]);
 
-  useEffect(() => {
-    if (initializedStatusesRef.current || statuses.length === 0) return;
-    setSelectedStatuses(statuses);
-    initializedStatusesRef.current = true;
-  }, [statuses]);
+  const selectedStatuses = useMemo(() => {
+    if (statusSelection === null) return statuses;
+    return statusSelection.filter((status) => statuses.includes(status));
+  }, [statusSelection, statuses]);
 
   const allRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
   const roleFilterActive = selectedRoles.length > 0 && !allRolesSelected;
@@ -105,7 +101,7 @@ export default function SuperAdminFilter({
     const updated = selectedRoles.includes(roleValue)
       ? selectedRoles.filter(r => r !== roleValue)
       : [...selectedRoles, roleValue];
-    setSelectedRoles(updated);
+    setRoleSelection(updated);
     onFilter({
       search,
       clientname,
@@ -118,7 +114,7 @@ export default function SuperAdminFilter({
     const updated = selectedStatuses.includes(statusValue)
       ? selectedStatuses.filter((s) => s !== statusValue)
       : [...selectedStatuses, statusValue];
-    setSelectedStatuses(updated);
+    setStatusSelection(updated);
     onFilter({
       search,
       clientname,
@@ -128,7 +124,7 @@ export default function SuperAdminFilter({
   };
 
   const handleSelectAllRoles = () => {
-    setSelectedRoles(roles);
+    setRoleSelection(null);
     onFilter({
       search,
       clientname,
@@ -138,7 +134,7 @@ export default function SuperAdminFilter({
   };
 
   const handleUnselectAllRoles = () => {
-    setSelectedRoles([]);
+    setRoleSelection([]);
     onFilter({
       search,
       clientname,
@@ -148,7 +144,7 @@ export default function SuperAdminFilter({
   };
 
   const handleSelectAllStatuses = () => {
-    setSelectedStatuses(statuses);
+    setStatusSelection(null);
     onFilter({
       search,
       clientname,
@@ -158,7 +154,7 @@ export default function SuperAdminFilter({
   };
 
   const handleUnselectAllStatuses = () => {
-    setSelectedStatuses([]);
+    setStatusSelection([]);
     onFilter({
       search,
       clientname,
@@ -173,11 +169,11 @@ export default function SuperAdminFilter({
       onFilter({ search, clientname: "", selectedRoles: resolveRoles(selectedRoles), status: resolveStatuses(selectedStatuses) });
     }
     if (key === "role") {
-      setSelectedRoles(roles);
+      setRoleSelection(null);
       onFilter({ search, clientname, selectedRoles: resolveRoles(roles), status: resolveStatuses(selectedStatuses) });
     }
     if (key === "status") {
-      setSelectedStatuses(statuses);
+      setStatusSelection(null);
       onFilter({ search, clientname, selectedRoles: resolveRoles(selectedRoles), status: resolveStatuses(statuses) });
     }
   };
@@ -185,8 +181,8 @@ export default function SuperAdminFilter({
   const clearAll = () => {
     setSearch("");
     setClientname("");
-    setSelectedRoles(roles);
-    setSelectedStatuses(statuses);
+    setRoleSelection(null);
+    setStatusSelection(null);
     onFilter({ search: "", clientname: "", selectedRoles: resolveRoles(roles), status: resolveStatuses(statuses) });
   };
 

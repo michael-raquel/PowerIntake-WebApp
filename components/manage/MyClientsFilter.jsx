@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -12,14 +12,12 @@ export default function ClientsFilter({
 }) {
   const [search,     setSearch]     = useState("");
   const [selectedTenantnames, setSelectedTenantnames] = useState([]);
-  const [selectedStatuses,    setSelectedStatuses]    = useState([]);
-  const initializedStatusesRef = useRef(false);
+  const [statusSelection, setStatusSelection] = useState(null);
 
-  useEffect(() => {
-    if (initializedStatusesRef.current || statuses.length === 0) return;
-    setSelectedStatuses(statuses);
-    initializedStatusesRef.current = true;
-  }, [statuses]);
+  const selectedStatuses = useMemo(() => {
+    if (statusSelection === null) return statuses;
+    return statusSelection.filter((status) => statuses.includes(status));
+  }, [statusSelection, statuses]);
 
   const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
   const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
@@ -69,29 +67,29 @@ export default function ClientsFilter({
     const updated = selectedStatuses.includes(value)
       ? selectedStatuses.filter((s) => s !== value)
       : [...selectedStatuses, value];
-    setSelectedStatuses(updated);
+    setStatusSelection(updated);
     emit({ status: updated });
   };
 
   const handleSelectAllStatuses = () => {
-    setSelectedStatuses(statuses);
+    setStatusSelection(null);
     emit({ status: statuses });
   };
 
   const handleUnselectAllStatuses = () => {
-    setSelectedStatuses([]);
+    setStatusSelection([]);
     emit({ status: [] });
   };
 
   const clearOne = (key) => {
     if (key === "tenantname") { setSelectedTenantnames([]); emit({ tenantname: [] }); }
-    if (key === "status")     { setSelectedStatuses(statuses);    emit({ status: statuses }); }
+    if (key === "status")     { setStatusSelection(null);    emit({ status: statuses }); }
   };
 
   const clearAll = () => {
     setSearch("");
     setSelectedTenantnames([]);
-    setSelectedStatuses(statuses);
+    setStatusSelection(null);
     onFilter({ search: "", tenantname: [], status: resolveStatuses(statuses) });
   };
 

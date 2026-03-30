@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -24,22 +24,18 @@ export default function CompanyFilter({
 }) {
   const [search,     setSearch]     = useState("");
   const [manager,    setManager]    = useState("");
-  const [selectedRoles, setSelectedRoles] = useState([]);
-  const [selectedStatuses,    setSelectedStatuses]    = useState([]);
-  const initializedRolesRef = useRef(false);
-  const initializedStatusesRef = useRef(false);
+  const [roleSelection, setRoleSelection] = useState(null);
+  const [statusSelection, setStatusSelection] = useState(null);
 
-  useEffect(() => {
-    if (initializedRolesRef.current || roles.length === 0) return;
-    setSelectedRoles(roles);
-    initializedRolesRef.current = true;
-  }, [roles]);
+  const selectedRoles = useMemo(() => {
+    if (roleSelection === null) return roles;
+    return roleSelection.filter((role) => roles.includes(role));
+  }, [roleSelection, roles]);
 
-  useEffect(() => {
-    if (initializedStatusesRef.current || statuses.length === 0) return;
-    setSelectedStatuses(statuses);
-    initializedStatusesRef.current = true;
-  }, [statuses]);
+  const selectedStatuses = useMemo(() => {
+    if (statusSelection === null) return statuses;
+    return statusSelection.filter((status) => statuses.includes(status));
+  }, [statusSelection, statuses]);
 
   const allRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
   const roleFilterActive = selectedRoles.length > 0 && !allRolesSelected;
@@ -109,7 +105,7 @@ export default function CompanyFilter({
     const updated = selectedRoles.includes(roleValue)
       ? selectedRoles.filter(r => r !== roleValue)
       : [...selectedRoles, roleValue];
-    setSelectedRoles(updated);
+    setRoleSelection(updated);
     onFilter({
       search,
       manager,
@@ -123,7 +119,7 @@ export default function CompanyFilter({
     const updated = selectedStatuses.includes(statusValue)
       ? selectedStatuses.filter((s) => s !== statusValue)
       : [...selectedStatuses, statusValue];
-    setSelectedStatuses(updated);
+    setStatusSelection(updated);
     onFilter({
       search,
       manager,
@@ -134,7 +130,7 @@ export default function CompanyFilter({
   };
 
   const handleSelectAllRoles = () => {
-    setSelectedRoles(roles);
+    setRoleSelection(null);
     onFilter({
       search,
       manager,
@@ -145,7 +141,7 @@ export default function CompanyFilter({
   };
 
   const handleUnselectAllRoles = () => {
-    setSelectedRoles([]);
+    setRoleSelection([]);
     onFilter({
       search,
       manager,
@@ -156,7 +152,7 @@ export default function CompanyFilter({
   };
 
   const handleSelectAllStatuses = () => {
-    setSelectedStatuses(statuses);
+    setStatusSelection(null);
     onFilter({
       search,
       manager,
@@ -167,7 +163,7 @@ export default function CompanyFilter({
   };
 
   const handleUnselectAllStatuses = () => {
-    setSelectedStatuses([]);
+    setStatusSelection([]);
     onFilter({
       search,
       manager,
@@ -183,11 +179,11 @@ export default function CompanyFilter({
       onFilter({ search, manager: "", selectedRoles: resolveRoles(selectedRoles), department: [], status: resolveStatuses(selectedStatuses) });
     }
     if (key === "role") {
-      setSelectedRoles(roles);
+      setRoleSelection(null);
       onFilter({ search, manager, selectedRoles: resolveRoles(roles), department: [], status: resolveStatuses(selectedStatuses) });
     }
     if (key === "status") {
-      setSelectedStatuses(statuses);
+      setStatusSelection(null);
       onFilter({ search, manager, selectedRoles: resolveRoles(selectedRoles), department: [], status: resolveStatuses(statuses) });
     }
   };
@@ -195,8 +191,8 @@ export default function CompanyFilter({
   const clearAll = () => {
     setSearch("");
     setManager("");
-    setSelectedRoles(roles);
-    setSelectedStatuses(statuses);
+    setRoleSelection(null);
+    setStatusSelection(null);
     onFilter({ search: "", manager: "", selectedRoles: resolveRoles(roles), department: [], status: resolveStatuses(statuses) });
   };
 
