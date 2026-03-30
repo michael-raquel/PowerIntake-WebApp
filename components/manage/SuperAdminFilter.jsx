@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -22,22 +22,18 @@ export default function SuperAdminFilter({
 }) {
   const [search,     setSearch]     = useState("");
   const [clientname, setClientname] = useState("");
-  const [selectedRoles, setSelectedRoles] = useState([]);
-  const [selectedStatuses, setSelectedStatuses] = useState([]);
-  const initializedRolesRef = useRef(false);
-  const initializedStatusesRef = useRef(false);
+  const [roleSelection, setRoleSelection] = useState(null);
+  const [statusSelection, setStatusSelection] = useState(null);
 
-  useEffect(() => {
-    if (initializedRolesRef.current || roles.length === 0) return;
-    setSelectedRoles(roles);
-    initializedRolesRef.current = true;
-  }, [roles]);
+  const selectedRoles = useMemo(() => {
+    if (roleSelection === null) return roles;
+    return roleSelection.filter((role) => roles.includes(role));
+  }, [roleSelection, roles]);
 
-  useEffect(() => {
-    if (initializedStatusesRef.current || statuses.length === 0) return;
-    setSelectedStatuses(statuses);
-    initializedStatusesRef.current = true;
-  }, [statuses]);
+  const selectedStatuses = useMemo(() => {
+    if (statusSelection === null) return statuses;
+    return statusSelection.filter((status) => statuses.includes(status));
+  }, [statusSelection, statuses]);
 
   const allRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
   const roleFilterActive = selectedRoles.length > 0 && !allRolesSelected;
@@ -55,6 +51,23 @@ export default function SuperAdminFilter({
   };
 
   const rowsValue = String(rowsPerPage ?? 10);
+
+  const roleLabel = roles.length === 0
+    ? "No roles"
+    : selectedRoles.length === 0
+      ? "No roles"
+      : allRolesSelected
+        ? "All roles"
+        : `${selectedRoles.length} selected`;
+
+  const statusNames = selectedStatuses.map((s) => (s === "true" ? "Active" : "Inactive"));
+  const statusLabel = statuses.length === 0
+    ? "No statuses"
+    : selectedStatuses.length === 0
+      ? "No status"
+      : allStatusesSelected
+        ? "All statuses"
+        : statusNames.join(", ");
 
   const activeFilterCount = [
     clientname,
@@ -88,12 +101,11 @@ export default function SuperAdminFilter({
     const updated = selectedRoles.includes(roleValue)
       ? selectedRoles.filter(r => r !== roleValue)
       : [...selectedRoles, roleValue];
-    const nextRoles = updated.length === 0 ? roles : updated;
-    setSelectedRoles(nextRoles);
+    setRoleSelection(updated);
     onFilter({
       search,
       clientname,
-      selectedRoles: resolveRoles(nextRoles),
+      selectedRoles: resolveRoles(updated),
       status: resolveStatuses(selectedStatuses),
     });
   };
@@ -102,13 +114,52 @@ export default function SuperAdminFilter({
     const updated = selectedStatuses.includes(statusValue)
       ? selectedStatuses.filter((s) => s !== statusValue)
       : [...selectedStatuses, statusValue];
-    const nextStatuses = updated.length === 0 ? statuses : updated;
-    setSelectedStatuses(nextStatuses);
+    setStatusSelection(updated);
     onFilter({
       search,
       clientname,
       selectedRoles: resolveRoles(selectedRoles),
-      status: resolveStatuses(nextStatuses),
+      status: resolveStatuses(updated),
+    });
+  };
+
+  const handleSelectAllRoles = () => {
+    setRoleSelection(null);
+    onFilter({
+      search,
+      clientname,
+      selectedRoles: resolveRoles(roles),
+      status: resolveStatuses(selectedStatuses),
+    });
+  };
+
+  const handleUnselectAllRoles = () => {
+    setRoleSelection([]);
+    onFilter({
+      search,
+      clientname,
+      selectedRoles: resolveRoles([]),
+      status: resolveStatuses(selectedStatuses),
+    });
+  };
+
+  const handleSelectAllStatuses = () => {
+    setStatusSelection(null);
+    onFilter({
+      search,
+      clientname,
+      selectedRoles: resolveRoles(selectedRoles),
+      status: resolveStatuses(statuses),
+    });
+  };
+
+  const handleUnselectAllStatuses = () => {
+    setStatusSelection([]);
+    onFilter({
+      search,
+      clientname,
+      selectedRoles: resolveRoles(selectedRoles),
+      status: resolveStatuses([]),
     });
   };
 
@@ -118,11 +169,11 @@ export default function SuperAdminFilter({
       onFilter({ search, clientname: "", selectedRoles: resolveRoles(selectedRoles), status: resolveStatuses(selectedStatuses) });
     }
     if (key === "role") {
-      setSelectedRoles(roles);
+      setRoleSelection(null);
       onFilter({ search, clientname, selectedRoles: resolveRoles(roles), status: resolveStatuses(selectedStatuses) });
     }
     if (key === "status") {
-      setSelectedStatuses(statuses);
+      setStatusSelection(null);
       onFilter({ search, clientname, selectedRoles: resolveRoles(selectedRoles), status: resolveStatuses(statuses) });
     }
   };
@@ -130,8 +181,8 @@ export default function SuperAdminFilter({
   const clearAll = () => {
     setSearch("");
     setClientname("");
-    setSelectedRoles(roles);
-    setSelectedStatuses(statuses);
+    setRoleSelection(null);
+    setStatusSelection(null);
     onFilter({ search: "", clientname: "", selectedRoles: resolveRoles(roles), status: resolveStatuses(statuses) });
   };
 
@@ -224,22 +275,55 @@ export default function SuperAdminFilter({
                   </button>
                 )}
               </div>
-              <div className="space-y-2">
-                {roles.map((r) => (
-                  <div key={r} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id={`role-${r}`}
-                      checked={selectedRoles.includes(r)}
-                      onChange={() => handleRole(r)}
-                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
-                    />
-                    <label htmlFor={`role-${r}`} className="text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                      {r}
-                    </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center justify-between w-full h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <span className="truncate">{roleLabel}</span>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="start">
+                  <div className="flex items-center justify-between px-1 pb-2">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllRoles}
+                      disabled={roles.length === 0}
+                      className="text-xs text-violet-600 disabled:text-gray-400"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUnselectAllRoles}
+                      disabled={roles.length === 0}
+                      className="text-xs text-gray-600 dark:text-gray-300 disabled:text-gray-400"
+                    >
+                      Unselect all
+                    </button>
                   </div>
-                ))}
-              </div>
+                  <div className="max-h-48 overflow-y-auto space-y-2 px-1">
+                    {roles.length === 0 ? (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">No roles available</p>
+                    ) : (
+                      roles.map((r) => (
+                        <label key={r} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`role-${r}`}
+                            checked={selectedRoles.includes(r)}
+                            onChange={() => handleRole(r)}
+                            className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">{r}</span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-1.5">
@@ -251,24 +335,56 @@ export default function SuperAdminFilter({
                   </button>
                 )}
               </div>
-              <div className="space-y-2">
-                {statuses.length === 0 && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
-                )}
-                {statuses.map((s) => (
-                  <label key={s} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedStatuses.includes(s)}
-                      onChange={() => handleStatus(s)}
-                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {s === "true" ? "Active" : "Inactive"}
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center justify-between w-full h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <span className="truncate">{statusLabel}</span>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="start">
+                  <div className="flex items-center justify-between px-1 pb-2">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllStatuses}
+                      disabled={statuses.length === 0}
+                      className="text-xs text-violet-600 disabled:text-gray-400"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUnselectAllStatuses}
+                      disabled={statuses.length === 0}
+                      className="text-xs text-gray-600 dark:text-gray-300 disabled:text-gray-400"
+                    >
+                      Unselect all
+                    </button>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-2 px-1">
+                    {statuses.length === 0 ? (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
+                    ) : (
+                      statuses.map((s) => (
+                        <label key={s} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedStatuses.includes(s)}
+                            onChange={() => handleStatus(s)}
+                            className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {s === "true" ? "Active" : "Inactive"}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
           </div>
