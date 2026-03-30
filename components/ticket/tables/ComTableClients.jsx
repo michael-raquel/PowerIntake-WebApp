@@ -96,29 +96,38 @@ export default function ComTableClients({
   }, [setTickets, onSynced]);
 
   const filteredTickets = useMemo(
-    () => tickets.filter(t => {
-      const search = searchValue.toLowerCase().trim();
-      const matchesSearch =
-        !search ||
-        t.v_ticketnumber?.toLowerCase().includes(search) ||
-        t.v_tenantname?.toLowerCase().includes(search) ||
-        t.v_username?.toLowerCase().includes(search) ||
-        t.v_title?.toLowerCase().includes(search) ||
-        t.v_ticketcategory?.toLowerCase().includes(search);
+  () => tickets.filter(t => {
+    const search = searchValue.toLowerCase().trim();
+    const matchesSearch =
+      !search ||
+      t.v_ticketnumber?.toLowerCase().includes(search) ||
+      t.v_tenantname?.toLowerCase().includes(search) ||
+      t.v_username?.toLowerCase().includes(search) ||
+      t.v_title?.toLowerCase().includes(search) ||
+      t.v_ticketcategory?.toLowerCase().includes(search);
 
-      const matchesClient     = !filters.Client     || t.v_tenantname?.toLowerCase().includes(filters.Client.toLowerCase().trim());
-      const matchesDepartment = !filters.Department || t.v_department === filters.Department;
-      const matchesSource     = !filters.Source     || t.v_source === filters.Source;
-      const matchesPriority   = !filters.Priority   || t.v_priority === filters.Priority;
-      const matchesCategory   = !filters.Category   || t.v_ticketcategory === filters.Category;
-      const matchesStatus     = !filters.Status     || t.v_status === filters.Status;
-      const matchesCompleted  = !hideCompleted ||
-        (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+    const matchesFilter = (filterValue, ticketValue) => {
+      if (!filterValue) return true;
+      if (Array.isArray(filterValue)) {
+        return filterValue.length === 0 || filterValue.includes(ticketValue);
+      }
+      return String(ticketValue).toLowerCase().includes(String(filterValue).toLowerCase().trim());
+    };
 
-      return matchesSearch && matchesClient && matchesDepartment && matchesSource && matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
-    }),
-    [tickets, searchValue, filters.Client, filters.Department, filters.Source, filters.Priority, filters.Category, filters.Status, hideCompleted]
-  );
+    const matchesClient     = matchesFilter(filters.Client, t.v_tenantname);
+    const matchesDepartment = matchesFilter(filters.Department, t.v_department);
+    const matchesSource     = matchesFilter(filters.Source, t.v_source);
+    const matchesPriority   = matchesFilter(filters.Priority, t.v_priority);
+    const matchesCategory   = matchesFilter(filters.Category, t.v_ticketcategory);
+    const matchesStatus     = matchesFilter(filters.Status, t.v_status);
+    const matchesCompleted  = !hideCompleted ||
+      (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+
+    return matchesSearch && matchesClient && matchesDepartment && matchesSource && 
+           matchesPriority && matchesCategory && matchesStatus && matchesCompleted;
+  }),
+  [tickets, searchValue, filters, hideCompleted]
+);
 
   const paginated = useMemo(
     () => filteredTickets.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage),
