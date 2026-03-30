@@ -1,3 +1,10 @@
+# [1.4.0-dev.13](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.12...v1.4.0-dev.13) (2026-03-30)
+
+
+### Bug Fixes
+
+* st-2147-UI bug in ticket page ([865270d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/865270da6e504acba88d5e0ab61489e8fb754005))
+
 # [1.4.0-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.11...v1.4.0-dev.12) (2026-03-30)
 
 
