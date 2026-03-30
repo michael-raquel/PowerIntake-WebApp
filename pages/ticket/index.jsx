@@ -433,6 +433,7 @@ export default function TicketPage() {
     onSyncFailed: useCallback(() => toast.warning('Ticket created but Dynamics sync failed'), []),
     onDeleted:    useCallback(() => toast.info('A ticket has been removed'), []),
     onUpdated:    useCallback(() => toast.info('A ticket has been updated'), []),
+    hideCompleted
   };
 
   // ── Mobile 
