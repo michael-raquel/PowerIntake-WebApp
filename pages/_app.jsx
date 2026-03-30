@@ -23,7 +23,16 @@ const SpartaAssistWidget = dynamic(
 );
 
 const msalInstance = new PublicClientApplication(msalConfig);
-const noSidebarPages = ["/", "/register", "/login"];
+
+const noSidebarPages = [
+  "/",
+  "/register",
+  "/login",
+  "/checking",        // ← add this
+  "/consent-callback",
+  "/unauthorized",
+  "/no-consent",
+];
 
 // Optional route-level role restrictions (all non-public routes still require login)
 const routeRoleMap = {
@@ -36,7 +45,6 @@ function AppContent({ Component, pageProps }) {
   const showSidebar = !isPublicPage;
   const requiredRoles = routeRoleMap[router.pathname] ?? [];
 
-  // Optional: hide widget on offline page
   const hideAssistRoutes = ["/offline"];
   const showAssistWidget = !hideAssistRoutes.includes(router.pathname);
 

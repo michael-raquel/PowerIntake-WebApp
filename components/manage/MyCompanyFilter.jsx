@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function CompanyFilter({
   onFilter,
@@ -12,14 +18,53 @@ export default function CompanyFilter({
   roles       = [],
   departments = [],
   statuses    = [],
+  rowsPerPage = 10,
+  onRowsPerPageChange,
+  rowsPerPageDisabled = false,
 }) {
   const [search,     setSearch]     = useState("");
   const [manager,    setManager]    = useState("");
   const [selectedRoles, setSelectedRoles] = useState([]);
-  const [department, setDepartment] = useState("");
-  const [status,     setStatus]     = useState("");
+  const [selectedDepartments, setSelectedDepartments] = useState([]);
+  const [selectedStatuses,    setSelectedStatuses]    = useState([]);
+  const initializedRolesRef = useRef(false);
+  const initializedStatusesRef = useRef(false);
 
-  const activeFilterCount = [manager, selectedRoles.length > 0, department, status].filter(Boolean).length;
+  useEffect(() => {
+    if (initializedRolesRef.current || roles.length === 0) return;
+    setSelectedRoles(roles);
+    initializedRolesRef.current = true;
+  }, [roles]);
+
+  useEffect(() => {
+    if (initializedStatusesRef.current || statuses.length === 0) return;
+    setSelectedStatuses(statuses);
+    initializedStatusesRef.current = true;
+  }, [statuses]);
+
+  const allRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
+  const roleFilterActive = selectedRoles.length > 0 && !allRolesSelected;
+  const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
+  const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
+
+  const resolveRoles = (nextRoles) => {
+    if (roles.length === 0) return nextRoles;
+    return nextRoles.length === roles.length ? [] : nextRoles;
+  };
+
+  const resolveStatuses = (nextStatuses) => {
+    if (statuses.length === 0) return nextStatuses;
+    return nextStatuses.length === statuses.length ? [] : nextStatuses;
+  };
+
+  const rowsValue = String(rowsPerPage ?? 10);
+
+  const activeFilterCount = [
+    manager,
+    roleFilterActive,
+    selectedDepartments.length > 0,
+    statusFilterActive,
+  ].filter(Boolean).length;
 
   const handleSearch = (e) => {
     const newSearch = e.target.value;
@@ -27,9 +72,9 @@ export default function CompanyFilter({
     onFilter({
       search: newSearch,
       manager,
-      selectedRoles,
-      department,
-      status,
+      selectedRoles: resolveRoles(selectedRoles),
+      department: selectedDepartments,
+      status: resolveStatuses(selectedStatuses),
     });
   };
 
@@ -39,9 +84,9 @@ export default function CompanyFilter({
     onFilter({
       search,
       manager: newManager,
-      selectedRoles,
-      department,
-      status,
+      selectedRoles: resolveRoles(selectedRoles),
+      department: selectedDepartments,
+      status: resolveStatuses(selectedStatuses),
     });
   };
 
@@ -49,66 +94,72 @@ export default function CompanyFilter({
     const updated = selectedRoles.includes(roleValue)
       ? selectedRoles.filter(r => r !== roleValue)
       : [...selectedRoles, roleValue];
-    setSelectedRoles(updated);
+    const nextRoles = updated.length === 0 ? roles : updated;
+    setSelectedRoles(nextRoles);
     onFilter({
       search,
       manager,
-      selectedRoles: updated,
-      department,
-      status,
+      selectedRoles: resolveRoles(nextRoles),
+      department: selectedDepartments,
+      status: resolveStatuses(selectedStatuses),
     });
   };
 
-  const handleDepartment = (val) => {
-    const newDept = val === "__all__" ? "" : val;
-    setDepartment(newDept);
+  const handleDepartment = (departmentValue) => {
+    const updated = selectedDepartments.includes(departmentValue)
+      ? selectedDepartments.filter((d) => d !== departmentValue)
+      : [...selectedDepartments, departmentValue];
+    setSelectedDepartments(updated);
     onFilter({
       search,
       manager,
-      selectedRoles,
-      department: newDept,
-      status,
+      selectedRoles: resolveRoles(selectedRoles),
+      department: updated,
+      status: resolveStatuses(selectedStatuses),
     });
   };
 
-  const handleStatus = (val) => {
-    const newStatus = val === "__all__" ? "" : val;
-    setStatus(newStatus);
+  const handleStatus = (statusValue) => {
+    const updated = selectedStatuses.includes(statusValue)
+      ? selectedStatuses.filter((s) => s !== statusValue)
+      : [...selectedStatuses, statusValue];
+    const nextStatuses = updated.length === 0 ? statuses : updated;
+    setSelectedStatuses(nextStatuses);
     onFilter({
       search,
       manager,
-      selectedRoles,
-      department,
-      status: newStatus,
+      selectedRoles: resolveRoles(selectedRoles),
+      department: selectedDepartments,
+      status: resolveStatuses(nextStatuses),
     });
   };
 
   const clearOne = (key) => {
     if (key === "manager") {
       setManager("");
-      onFilter({ search, manager: "", selectedRoles, department, status });
+      onFilter({ search, manager: "", selectedRoles: resolveRoles(selectedRoles), department: selectedDepartments, status: resolveStatuses(selectedStatuses) });
     }
     if (key === "role") {
-      setSelectedRoles([]);
-      onFilter({ search, manager, selectedRoles: [], department, status });
+      setSelectedRoles(roles);
+      onFilter({ search, manager, selectedRoles: resolveRoles(roles), department: selectedDepartments, status: resolveStatuses(selectedStatuses) });
     }
     if (key === "department") {
-      setDepartment("");
-      onFilter({ search, manager, selectedRoles, department: "", status });
+      setSelectedDepartments([]);
+      onFilter({ search, manager, selectedRoles: resolveRoles(selectedRoles), department: [], status: resolveStatuses(selectedStatuses) });
     }
     if (key === "status") {
-      setStatus("");
-      onFilter({ search, manager, selectedRoles, department, status: "" });
+      setSelectedStatuses(statuses);
+      onFilter({ search, manager, selectedRoles: resolveRoles(selectedRoles), department: selectedDepartments, status: resolveStatuses(statuses) });
     }
   };
 
   const clearAll = () => {
     setSearch("");
     setManager("");
-    setSelectedRoles([]);
-    setDepartment("");
-    setStatus("");
-    onFilter({ search: "", manager: "", selectedRoles: [], department: "", status: "" });
+    setSelectedRoles(roles);
+    setSelectedDepartments([]);
+    setSelectedStatuses(statuses);
+    onFilter({ search: "", manager: "", selectedRoles: resolveRoles(roles), department: [], status: resolveStatuses(statuses) });
   };
 
   return (
@@ -126,7 +177,7 @@ export default function CompanyFilter({
           <button
             onClick={() => {
               setSearch("");
-              onFilter({ search: "", manager, selectedRoles, department, status });
+              onFilter({ search: "", manager, selectedRoles: resolveRoles(selectedRoles), department: selectedDepartments, status: resolveStatuses(selectedStatuses) });
             }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
@@ -194,7 +245,7 @@ export default function CompanyFilter({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Role</label>
-                {selectedRoles.length > 0 && (
+                {roleFilterActive && (
                   <button onClick={() => clearOne("role")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
@@ -221,49 +272,79 @@ export default function CompanyFilter({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Department</label>
-                {department && (
+                {selectedDepartments.length > 0 && (
                   <button onClick={() => clearOne("department")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
               </div>
-              <Select value={department || "__all__"} onValueChange={handleDepartment}>
-                <SelectTrigger className="h-9 text-sm w-full">
-                  <SelectValue placeholder="All Departments" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All Departments</SelectItem>
-                  {departments.map((d) => (
-                    <SelectItem key={d} value={d}>{d}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {departments.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">No departments available</p>
+                )}
+                {departments.map((d) => (
+                  <label key={d} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedDepartments.includes(d)}
+                      onChange={() => handleDepartment(d)}
+                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{d}</span>
+                  </label>
+                ))}
+              </div>
             </div>
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                {status && (
+                {statusFilterActive && (
                   <button onClick={() => clearOne("status")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
               </div>
-              <Select value={status || "__all__"} onValueChange={handleStatus}>
-                <SelectTrigger className="h-9 text-sm w-full">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All Statuses</SelectItem>
-                  {statuses.map((s) => (
-                    <SelectItem key={s} value={s}>{s === "true" ? "Active" : "Inactive"}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {statuses.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
+                )}
+                {statuses.map((s) => (
+                  <label key={s} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes(s)}
+                      onChange={() => handleStatus(s)}
+                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {s === "true" ? "Active" : "Inactive"}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
 
           </div>
         </PopoverContent>
       </Popover>
+
+      {onRowsPerPageChange && (
+        <div className="md:hidden">
+          <Select value={rowsValue} onValueChange={onRowsPerPageChange} disabled={rowsPerPageDisabled}>
+            <SelectTrigger size="sm" className="h-8 px-2 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
     </div>
   );

@@ -1,3 +1,81 @@
+# [1.4.0-dev.15](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.14...v1.4.0-dev.15) (2026-03-30)
+
+
+### Bug Fixes
+
+* st-2118-ticketpageRefactor ticket filters and table filtering ([fda5392](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fda539238c55ec62d686cd3490f214ec1a092dec))
+
+# [1.4.0-dev.14](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.13...v1.4.0-dev.14) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket webhook on update ([d0e38d7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d0e38d758d9c9c63176ab54da3393ce7bc820395))
+
+# [1.4.0-dev.13](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.12...v1.4.0-dev.13) (2026-03-30)
+
+
+### Bug Fixes
+
+* st-2147-UI bug in ticket page ([865270d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/865270da6e504acba88d5e0ab61489e8fb754005))
+
+# [1.4.0-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.11...v1.4.0-dev.12) (2026-03-30)
+
+
+### Bug Fixes
+
+* st-2145-tenant-id-column-fix ([5568d92](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5568d920fdab5025d6905a37934ea27514c206ed))
+
+# [1.4.0-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.10...v1.4.0-dev.11) (2026-03-30)
+
+
+### Bug Fixes
+
+* added hidecompleted ticket on mobile cards ([6a1a7cb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6a1a7cbe10cd04913c758f01abc2bac7e50ba57e))
+
+# [1.4.0-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.9...v1.4.0-dev.10) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket remove from dynamics automatically removes on powerintake without manual refresh ([fc0d5d8](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fc0d5d89c54750c8ed79e0f766b63ca91880b1ec))
+
+# [1.4.0-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.8...v1.4.0-dev.9) (2026-03-30)
+
+
+### Bug Fixes
+
+* Make rows navigable; sync ticket search param ([058c0ed](https://github.com/michael-raquel/PowerIntake-WebApp/commit/058c0ed4f1460925572ae609778a37da2be94bc8))
+
+# [1.4.0-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.7...v1.4.0-dev.8) (2026-03-30)
+
+
+### Bug Fixes
+
+* Added a checkbox filter ([ecf46eb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ecf46eb88caf38ca4ca895de16e3236c1a3abda2))
+* Support multi-select filters and client-side paging ([70a5c7e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/70a5c7eef43d3091ac131e355ab4b7ae6e1892f2))
+
+# [1.4.0-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.6...v1.4.0-dev.7) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-multiple join rooms on webhook ([4a62a5c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4a62a5cd219448c0f8cdd9c2012ddf72e13a5569))
+
+# [1.4.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.5...v1.4.0-dev.6) (2026-03-30)
+
+
+### Bug Fixes
+
+* ui fix buttons in createticket in mobile view ([9a6bc0a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9a6bc0a59967c99a26308f39afd562bc5266d2be))
+
+# [1.4.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.4...v1.4.0-dev.5) (2026-03-30)
+
+
+### Bug Fixes
+
+* light and dark mode bug in IOS ([2131e8c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2131e8c0b185d68290f2cf7716f5e25e7660b898))
+
 # [1.4.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.3...v1.4.0-dev.4) (2026-03-29)
 
 

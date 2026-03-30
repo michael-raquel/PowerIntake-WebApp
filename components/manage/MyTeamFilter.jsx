@@ -1,24 +1,59 @@
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSearch, statuses = [], selectedFilters = {} }) {
-  const activeFilterCount = Object.entries(selectedFilters).filter(
-    ([key, v]) => key !== "search" && v && typeof v === "string" && v.trim() !== ""
-  ).length;
+export default function MyTeamFilter({
+  onFiltersChange,
+  searchValue = "",
+  onSearch,
+  statuses = [],
+  selectedFilters = {},
+  rowsPerPage = 10,
+  onRowsPerPageChange,
+  rowsPerPageDisabled = false,
+}) {
+  const rawSelectedStatuses = Array.isArray(selectedFilters.status)
+    ? selectedFilters.status
+    : selectedFilters.status
+      ? [selectedFilters.status]
+      : [];
+  const selectedStatuses = rawSelectedStatuses.length === 0 && statuses.length > 0
+    ? statuses
+    : rawSelectedStatuses;
 
-  const handleFilterChange = (filter, value) => {
-    if (!value) return;
-    onFiltersChange({ ...selectedFilters, [filter]: value });
+  const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
+  const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
+  const activeFilterCount = statusFilterActive ? 1 : 0;
+
+  const rowsValue = String(rowsPerPage ?? 10);
+
+  const toggleStatus = (value) => {
+    const next = selectedStatuses.includes(value)
+      ? selectedStatuses.filter((s) => s !== value)
+      : [...selectedStatuses, value];
+    const nextStatuses = next.length === 0 && statuses.length > 0 ? statuses : next;
+    const updated = { ...selectedFilters, status: nextStatuses };
+    if (nextStatuses.length === 0) delete updated.status;
+    onFiltersChange(updated);
   };
 
-  const clearFilter = (filter) => {
-    const next = { ...selectedFilters };
-    delete next[filter];
-    onFiltersChange(next);
+  const clearStatus = () => {
+    if (statuses.length === 0) {
+      const next = { ...selectedFilters };
+      delete next.status;
+      onFiltersChange(next);
+      return;
+    }
+    onFiltersChange({ ...selectedFilters, status: statuses });
   };
 
   return (
@@ -68,7 +103,7 @@ export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSear
               <span className="text-sm font-medium text-gray-900 dark:text-white">Filters</span>
               {activeFilterCount > 0 && (
                 <button
-                  onClick={() => onFiltersChange({})}
+                  onClick={() => onFiltersChange(statuses.length > 0 ? { status: statuses } : {})}
                   className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
                 >
                   Clear all
@@ -79,37 +114,52 @@ export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSear
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                {selectedFilters.status && (
-                  <button onClick={() => clearFilter("status")}>
+                {statusFilterActive && (
+                  <button onClick={clearStatus}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
               </div>
-              <Select
-                value={selectedFilters.status || ""}
-                onValueChange={(value) => {
-                  if (value === "") {
-                    clearFilter("status");
-                  } else {
-                    handleFilterChange("status", value);
-                  }
-                }}
-              >
-                <SelectTrigger className="h-9 text-sm w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-gray-900 dark:border-gray-800">
-                  {statuses.map((s) => (
-                    <SelectItem key={s} value={s} className="dark:text-gray-200">
+              <div className="space-y-2">
+                {statuses.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
+                )}
+                {statuses.map((s) => (
+                  <label key={s} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes(s)}
+                      onChange={() => toggleStatus(s)}
+                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       {s === "true" ? "Active" : "Inactive"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </PopoverContent>
       </Popover>
+
+      {onRowsPerPageChange && (
+        <div className="md:hidden">
+          <Select value={rowsValue} onValueChange={onRowsPerPageChange} disabled={rowsPerPageDisabled}>
+            <SelectTrigger size="sm" className="h-8 px-2 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 }
