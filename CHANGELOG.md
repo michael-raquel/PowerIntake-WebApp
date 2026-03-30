@@ -1,3 +1,10 @@
+# [1.4.0-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.9...v1.4.0-dev.10) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket remove from dynamics automatically removes on powerintake without manual refresh ([fc0d5d8](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fc0d5d89c54750c8ed79e0f766b63ca91880b1ec))
+
 # [1.4.0-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.8...v1.4.0-dev.9) (2026-03-30)
 
 
