@@ -1,3 +1,10 @@
+# [1.4.0-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.6...v1.4.0-dev.7) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-multiple join rooms on webhook ([4a62a5c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4a62a5cd219448c0f8cdd9c2012ddf72e13a5569))
+
 # [1.4.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.5...v1.4.0-dev.6) (2026-03-30)
 
 
