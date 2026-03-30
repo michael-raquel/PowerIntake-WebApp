@@ -31,6 +31,9 @@ export default function ComTableClients({
   onTicketUpdated,
   pendingSyncUuid,
   onSynced,
+  onSyncFailed,
+  onDeleted,
+  onUpdated,
   hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
@@ -41,46 +44,41 @@ export default function ComTableClients({
   const prevTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
 
+  
   useEffect(() => {
-    const handleTicketSynced = ({ ticketuuid, ticket }) => {
-      if (!ticket) return;
+   const handleTicketSynced = ({ ticketuuid, ticket }) => {
+        if (!ticket) return;
+        setTickets(prev => {
+          const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
+          if (exists) {
+            return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
+          } else {
+            return [ticket, ...prev];
+          }
+        });
+        onSynced?.();
+      };
 
-      setTickets(prev => {
-        const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
-        if (exists) {
-          return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
-        } else {
-          return [ticket, ...prev];
-        }
-      });
-
-      toast.success('Ticket synced to Dynamics successfully');
-      onSynced?.();
-    };
-
-    const handleTicketSyncFailed = ({ ticketuuid }) => {
-      console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
-      toast.warning('Ticket created but Dynamics sync failed');
-      onSynced?.();
-    };
+      const handleTicketSyncFailed = ({ ticketuuid }) => {
+        console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
+        onSyncFailed?.();  
+      };
 
       const handleTicketDeleted = ({ ticketuuid }) => {
-      setTickets(prev => prev.filter(t => t.v_ticketuuid !== ticketuuid));
-      toast.info('A ticket has been removed');
-
+        setTickets(prev => prev.filter(t => t.v_ticketuuid !== ticketuuid));
         if (selectedTicket && String(selectedTicket.v_ticketuuid) === String(ticketuuid)) {
-            setSelectedTicket(null);
+          setSelectedTicket(null);
         }
-    };
+        onDeleted?.(); 
+      };
 
-    const handleTicketUpdated = ({ ticketuuid, ticket }) => {
+      const handleTicketUpdated = ({ ticketuuid, ticket }) => {
         if (!ticket) return;
         setTickets(prev =>
-            prev.map(t => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
+          prev.map(t => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
         );
-
-        toast.info('A ticket has been updated');
-    };
+        onUpdated?.();  
+      };
 
     socket.on("ticket:synced",      handleTicketSynced);
     socket.on("ticket:sync_failed", handleTicketSyncFailed);
@@ -93,7 +91,7 @@ export default function ComTableClients({
       socket.off("ticket:deleted",     handleTicketDeleted);
       socket.off("ticket:updated",     handleTicketUpdated);
     };
-  }, [setTickets, onSynced]);
+  }, [setTickets, onSynced, onSyncFailed, onDeleted, onUpdated, selectedTicket]);
 
   const filteredTickets = useMemo(
     () => tickets.filter(t => {

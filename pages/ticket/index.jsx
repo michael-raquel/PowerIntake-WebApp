@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 const MOBILE_PER_PAGE = 10;
 const ROW_HEIGHT = 50;
@@ -395,6 +396,20 @@ export default function TicketPage() {
     </footer>
   );
 
+  // const tableProps = {
+  //   activeTab: safeTab,
+  //   currentPage: safePage,
+  //   onTotalRecordsChange: setTotalRecords,
+  //   onFilterOptionsChange: setFilterOptions,
+  //   searchValue,
+  //   filters: selectedFilters,
+  //   refreshKey,
+  //   onTicketSelect: handleTicketSelect,
+  //   onTicketUpdated: () => setRefreshKey(k => k + 1),
+  //   pendingSyncUuid,                          
+  //   onSynced: () => setPendingSyncUuid(null), 
+  // };
+
   const tableProps = {
     activeTab: safeTab,
     currentPage: safePage,
@@ -405,8 +420,11 @@ export default function TicketPage() {
     refreshKey,
     onTicketSelect: handleTicketSelect,
     onTicketUpdated: () => setRefreshKey(k => k + 1),
-    pendingSyncUuid,                          
-    onSynced: () => setPendingSyncUuid(null), 
+    pendingSyncUuid,
+    onSynced:     useCallback(() => { setPendingSyncUuid(null); toast.success('Ticket synced to Dynamics successfully'); }, []),
+    onSyncFailed: useCallback(() => toast.warning('Ticket created but Dynamics sync failed'), []),
+    onDeleted:    useCallback(() => toast.info('A ticket has been removed'), []),
+    onUpdated:    useCallback(() => toast.info('A ticket has been updated'), []),
   };
 
   // ── Mobile 
