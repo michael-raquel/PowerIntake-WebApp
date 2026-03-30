@@ -1,4 +1,5 @@
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,14 +22,21 @@ export default function MyTeamFilter({
   onRowsPerPageChange,
   rowsPerPageDisabled = false,
 }) {
-  const rawSelectedStatuses = Array.isArray(selectedFilters.status)
+  const initializedStatusesRef = useRef(false);
+
+  useEffect(() => {
+    if (initializedStatusesRef.current || statuses.length === 0) return;
+    if (typeof selectedFilters.status === "undefined") {
+      onFiltersChange({ ...selectedFilters, status: statuses });
+    }
+    initializedStatusesRef.current = true;
+  }, [statuses, selectedFilters, onFiltersChange]);
+
+  const selectedStatuses = Array.isArray(selectedFilters.status)
     ? selectedFilters.status
     : selectedFilters.status
       ? [selectedFilters.status]
       : [];
-  const selectedStatuses = rawSelectedStatuses.length === 0 && statuses.length > 0
-    ? statuses
-    : rawSelectedStatuses;
 
   const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
   const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
@@ -36,24 +44,36 @@ export default function MyTeamFilter({
 
   const rowsValue = String(rowsPerPage ?? 10);
 
+  const statusNames = selectedStatuses.map((s) => (s === "true" ? "Active" : "Inactive"));
+  const statusLabel = statuses.length === 0
+    ? "No statuses"
+    : selectedStatuses.length === 0
+      ? "No status"
+      : allStatusesSelected
+        ? "All statuses"
+        : statusNames.join(", ");
+
   const toggleStatus = (value) => {
     const next = selectedStatuses.includes(value)
       ? selectedStatuses.filter((s) => s !== value)
       : [...selectedStatuses, value];
-    const nextStatuses = next.length === 0 && statuses.length > 0 ? statuses : next;
-    const updated = { ...selectedFilters, status: nextStatuses };
-    if (nextStatuses.length === 0) delete updated.status;
-    onFiltersChange(updated);
+    onFiltersChange({ ...selectedFilters, status: next });
   };
 
   const clearStatus = () => {
     if (statuses.length === 0) {
-      const next = { ...selectedFilters };
-      delete next.status;
-      onFiltersChange(next);
+      onFiltersChange({ ...selectedFilters, status: [] });
       return;
     }
     onFiltersChange({ ...selectedFilters, status: statuses });
+  };
+
+  const handleSelectAllStatuses = () => {
+    onFiltersChange({ ...selectedFilters, status: statuses });
+  };
+
+  const handleUnselectAllStatuses = () => {
+    onFiltersChange({ ...selectedFilters, status: [] });
   };
 
   return (
@@ -120,24 +140,56 @@ export default function MyTeamFilter({
                   </button>
                 )}
               </div>
-              <div className="space-y-2">
-                {statuses.length === 0 && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
-                )}
-                {statuses.map((s) => (
-                  <label key={s} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedStatuses.includes(s)}
-                      onChange={() => toggleStatus(s)}
-                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {s === "true" ? "Active" : "Inactive"}
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center justify-between w-full h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <span className="truncate">{statusLabel}</span>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-2" align="start">
+                  <div className="flex items-center justify-between px-1 pb-2">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllStatuses}
+                      disabled={statuses.length === 0}
+                      className="text-xs text-violet-600 disabled:text-gray-400"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUnselectAllStatuses}
+                      disabled={statuses.length === 0}
+                      className="text-xs text-gray-600 dark:text-gray-300 disabled:text-gray-400"
+                    >
+                      Unselect all
+                    </button>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-2 px-1">
+                    {statuses.length === 0 ? (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
+                    ) : (
+                      statuses.map((s) => (
+                        <label key={s} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedStatuses.includes(s)}
+                            onChange={() => toggleStatus(s)}
+                            className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {s === "true" ? "Active" : "Inactive"}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </PopoverContent>

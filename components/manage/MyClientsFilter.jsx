@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,15 @@ export default function ClientsFilter({
 
   const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
   const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
+
+  const statusNames = selectedStatuses.map((s) => (s === "true" ? "Active" : "Inactive"));
+  const statusLabel = statuses.length === 0
+    ? "No statuses"
+    : selectedStatuses.length === 0
+      ? "No status"
+      : allStatusesSelected
+        ? "All statuses"
+        : statusNames.join(", ");
 
   const activeFilterCount = [selectedTenantnames.length > 0, statusFilterActive].filter(Boolean).length;
 
@@ -60,9 +69,18 @@ export default function ClientsFilter({
     const updated = selectedStatuses.includes(value)
       ? selectedStatuses.filter((s) => s !== value)
       : [...selectedStatuses, value];
-    const nextStatuses = updated.length === 0 ? statuses : updated;
-    setSelectedStatuses(nextStatuses);
-    emit({ status: nextStatuses });
+    setSelectedStatuses(updated);
+    emit({ status: updated });
+  };
+
+  const handleSelectAllStatuses = () => {
+    setSelectedStatuses(statuses);
+    emit({ status: statuses });
+  };
+
+  const handleUnselectAllStatuses = () => {
+    setSelectedStatuses([]);
+    emit({ status: [] });
   };
 
   const clearOne = (key) => {
@@ -170,24 +188,56 @@ export default function ClientsFilter({
                   </button>
                 )}
               </div>
-              <div className="space-y-2">
-                {statuses.length === 0 && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
-                )}
-                {statuses.map((s) => (
-                  <label key={s} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedStatuses.includes(s)}
-                      onChange={() => handleStatus(s)}
-                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">
-                      {s === "true" ? "Active" : "Inactive"}
-                    </span>
-                  </label>
-                ))}
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center justify-between w-full h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    <span className="truncate">{statusLabel}</span>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-64 p-2" align="start">
+                  <div className="flex items-center justify-between px-1 pb-2">
+                    <button
+                      type="button"
+                      onClick={handleSelectAllStatuses}
+                      disabled={statuses.length === 0}
+                      className="text-xs text-violet-600 disabled:text-gray-400"
+                    >
+                      Select all
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUnselectAllStatuses}
+                      disabled={statuses.length === 0}
+                      className="text-xs text-gray-600 dark:text-gray-300 disabled:text-gray-400"
+                    >
+                      Unselect all
+                    </button>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto space-y-2 px-1">
+                    {statuses.length === 0 ? (
+                      <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
+                    ) : (
+                      statuses.map((s) => (
+                        <label key={s} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedStatuses.includes(s)}
+                            onChange={() => handleStatus(s)}
+                            className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                          />
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            {s === "true" ? "Active" : "Inactive"}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
 
           </div>
