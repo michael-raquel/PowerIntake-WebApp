@@ -98,6 +98,8 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
   const dateLabel = createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   const timeLabel = createdAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
 
+  const clientInitial = ticket.v_tenantname ? ticket.v_tenantname.charAt(0).toUpperCase() : '?';
+
   const metadataItems = [
     ticket.v_source && { label: 'Source', value: ticket.v_source },
     { label: 'Client', value: ticket.v_tenantname },
@@ -106,11 +108,10 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
     ticket.v_technicianname && { label: 'Technician', value: ticket.v_technicianname },
   ].filter(Boolean);
 
-  const gridData = [
-    { label: 'Client', value: ticket.v_tenantname || '—' },
-    { label: 'Category', value: ticket.v_ticketcategory || '—' },
+  const mobileGridData = [
     { label: 'Requester', value: ticket.v_username || '—' },
     { label: 'Technician', value: ticket.v_technicianname || '—' },
+    { label: 'Category', value: ticket.v_ticketcategory || '—' },
     { label: 'Source', value: ticket.v_source || '—' },
     ticket.v_target && { label: 'Target', value: new Date(ticket.v_target).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) },
   ].filter(Boolean);
@@ -119,51 +120,81 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
     <button
       type="button"
       onClick={() => onClick(ticket.v_ticketuuid)}
-      className="w-full text-left group bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md transition-all duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 relative"
+      className="w-full text-left group bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-violet-300 dark:hover:border-violet-700 hover:shadow-md transition-all duration-200 overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 relative"
     >
-      <div className="absolute left-0 top-0 bottom-0 w-0 group-hover:w-1 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-l-xl transition-all duration-200" />
-      <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-100 dark:border-gray-800 gap-2">
-        <span className="text-[11px] sm:text-xs font-mono font-semibold text-violet-600 dark:text-violet-400 shrink-0">#{ticket.v_ticketnumber}</span>
-        <span className={`inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium px-1.5 sm:px-2 py-0.5 rounded-full ${pill}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
-          {ticket.v_status}
-        </span>
-      </div>
-      <div className="px-3 sm:px-4 pt-2.5 sm:pt-3 pb-2">
-        <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug">{ticket.v_title}</p>
-      </div>
-      <div className="px-3 sm:px-4 pb-3 sm:hidden">
-        <div className="grid grid-cols-2 gap-x-3 sm:gap-x-4 gap-y-2 sm:gap-y-2.5">
-          {gridData.map(({ label, value }) => (
-            <div key={label} className="min-w-0">
-              <p className="text-[9px] sm:text-[10px] uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                {label}
-              </p>
-              <p className="text-[11px] sm:text-xs font-medium text-gray-800 dark:text-gray-200 truncate">
-                {value}
-              </p>
+      <div className="sm:hidden">
+
+        <div className="flex items-center gap-2 px-3 py-2.5 bg-violet-50 dark:bg-violet-900/20 border-b border-violet-100 dark:border-violet-800/40">
+          <div className="w-6 h-6 rounded-md bg-violet-600 dark:bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0 select-none">
+            {clientInitial}
+          </div>
+          <span className="text-sm font-semibold text-violet-600 dark:text-violet-300 truncate leading-snug">
+            {ticket.v_tenantname || '—'}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 px-3 pt-2.5 mb-2">
+          <span className="text-[11px] font-mono font-bold text-violet-600 dark:text-violet-400">
+            #{ticket.v_ticketnumber}
+          </span>
+          <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border shrink-0 ${pill}`}>
+            {ticket.v_status}
+          </span>
+        </div>
+
+        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2 leading-relaxed px-3 mb-3">
+          {ticket.v_title}
+        </p>
+
+        <div className="border-t border-gray-100 dark:border-gray-700/60 mb-2.5" />
+
+        <div className="grid grid-cols-2 gap-1.5 px-3 mb-2.5">
+          {mobileGridData.map(({ label, value }) => (
+            <div
+              key={label}
+              className="bg-gray-50 dark:bg-gray-900/60 rounded-md px-2.5 py-1.5 min-w-0 border border-gray-100 dark:border-gray-700/50"
+            >
+              <p className="text-[9px] text-gray-400 dark:text-gray-500 mb-0.5 uppercase tracking-wider">{label}</p>
+              <p className="text-[11px] font-medium text-gray-800 dark:text-gray-200 truncate">{value}</p>
             </div>
           ))}
         </div>
+
       </div>
 
-      <div className="hidden sm:block px-3 sm:px-4 pb-3">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-gray-600 dark:text-gray-400">
-          {metadataItems.map((item, index) => (
-            <span key={item.label} className="inline-flex items-center gap-1">
-              <span className="text-[9px] sm:text-[10px] tracking-wider text-gray-400 dark:text-gray-500">{item.label}:</span>
-              <span className="text-[11px] sm:text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{item.value}</span>
-              {index < metadataItems.length - 1 && (
-                <span className="text-gray-300 dark:text-gray-600 ml-1">|</span>
-              )}
-            </span>
-          ))}
+      <div className="sm:hidden flex items-center justify-between px-3 py-2 bg-gray-50/70 dark:bg-gray-800/40 border-t border-gray-100/80 dark:border-gray-700/40 gap-2">
+        <span className="text-[9px] text-gray-400 dark:text-gray-500 truncate">{dateLabel} · {timeLabel}</span>
+        <span className="text-[9px] font-semibold text-violet-500 dark:text-violet-400 whitespace-nowrap shrink-0">View details →</span>
+      </div>
+
+      <div className="hidden sm:block">
+        <div className="absolute left-0 top-0 bottom-0 w-0 group-hover:w-1 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-l-xl transition-all duration-200" />
+        <div className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3 border-b border-gray-100 dark:border-gray-800 gap-2">
+          <span className="text-[11px] sm:text-xs font-mono font-semibold text-violet-600 dark:text-violet-400 shrink-0">#{ticket.v_ticketnumber}</span>
+          <span className={`inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium px-1.5 sm:px-2 py-0.5 rounded-full ${pill}`}>
+            {ticket.v_status}
+          </span>
         </div>
-      </div>
-
-      <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800/40 border-t border-gray-100 dark:border-gray-800 gap-2">
-        <span className="text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500 truncate">{dateLabel} · {timeLabel}</span>
-        <span className="text-[9px] sm:text-[10px] text-violet-500 dark:text-violet-400 font-medium whitespace-nowrap shrink-0">View details →</span>
+        <div className="px-3 sm:px-4 pt-2.5 sm:pt-3 pb-2">
+          <p className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white line-clamp-2 leading-snug">{ticket.v_title}</p>
+        </div>
+        <div className="px-3 sm:px-4 pb-3">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] sm:text-[11px] text-gray-600 dark:text-gray-400">
+            {metadataItems.map((item, index) => (
+              <span key={item.label} className="inline-flex items-center gap-1">
+                <span className="text-[9px] sm:text-[10px] tracking-wider text-gray-400 dark:text-gray-500">{item.label}:</span>
+                <span className="text-[11px] sm:text-xs font-medium text-gray-800 dark:text-gray-200 truncate">{item.value}</span>
+                {index < metadataItems.length - 1 && (
+                  <span className="text-gray-300 dark:text-gray-600 ml-1">|</span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+        <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 bg-gray-50 dark:bg-gray-800/40 border-t border-gray-100 dark:border-gray-800 gap-2">
+          <span className="text-[9px] sm:text-[10px] text-gray-400 dark:text-gray-500 truncate">{dateLabel} · {timeLabel}</span>
+          <span className="text-[9px] sm:text-[10px] text-violet-500 dark:text-violet-400 font-medium whitespace-nowrap shrink-0">View details →</span>
+        </div>
       </div>
     </button>
   );
