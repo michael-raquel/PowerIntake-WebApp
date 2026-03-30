@@ -1,5 +1,4 @@
-
-name: Azure Static Web Apps CI/CD
+name: Azure Static Web Apps CI/CD (DEV)
 
 on:
   push:
@@ -15,6 +14,7 @@ jobs:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Job
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -22,7 +22,7 @@ jobs:
           lfs: false
           fetch-depth: 0
 
-      # 1️⃣ Resolve version and date before the Azure action runs
+      # 1️⃣ Resolve version and date
       - name: Set version and date env vars
         run: |
           git fetch --tags
@@ -30,7 +30,7 @@ jobs:
           echo "NEXT_PUBLIC_APP_VERSION=${VERSION}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
 
-      # 2️⃣ Write .env.production so Next.js picks it up during internal build
+      # 2️⃣ Generate .env.production for Next.js build
       - name: Write .env.production
         run: |
           echo "NEXT_PUBLIC_APP_VERSION=${{ env.NEXT_PUBLIC_APP_VERSION }}" >> .env.production
@@ -38,6 +38,11 @@ jobs:
           echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}" >> .env.production
           echo "NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID_DEV }}" >> .env.production
 
+          # ✅ DEV → STANDARD mapping
+          echo "NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL_DEV }}" >> .env.production
+          echo "NEXT_PUBLIC_AZURE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_AZURE_CLIENT_ID_DEV }}" >> .env.production
+
+      # 3️⃣ Build & Deploy
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -49,17 +54,23 @@ jobs:
           api_location: ""
           output_location: "out"
           production_branch: "dev"
-        # 3️⃣ Safety net — passed to the action's own process as well
+
+        # 4️⃣ Safety fallback envs
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}
           NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID_DEV }}
           NEXT_PUBLIC_APP_VERSION: ${{ env.NEXT_PUBLIC_APP_VERSION }}
           NEXT_PUBLIC_APP_RELEASE_DATE: ${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}
 
+          # ✅ DEV → STANDARD mapping
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL_DEV }}
+          NEXT_PUBLIC_AZURE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_AZURE_CLIENT_ID_DEV }}
+
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
+
     steps:
       - name: Close Pull Request
         id: closepullrequest
@@ -67,4 +78,3 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_ICY_TREE_0F2B00310 }}
           action: "close"
-
