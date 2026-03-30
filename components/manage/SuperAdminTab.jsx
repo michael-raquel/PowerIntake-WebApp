@@ -36,25 +36,18 @@ const TABLE_HEADERS = [
 
 const DEFAULT_ROWS = 10;
 
-export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
+export default function SuperAdminTab() {
   const { accounts } = useMsal();
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
   const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
+  const [localPage, setLocalPage] = useState(1);
 
   const {
     data,
     loading,
-    error,
-    page,
-    total,
-    totalPages,
-    hasNext,
-    hasPrev,
     fetchData,
-    totals,
     filterOptions,
-    allRoleData,
-  } = useFetchSuperAdminUsers(1, effectiveLimit);
+  } = useFetchSuperAdminUsers(1, effectiveLimit, { fetchAll: true });
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
   const {
@@ -77,7 +70,6 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
   const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState({});
   const [roleOverrides, setRoleOverrides] = useState({});
 
@@ -93,9 +85,10 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
 
   useEffect(() => {
     if (selectedRowsPerPage !== null) {
-      fetchData(1, activeFilters);
+      fetchData(1, {});
+      setLocalPage(1);
     }
-  }, [selectedRowsPerPage, fetchData, activeFilters]);
+  }, [selectedRowsPerPage, fetchData]);
 
   const buildRoleString = useCallback((currentRole, roleName, checked) => {
     const rawRoles = String(currentRole || "")
@@ -166,7 +159,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
       });
     } catch (err) {
     } finally {
-      await fetchData(page, activeFilters);
+      await fetchData(1, {});
       if (userKey) {
         setRoleOverrides((prev) => {
           const next = { ...prev };
@@ -179,7 +172,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
 
   const handleSync = async () => {
     await syncUsers();
-    fetchData(page, activeFilters);
+    fetchData(1, {});
   };
 
   const handleRecordsPerPageChange = async (value) => {
@@ -201,9 +194,8 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
   };
 
   const handleFilter = (newFilters) => {
-    setSearchQuery(newFilters.clientname ?? "");
     setActiveFilters(newFilters);
-    fetchData(1, newFilters);
+    setLocalPage(1);
   };
 
   const roles    = filterOptions?.roles ?? [];
@@ -225,45 +217,85 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
       .includes(target);
   };
 
-  const roleIsActive = Boolean(activeFilters?.selectedRoles && activeFilters.selectedRoles.length > 0);
+  const filteredData = useMemo(() => {
+    const searchValue = String(activeFilters?.search ?? "").trim().toLowerCase();
+    const clientValue = String(activeFilters?.clientname ?? "").trim().toLowerCase();
+    const selectedRoles = Array.isArray(activeFilters?.selectedRoles)
+      ? activeFilters.selectedRoles
+      : activeFilters?.selectedRoles
+        ? [activeFilters.selectedRoles]
+        : [];
+    const selectedStatuses = Array.isArray(activeFilters?.status)
+      ? activeFilters.status
+      : activeFilters?.status
+        ? [activeFilters.status]
+        : [];
+    const normalizedRoles = selectedRoles.map((role) => normalizeRole(role));
 
-  const exactRoleData = useMemo(() => {
-    if (!roleIsActive) return [];
-    const selectedRoles = activeFilters.selectedRoles || [];
-    return allRoleData.filter((row) => 
-      selectedRoles.some((selectedRole) => 
-        normalizeRole(getRoleValue(row)) === normalizeRole(selectedRole)
-      )
-    );
-  }, [activeFilters?.selectedRoles, allRoleData, getRoleValue, normalizeRole, roleIsActive]);
+    return data.filter((row) => {
+      if (searchValue) {
+        const username = String(row.v_username || "").toLowerCase();
+        if (!username.includes(searchValue)) return false;
+      }
+
+      if (clientValue) {
+        const clientName = String(row.v_tenantname || "").toLowerCase();
+        if (!clientName.includes(clientValue)) return false;
+      }
+
+      if (normalizedRoles.length > 0) {
+        const roleValue = normalizeRole(getRoleValue(row));
+        if (!normalizedRoles.includes(roleValue)) return false;
+      }
+
+      if (selectedStatuses.length > 0) {
+        if (!selectedStatuses.includes(String(row.v_status))) return false;
+      }
+
+      return true;
+    });
+  }, [activeFilters, data, getRoleValue, normalizeRole]);
+
+  const displayTotal = filteredData.length;
+  const displayTotalPages = effectiveLimit > 0
+    ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit))
+    : 1;
+  const displayHasPrev = localPage > 1;
+  const displayHasNext = localPage < displayTotalPages;
 
   const pagedData = useMemo(() => {
-    if (!roleIsActive) return data;
-    const start = (page - 1) * effectiveLimit;
-    return exactRoleData.slice(start, start + effectiveLimit);
-  }, [data, exactRoleData, effectiveLimit, page, roleIsActive]);
+    const start = (localPage - 1) * effectiveLimit;
+    return filteredData.slice(start, start + effectiveLimit);
+  }, [filteredData, effectiveLimit, localPage]);
 
-  const displayTotal = roleIsActive ? exactRoleData.length : (total ?? 0);
-  const displayTotalPages = roleIsActive
-    ? (effectiveLimit > 0 ? Math.max(1, Math.ceil(exactRoleData.length / effectiveLimit)) : 1)
-    : totalPages;
-  const displayHasPrev = roleIsActive ? page > 1 : hasPrev;
-  const displayHasNext = roleIsActive ? page < displayTotalPages : hasNext;
+  const filteredTotals = useMemo(() => {
+    const totalTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_totalticket ?? 0), 0);
+    const openTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_openticket ?? 0), 0);
+    const completedTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_completed ?? 0), 0);
+    const cancelledTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_cancelled ?? 0), 0);
+    const completionRate = totalTickets > 0
+      ? Number(((completedTickets / totalTickets) * 100).toFixed(1))
+      : 0;
+
+    return { totalTickets, openTickets, completedTickets, cancelledTickets, completionRate };
+  }, [filteredData]);
 
   useEffect(() => {
-    if (roleIsActive && page > displayTotalPages) {
-      fetchData(1, activeFilters);
+    if (localPage > displayTotalPages) {
+      setLocalPage(1);
     }
-  }, [activeFilters, displayTotalPages, fetchData, page, roleIsActive]);
+  }, [localPage, displayTotalPages]);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
 
       <SuperAdminFilter
         onFilter={handleFilter}
-        clientName={searchQuery}
         roles={roles}
         statuses={statuses}
+        rowsPerPage={selectedRowsPerPage ?? DEFAULT_ROWS}
+        onRowsPerPageChange={handleRecordsPerPageChange}
+        rowsPerPageDisabled={updating}
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -393,35 +425,35 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">Totals</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">All records</span>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="mt-3 grid grid-cols-3 gap-2">
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                       <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.totalTickets ?? 0}
+                        {filteredTotals.totalTickets}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Completed Tickets</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.completedTickets ?? 0}
+                        {filteredTotals.completedTickets}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                       <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.openTickets ?? 0}
+                        {filteredTotals.openTickets}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled Tickets</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.cancelledTickets ?? 0}
+                        {filteredTotals.cancelledTickets}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                       <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.completionRate ?? 0}%
+                        {filteredTotals.completionRate}%
                       </p>
                     </div>
                   </div>
@@ -430,7 +462,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
+      <div className="hidden md:flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>
@@ -500,19 +532,19 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
               <td colSpan={4} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.totalTickets ?? 0}
+                {filteredTotals.totalTickets}
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.completedTickets ?? 0}
+                {filteredTotals.completedTickets}
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.openTickets ?? 0}
+                {filteredTotals.openTickets}
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.cancelledTickets ?? 0}
+                {filteredTotals.cancelledTickets}
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.completionRate ?? 0}%
+                {filteredTotals.completionRate}%
               </td>
               <td className="px-4 py-3" />
               <td className="px-4 py-3" />
@@ -543,7 +575,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => fetchData(page - 1, activeFilters)}
+              onClick={() => setLocalPage((current) => Math.max(1, current - 1))}
               disabled={!displayHasPrev || loading}
               className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
@@ -552,14 +584,14 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
 
             {[...Array(displayTotalPages)].map((_, i) => {
               const pageNum = i + 1;
-              if (pageNum === 1 || pageNum === displayTotalPages || Math.abs(pageNum - page) <= 1) {
+              if (pageNum === 1 || pageNum === displayTotalPages || Math.abs(pageNum - localPage) <= 1) {
                 return (
                   <button
                     key={pageNum}
-                    onClick={() => fetchData(pageNum, activeFilters)}
+                    onClick={() => setLocalPage(pageNum)}
                     disabled={loading}
                     className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                      pageNum === page
+                      pageNum === localPage
                         ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
                         : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                     }`}
@@ -568,14 +600,14 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                   </button>
                 );
               }
-              if (Math.abs(pageNum - page) === 2) {
+              if (Math.abs(pageNum - localPage) === 2) {
                 return <span key={pageNum} className="text-xs text-gray-400 px-1">...</span>;
               }
               return null;
             })}
 
             <button
-              onClick={() => fetchData(page + 1, activeFilters)}
+              onClick={() => setLocalPage((current) => Math.min(displayTotalPages, current + 1))}
               disabled={!displayHasNext || loading}
               className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >

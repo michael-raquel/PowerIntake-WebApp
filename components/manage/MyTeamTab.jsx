@@ -29,7 +29,7 @@ const TABLE_HEADERS = [
 
 const DEFAULT_ROWS = 10;
 
-export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
+export default function MyTeamTab({ selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
   const { accounts } = useMsal();
   const [localPage, setLocalPage] = useState(1);
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
@@ -54,12 +54,6 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
   const {
     data,
     loading,
-    error,
-    page,
-    total,
-    totalPages,
-    hasNext,
-    hasPrev,
     fetchData,
     totals,
     filterOptions,
@@ -102,6 +96,12 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
+    const selectedStatuses = Array.isArray(selectedFilters.status)
+      ? selectedFilters.status
+      : selectedFilters.status
+        ? [selectedFilters.status]
+        : [];
+
     return data.filter((row) => {
       // Text search
       if (searchValue && searchValue.trim()) {
@@ -115,15 +115,15 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
       }
 
       // Status filter
-      if (selectedFilters.status && selectedFilters.status.trim()) {
-        if (row.v_status !== selectedFilters.status) {
+      if (selectedStatuses.length > 0) {
+        if (!selectedStatuses.includes(String(row.v_status))) {
           return false;
         }
       }
 
       return true;
     });
-  }, [data, searchValue, selectedFilters]);
+  }, [data, searchValue, selectedFilters.status]);
 
   const displayTotal = filteredData.length;
   const displayTotalPages = effectiveLimit > 0 ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit)) : 1;
@@ -154,6 +154,9 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
         onSearch={handleSearchChange}
         statuses={statuses}
         selectedFilters={selectedFilters}
+        rowsPerPage={selectedRowsPerPage ?? DEFAULT_ROWS}
+        onRowsPerPageChange={handleRecordsPerPageChange}
+        rowsPerPageDisabled={updating}
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -243,6 +246,10 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
                     <p className="text-xs text-gray-500 dark:text-gray-400">Canceled</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</p>
                   </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 col-span-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completion ?? 0}%</p>
+                  </div>
                 </div>
 
               </div>
@@ -289,7 +296,7 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
         )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
+      <div className="hidden md:flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>

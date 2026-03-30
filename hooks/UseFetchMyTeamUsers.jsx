@@ -3,6 +3,14 @@ import { useAuth } from "@/context/AuthContext";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
+const appendListParam = (params, key, value) => {
+  if (Array.isArray(value)) {
+    if (value.length > 0) params.append(key, value.join(","));
+    return;
+  }
+  if (value) params.append(key, value);
+};
+
 export default function useFetchMyTeam(initialPage = 1, initialLimit = null) {
   const { tokenInfo }              = useAuth();
   const { instance, accounts }     = useMsal();
@@ -48,7 +56,7 @@ export default function useFetchMyTeam(initialPage = 1, initialLimit = null) {
     });
 
     if (filters.search) params.append("search", filters.search);
-    if (filters.status) params.append("status", filters.status);
+    appendListParam(params, "status", filters.status);
 
     const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myteam?${params}`;
 
@@ -95,7 +103,7 @@ export default function useFetchMyTeam(initialPage = 1, initialLimit = null) {
       if (limitRef.current != null) params.append("limit", limitRef.current);
 
       if (filters.search) params.append("search", filters.search);
-      if (filters.status) params.append("status", filters.status);
+      appendListParam(params, "status", filters.status);
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myteam?${params}`;
 
