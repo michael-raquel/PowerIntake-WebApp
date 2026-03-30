@@ -64,12 +64,34 @@ export default function ComTableClients({
       onSynced?.();
     };
 
+      const handleTicketDeleted = ({ ticketuuid }) => {
+      setTickets(prev => prev.filter(t => t.v_ticketuuid !== ticketuuid));
+      toast.info('A ticket has been removed');
+
+        if (selectedTicket && String(selectedTicket.v_ticketuuid) === String(ticketuuid)) {
+            setSelectedTicket(null);
+        }
+    };
+
+    const handleTicketUpdated = ({ ticketuuid, ticket }) => {
+        if (!ticket) return;
+        setTickets(prev =>
+            prev.map(t => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
+        );
+
+        toast.info('A ticket has been updated');
+    };
+
     socket.on("ticket:synced",      handleTicketSynced);
     socket.on("ticket:sync_failed", handleTicketSyncFailed);
+    socket.on("ticket:deleted",     handleTicketDeleted);
+    socket.on("ticket:updated",     handleTicketUpdated);
 
     return () => {
       socket.off("ticket:synced",      handleTicketSynced);
       socket.off("ticket:sync_failed", handleTicketSyncFailed);
+      socket.off("ticket:deleted",     handleTicketDeleted);
+      socket.off("ticket:updated",     handleTicketUpdated);
     };
   }, [setTickets, onSynced]);
 
