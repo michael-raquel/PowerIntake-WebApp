@@ -1,3 +1,10 @@
+# [1.4.0-dev.17](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.16...v1.4.0-dev.17) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket return the hideCompleted callback ([a31febb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a31febb84f49e7b9d830edf376883cb989e8399c))
+
 # [1.4.0-dev.16](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.15...v1.4.0-dev.16) (2026-03-30)
 
 
