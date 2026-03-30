@@ -1,3 +1,10 @@
+# [1.4.0-dev.15](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.14...v1.4.0-dev.15) (2026-03-30)
+
+
+### Bug Fixes
+
+* st-2118-ticketpageRefactor ticket filters and table filtering ([fda5392](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fda539238c55ec62d686cd3490f214ec1a092dec))
+
 # [1.4.0-dev.14](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.13...v1.4.0-dev.14) (2026-03-30)
 
 
