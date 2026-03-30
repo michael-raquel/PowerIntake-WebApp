@@ -6,6 +6,8 @@ import socket from "@/lib/socket";
 
 const AuthContext = createContext(null);
 
+const GLOBAL_ADMIN_WID = "62e90394-69f5-4237-9190-012177145e10";
+
 function decodeJwt(token) {
   try {
     return JSON.parse(atob(token.split(".")[1]));
@@ -18,10 +20,12 @@ export function AuthProvider({ children }) {
   const { instance, accounts } = useMsal();
   const account = accounts[0] ?? null;
 
-  const [accessToken, setAccessToken] = useState(null);
-  const [tokenInfo, setTokenInfo]     = useState(null);
-  const [userInfo, setUserInfo]       = useState(null);
+  const [accessToken, setAccessToken]     = useState(null);
+  const [tokenInfo, setTokenInfo]         = useState(null);
+  const [userInfo, setUserInfo]           = useState(null);
+  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
 
+  // ── Your API token ──────────────────────────────────────
   useEffect(() => {
     if (!account) return;
 
@@ -83,6 +87,37 @@ export function AuthProvider({ children }) {
     acquire();
   }, [account, instance]);
 
+  // ── Graph token — only for wids / Global Admin check ────
+  // This tells us if the logged-in user is a Global Admin in their Azure AD tenant.
+  // It does NOT determine consent — consent is checked via the DB in AuthGuard.
+  useEffect(() => {
+    if (!account) return;
+
+    const checkGlobalAdmin = async () => {
+      try {
+        const graphRes = await instance.acquireTokenSilent({
+          scopes: ["https://graph.microsoft.com/User.Read"],
+          account,
+        });
+
+        const claims = decodeJwt(graphRes.accessToken);
+        const wids   = claims?.wids ?? [];
+
+        console.log("[AUTH] Graph wids:", wids);
+        setIsGlobalAdmin(wids.includes(GLOBAL_ADMIN_WID));
+
+      } catch (err) {
+        // This is expected for tenants that haven't consented yet.
+        // isGlobalAdmin stays false — AuthGuard handles the redirect.
+        console.warn("[AUTH] Could not get Graph token (expected for unconsented tenants):", err.errorCode ?? err.message);
+        setIsGlobalAdmin(false);
+      }
+    };
+
+    checkGlobalAdmin();
+  }, [account, instance]);
+
+  // ── Login sync ───────────────────────────────────────────
   useEffect(() => {
     if (!accessToken || !tokenInfo) return;
 
@@ -90,11 +125,15 @@ export function AuthProvider({ children }) {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login-sync`,
-          {
-            method: "POST",
-            headers: { Authorization: `Bearer ${accessToken}` },
-          }
+          { method: "POST", headers: { Authorization: `Bearer ${accessToken}` } },
         );
+
+        // 403 = tenant not in DB yet (expected for new/unconsented tenants)
+        // AuthGuard will handle redirecting them. Don't treat as fatal.
+        if (res.status === 403) {
+          console.warn("[LOGIN SYNC] Tenant not registered — skipping sync, AuthGuard will redirect.");
+          return;
+        }
 
         if (!res.ok) {
           console.warn("[AUTH] login-sync failed:", res.status);
@@ -122,7 +161,6 @@ export function AuthProvider({ children }) {
         } else {
           joinRooms();
         }
-
       } catch (err) {
         console.error("[AUTH] syncUser error:", err);
       }
@@ -167,7 +205,13 @@ export function AuthProvider({ children }) {
   }, [account]);
 
   return (
-    <AuthContext.Provider value={{ account, accessToken, tokenInfo, userInfo }}>
+    <AuthContext.Provider value={{
+      account,
+      accessToken,
+      tokenInfo,
+      userInfo,
+      isGlobalAdmin,
+    }}>
       {children}
     </AuthContext.Provider>
   );
