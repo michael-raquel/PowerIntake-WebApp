@@ -415,6 +415,7 @@ export default function TicketPage() {
     onTicketUpdated: () => setRefreshKey(k => k + 1),
     pendingSyncUuid,                          
     onSynced: () => setPendingSyncUuid(null), 
+    hideCompleted, 
   };
 
   // ── Mobile 
