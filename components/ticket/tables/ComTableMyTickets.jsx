@@ -48,9 +48,9 @@ export default function ComTableMyTickets({
   );
 
   useEffect(() => {
+
     const handleTicketSynced = ({ ticketuuid, ticket }) => {
       if (!ticket) return;
-
       setTickets(prev => {
         const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
         if (exists) {
@@ -59,7 +59,6 @@ export default function ComTableMyTickets({
           return [ticket, ...prev];
         }
       });
-
       toast.success('Ticket synced to Dynamics successfully');
       onSynced?.();
     };
@@ -70,12 +69,23 @@ export default function ComTableMyTickets({
       onSynced?.();
     };
 
+    const handleTicketDeleted = ({ ticketuuid }) => {
+      setTickets(prev => prev.filter(t => t.v_ticketuuid !== ticketuuid));
+      toast.info('A ticket has been removed');
+
+        if (selectedTicket && String(selectedTicket.v_ticketuuid) === String(ticketuuid)) {
+            setSelectedTicket(null);
+        }
+    };
+
     socket.on("ticket:synced",      handleTicketSynced);
     socket.on("ticket:sync_failed", handleTicketSyncFailed);
+    socket.on("ticket:deleted",     handleTicketDeleted);
 
     return () => {
       socket.off("ticket:synced",      handleTicketSynced);
       socket.off("ticket:sync_failed", handleTicketSyncFailed);
+      socket.off("ticket:deleted",     handleTicketDeleted);
     };
   }, [setTickets, onSynced]);
 
