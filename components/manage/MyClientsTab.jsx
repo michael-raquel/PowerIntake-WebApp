@@ -311,7 +311,10 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
               {TABLE_HEADERS.map((header) => (
-                <th key={header} className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                <th
+                  key={header}
+                  className={`py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap ${header === "Client Name" ? "text-left pl-8" : "text-center px-4"}`}
+                >
                   {header}
                 </th>
               ))}
@@ -343,7 +346,7 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
                       <CopyButton value={row.v_tenantid} />
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
+                  <td className="py-3 text-gray-900 dark:text-white whitespace-nowrap text-left pl-8">{row.v_tenantname}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completed ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket ?? 0}</td>
