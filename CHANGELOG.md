@@ -1,3 +1,10 @@
+# [1.4.0-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.8...v1.4.0-dev.9) (2026-03-30)
+
+
+### Bug Fixes
+
+* Make rows navigable; sync ticket search param ([058c0ed](https://github.com/michael-raquel/PowerIntake-WebApp/commit/058c0ed4f1460925572ae609778a37da2be94bc8))
+
 # [1.4.0-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.7...v1.4.0-dev.8) (2026-03-30)
 
 
