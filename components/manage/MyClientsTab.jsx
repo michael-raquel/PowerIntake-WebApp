@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/router";
 import { RefreshCw, ChevronLeft, ChevronRight, Copy, Check, Search, X } from "lucide-react";
 import useFetchMyClients from "@/hooks/UseFetchMyClientUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
@@ -21,7 +22,8 @@ const DEFAULT_ROWS = 10;
 
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
-  const handleCopy = async () => {
+  const handleCopy = async (event) => {
+    event?.stopPropagation();
     await navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -42,6 +44,7 @@ function CopyButton({ value }) {
 
 export default function MyClientsTab({ searchValue = "", onSearchChange = () => {} }) {
   const { accounts } = useMsal();
+  const router = useRouter();
   const [localPage, setLocalPage] = useState(1);
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
 
@@ -106,6 +109,13 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
       }
     }
   };
+
+  const handleRowClick = useCallback((row) => {
+    const searchText = String(row?.v_tenantname || "").trim();
+    if (!searchText) return;
+    const params = new URLSearchParams({ tab: "my-client", search: searchText });
+    router.push(`/ticket?${params.toString()}`);
+  }, [router]);
 
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
@@ -209,7 +219,11 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
             {pagedData.map((row, i) => (
-              <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+              <div
+                key={i}
+                onClick={() => handleRowClick(row)}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3 cursor-pointer hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+              >
                 <div className="flex items-center gap-3 ">
                   <div className="w-9 h-9 rounded-md bg-violet-600 dark:bg-violet-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
                     {row.v_tenantname?.charAt(0).toUpperCase()}
@@ -318,7 +332,11 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
               </tr>
             ) : (
               pagedData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
+                <tr
+                  key={i}
+                  onClick={() => handleRowClick(row)}
+                  className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                >
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center justify-center gap-1">
                       <span className="text-gray-600 dark:text-gray-300 truncate max-w-[120px] block">{row.v_tenantid}</span>
