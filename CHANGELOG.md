@@ -1,3 +1,10 @@
+# [1.4.0-dev.19](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.18...v1.4.0-dev.19) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket weebsocket applied on timeline tab ([5f1e64d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5f1e64db00f2bb38254109100132c6cc7a678159))
+
 # [1.4.0-dev.18](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.17...v1.4.0-dev.18) (2026-03-30)
 
 
