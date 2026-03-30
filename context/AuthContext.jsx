@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
@@ -57,7 +57,6 @@ export function AuthProvider({ children }) {
             const response = await instance.acquireTokenPopup({ ...apiRequest, account });
             const token    = response.accessToken;
             const claims   = decodeJwt(token);
-
             setAccessToken(token);
             setTokenInfo({
               accessToken: token,
@@ -85,12 +84,10 @@ export function AuthProvider({ children }) {
   }, [account, instance]);
 
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken || !tokenInfo) return;
 
     const syncUser = async () => {
       try {
-        console.log("[AUTH] syncUser running, accessToken present");
-
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login-sync`,
           {
@@ -99,80 +96,73 @@ export function AuthProvider({ children }) {
           }
         );
 
-        console.log("[AUTH] login-sync response status:", res.status);
-
         if (!res.ok) {
           console.warn("[AUTH] login-sync failed:", res.status);
-          return;
-        }
-
-        const data = await res.json();
-        const user = data.user ?? null;
-        // console.log("[AUTH] user:", user);
-        setUserInfo(user);
-
-        if (user?.entrauserid) {
-          if (!socket.connected) socket.connect();
-
-          const joinRooms = () => {
-            socket.emit("join", user.entrauserid);
-            // console.log("[WS] Joined room:", user.entrauserid);
-            if (user?.entratenantid) {
-              socket.emit("join", user.entratenantid);
-              // console.log("[WS] Joined tenant room:", user.entratenantid);
-            }
-          };
-
-          if (socket.connected) {
-            joinRooms();
-          } else {
-            socket.once("connect", joinRooms);
-          }
+          
         } else {
-          console.warn("[WS] No entrauserid on user — skipping socket join");
+          const data = await res.json();
+          setUserInfo(data.user ?? null);
         }
+
+        const entrauserid   = tokenInfo.account.localAccountId;
+        const entratenantid = tokenInfo.account.tenantId;
+
+        const joinRooms = () => {
+          socket.emit("join", entrauserid);
+          // console.log("[WS] Joined room:", entrauserid);
+          if (entratenantid) {
+            socket.emit("join", entratenantid);
+            // console.log("[WS] Joined tenant room:", entratenantid);
+          }
+        };
+
+        if (!socket.connected) {
+          socket.connect();
+          socket.once("connect", joinRooms);
+        } else {
+          joinRooms();
+        }
+
       } catch (err) {
         console.error("[AUTH] syncUser error:", err);
       }
     };
 
     syncUser();
-  }, [accessToken]);
+  }, [accessToken, tokenInfo]);
 
   useEffect(() => {
-    const onConnect      = () => console.log("[WS] socket connected:", socket.id);
-    const onDisconnect   = (reason) => console.log("[WS] socket disconnected:", reason);
-    const onConnectError = (err) => console.error("[WS] connect_error:", err.message);
+    if (!tokenInfo?.account?.localAccountId) return;
 
-    socket.on("connect",       onConnect);
+    const handleReconnect = () => {
+      console.log("[WS] Reconnected — re-joining rooms");
+      socket.emit("join", tokenInfo.account.localAccountId);
+      if (tokenInfo?.account?.tenantId) {
+        socket.emit("join", tokenInfo.account.tenantId);
+      }
+    };
+
+    socket.on("connect", handleReconnect);
+    return () => socket.off("connect", handleReconnect);
+  }, [tokenInfo?.account?.localAccountId, tokenInfo?.account?.tenantId]);
+
+  useEffect(() => {
+    const onDisconnect   = (reason) => console.log("[WS] socket disconnected:", reason);
+    const onConnectError = (err)    => console.error("[WS] connect_error:", err.message);
+
     socket.on("disconnect",    onDisconnect);
     socket.on("connect_error", onConnectError);
 
     return () => {
-      socket.off("connect",       onConnect);
       socket.off("disconnect",    onDisconnect);
       socket.off("connect_error", onConnectError);
     };
   }, []);
 
   useEffect(() => {
-    if (!userInfo?.entrauserid) return;
-
-    const handleReconnect = () => {
-      console.log("[WS] Reconnected — re-joining rooms");
-      socket.emit("join", userInfo.entrauserid);
-      if (userInfo?.entratenantid) {
-        socket.emit("join", userInfo.entratenantid);
-      }
-    };
-
-    socket.on("connect", handleReconnect);
-    return () => socket.off("connect", handleReconnect);
-  }, [userInfo?.entrauserid, userInfo?.entratenantid]);
-
-  useEffect(() => {
     if (!account) {
       socket.disconnect();
+      console.log("[WS] Disconnected on logout");
     }
   }, [account]);
 
