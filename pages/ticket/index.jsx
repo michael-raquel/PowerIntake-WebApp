@@ -99,8 +99,6 @@ export default function TicketPage() {
     return false;
   }, [userSettings]);
 
-  // const [hideCompleted, setHideCompleted] = useState(initialHideCompleted);
-
   const tabs = useMemo(() => {
     const t = [];
     if (isSuperAdmin) {
@@ -127,6 +125,83 @@ export default function TicketPage() {
   }, [userId, safeTab, tokenInfo?.account?.tenantId]);
 
   const { tickets = [], isLoading } = useFetchTicket({ ...ticketQuery, refreshKey });
+
+  const handleTabChange = useCallback((id) => {
+    setActiveTab(id);
+    setCurrentPage(1);
+    setSearchValue('');
+    setSelectedFilters({});
+    setFilterOptions({});
+  }, []);
+
+  const handleFiltersChange = useCallback((filters) => {
+    setSelectedFilters(filters);
+    setCurrentPage(1);
+  }, []);
+
+  const handleTicketSelect = useCallback((ticket) => {
+    setSelectedTicket(ticket);
+  }, []);
+
+  const handleDialogClose = useCallback(() => {
+    setSelectedTicket(null);
+  }, []);
+
+  const handleTicketUpdated = useCallback(() => {
+    setRefreshKey(k => k + 1);
+    setSelectedTicket(null);
+  }, []);
+
+  const handleHideCompletedChange = useCallback(async (val) => {
+    setHideCompleted(val);
+    if (userSettings?.[0]?.v_entrauserid) {
+      try {
+        await updateHideTickets({
+          entrauserid: userSettings[0].v_entrauserid,
+          hideCompleted: val,
+          modifiedby: tokenInfo?.account?.username ?? null,
+        });
+      } catch (err) {
+        console.error('Failed to save hide completed setting:', err);
+      }
+    }
+  }, [userSettings, updateHideTickets, tokenInfo]);
+
+  const handleRecordsPerPageChange = useCallback(async (value) => {
+    const newValue = Number(value);
+    setCurrentPage(1);
+    setUserRowsPerPage(newValue);
+
+    if (userSettings && userSettings.length > 0) {
+      try {
+        await updateRecordCount({
+          entrauserid: userSettings[0]?.v_entrauserid,
+          ticketrecordcount: newValue,
+          managerecordcount: userSettings[0]?.v_managerecordcount ?? null,
+          modifiedby: tokenInfo?.account?.username ?? null,
+        });
+      } catch (err) {
+        console.error('Failed to update record count:', err);
+      }
+    }
+  }, [userSettings, updateRecordCount, tokenInfo]);
+
+  const handleOnSynced = useCallback(() => { 
+    setPendingSyncUuid(null); 
+    toast.success('Ticket synced to Dynamics successfully'); 
+  }, []);
+
+  const handleOnSyncFailed = useCallback(() => {
+    toast.warning('Ticket created but Dynamics sync failed');
+  }, []);
+
+  const handleOnDeleted = useCallback(() => {
+    toast.info('A ticket has been removed');
+  }, []);
+
+  const handleOnUpdated = useCallback(() => {
+    toast.info('A ticket has been updated');
+  }, []);
 
   useEffect(() => {
     setHideCompleted(initialHideCompleted);
@@ -174,77 +249,17 @@ export default function TicketPage() {
     return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', update); };
   }, [isMobile, safeTab]);
 
-  const handleTabChange = useCallback((id) => {
-    setActiveTab(id);
-    setCurrentPage(1);
-    setSearchValue('');
-    setSelectedFilters({});
-    setFilterOptions({});
-  }, []);
-
-  const handleFiltersChange = useCallback((filters) => {
-    setSelectedFilters(filters);
-    setCurrentPage(1);
-  }, []);
-
-  const handleTicketSelect = useCallback((ticket) => {
-    setSelectedTicket(ticket);
-  }, []);
-
-  const handleDialogClose = useCallback(() => {
-    setSelectedTicket(null);
-  }, []);
-
-  const handleTicketUpdated = useCallback(() => {
-    setRefreshKey(k => k + 1);
-    setSelectedTicket(null);
-  }, []);
-
-  const handleHideCompletedChange = useCallback(async (val) => {
-    setHideCompleted(val);
-    if (userSettings?.[0]?.v_entrauserid) {
-      try {
-        await updateHideTickets({
-          entrauserid: userSettings[0].v_entrauserid,
-          hideCompleted: val,
-          modifiedby: tokenInfo?.account?.username ?? null,
-        });
-      } catch (err) {
-        console.error('Failed to save hide completed setting:', err);
-      }
-    }
-  }, [userSettings, updateHideTickets, tokenInfo]);
-
-  const handleRecordsPerPageChange = async (value) => {
-    const newValue = Number(value);
-    setCurrentPage(1);
-    setUserRowsPerPage(newValue);
-
-    if (userSettings && userSettings.length > 0) {
-      try {
-        await updateRecordCount({
-          entrauserid: userSettings[0]?.v_entrauserid,
-          ticketrecordcount: newValue,
-          managerecordcount: userSettings[0]?.v_managerecordcount ?? null,
-          modifiedby: tokenInfo?.account?.username ?? null,
-        });
-      } catch (err) {
-        console.error('Failed to update record count:', err);
-      }
-    }
-  };
-
   if (showCreateTicket) {
-  return (
-    <ComCreateTicket
-      onClose={() => setShowCreateTicket(false)}
-      onTicketCreated={(ticketuuid) => {
-        setPendingSyncUuid(ticketuuid);
-        setShowCreateTicket(false);
-      }}
-    />
-  );
-}
+    return (
+      <ComCreateTicket
+        onClose={() => setShowCreateTicket(false)}
+        onTicketCreated={(ticketuuid) => {
+          setPendingSyncUuid(ticketuuid);
+          setShowCreateTicket(false);
+        }}
+      />
+    );
+  }
 
   const header = (
     <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
@@ -356,12 +371,10 @@ export default function TicketPage() {
   const footer = (
     <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 ">
       <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
-
         <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
           <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
           <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">Sparta Services, LLC</p>
         </div>
-
         <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3 sm:pr-14">
           <div className="hidden sm:flex items-center gap-1">
             {[
@@ -379,7 +392,6 @@ export default function TicketPage() {
               </span>
             ))}
           </div>
-
           <div className="grid sm:hidden grid-cols-2 gap-x-0 gap-y-0">
             {[
               { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
@@ -395,28 +407,12 @@ export default function TicketPage() {
             ))}
           </div>
         </div>
-
         <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">
           &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
         </p>
-
       </div>
     </footer>
   );
-
-  // const tableProps = {
-  //   activeTab: safeTab,
-  //   currentPage: safePage,
-  //   onTotalRecordsChange: setTotalRecords,
-  //   onFilterOptionsChange: setFilterOptions,
-  //   searchValue,
-  //   filters: selectedFilters,
-  //   refreshKey,
-  //   onTicketSelect: handleTicketSelect,
-  //   onTicketUpdated: () => setRefreshKey(k => k + 1),
-  //   pendingSyncUuid,                          
-  //   onSynced: () => setPendingSyncUuid(null), 
-  // };
 
   const tableProps = {
     activeTab: safeTab,
@@ -429,10 +425,10 @@ export default function TicketPage() {
     onTicketSelect: handleTicketSelect,
     onTicketUpdated: () => setRefreshKey(k => k + 1),
     pendingSyncUuid,
-    onSynced:     useCallback(() => { setPendingSyncUuid(null); toast.success('Ticket synced to Dynamics successfully'); }, []),
-    onSyncFailed: useCallback(() => toast.warning('Ticket created but Dynamics sync failed'), []),
-    onDeleted:    useCallback(() => toast.info('A ticket has been removed'), []),
-    onUpdated:    useCallback(() => toast.info('A ticket has been updated'), []),
+    onSynced: handleOnSynced,
+    onSyncFailed: handleOnSyncFailed,
+    onDeleted: handleOnDeleted,
+    onUpdated: handleOnUpdated,
     hideCompleted,
   };
 
@@ -465,7 +461,6 @@ export default function TicketPage() {
           </div>
         </div>
         {footer}
-
         {selectedTicket && (
           <ComUpdateForm
             ticket={selectedTicket}
@@ -505,7 +500,6 @@ export default function TicketPage() {
         </div>
       </div>
       {footer}
-
       {selectedTicket && (
         <ComUpdateForm
           ticket={selectedTicket}
