@@ -1,3 +1,10 @@
+# [1.4.0-dev.20](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.19...v1.4.0-dev.20) (2026-03-30)
+
+
+### Bug Fixes
+
+* made small changes on the table ([714f8fe](https://github.com/michael-raquel/PowerIntake-WebApp/commit/714f8fe278e0b380f73a863cacb23ec643b6785e))
+
 # [1.4.0-dev.19](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.18...v1.4.0-dev.19) (2026-03-30)
 
 
