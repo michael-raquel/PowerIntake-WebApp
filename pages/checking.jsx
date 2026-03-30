@@ -67,7 +67,7 @@ export default function Checking() {
 
             const consentUrl = [
               `https://login.microsoftonline.com/${tid}/adminconsent`,
-              `?client_id=${process.env.NEXT_PUBLIC_AZURE_CLIENT_ID}`,
+              `?client_id=${process.env.AZURE_CLIENT_ID}`,
               `&redirect_uri=${process.env.NEXT_PUBLIC_APP_URL}/consent-callback`,
             ].join("");
 
