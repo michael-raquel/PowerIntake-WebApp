@@ -391,25 +391,33 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                             type="time"
                             value={call.fromTime}
                             onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
-                            className="h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none"
-                          />
-                        ) : (
-                          <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</span>
-                        )}
-                      </div>
-                      <div className="w-full">
-                        <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">End</p>
-                        {canEdit ? (
-                          <Input
-                            type="time"
-                            value={call.toTime}
-                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
-                            className="h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none"
-                          />
-                        ) : (
-                          <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</span>
-                        )}
-                      </div>
+                            className="h-9 text-sm w-full min-w-0 max-w-full truncate
+        bg-white text-gray-900 border border-gray-300
+        dark:bg-gray-800 dark:text-white dark:border-gray-600
+        focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500
+        px-3 py-2 lg:px-4 lg:py-3 appearance-none"
+    />
+  ) : (
+    <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</span>
+  )}
+</div>
+<div className="w-full">
+  <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">End</p>
+  {canEdit ? (
+    <Input
+      type="time"
+      value={call.toTime}
+      onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
+      className="h-9 text-sm w-full min-w-0 max-w-full truncate
+        bg-white text-gray-900 border border-gray-300
+        dark:bg-gray-800 dark:text-white dark:border-gray-600
+        focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500
+        px-3 py-2 lg:px-4 lg:py-3 appearance-none"
+    />
+  ) : (
+    <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</span>
+  )}
+</div>
                     </div>
 
                   </div>

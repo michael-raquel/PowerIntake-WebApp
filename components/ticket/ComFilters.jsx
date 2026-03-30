@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from 'react';
-import { Search, Filter, Plus, X, SlidersHorizontal, Eye, EyeOff } from 'lucide-react';
+import { Search, Plus, X, SlidersHorizontal, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
@@ -15,6 +14,8 @@ const FILTER_CONFIG = {
   'my-team': ['Source', 'Priority', 'Category', 'Status'],
   'my-ticket': ['Source', 'Priority', 'Category', 'Status'],
 };
+
+const TEXT_INPUT_FILTERS = new Set(['Client', 'Manager']);
 
 export default function ComFilters({
   onSearch,
@@ -28,26 +29,25 @@ export default function ComFilters({
   onHideCompletedChange,
 }) {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState(null);
 
   const filtersForTab = FILTER_CONFIG[activeTab] || [];
-  
-  const activeFilterCount = Object.entries(selectedFilters).filter(
-    ([_, v]) => v && typeof v === 'string' && v.trim() !== ''
-  ).length + (hideCompleted ? 1 : 0);
 
-  const getOptionsForFilter = (filter) => {
-    const options = filterOptions[filter] || [];
-    const uniqueOptions = [...new Set(options.map(v => String(v).trim()).filter(Boolean))];
-    const selected = selectedFilters[filter];
-    return selected && !uniqueOptions.includes(selected)
-      ? [selected, ...uniqueOptions]
-      : uniqueOptions;
+  const activeFilterCount =
+    Object.values(selectedFilters).filter(v =>
+      Array.isArray(v) ? v.length > 0 : v?.trim()
+    ).length + (hideCompleted ? 1 : 0);
+
+  const getOptions = (filter) =>
+    [...new Set((filterOptions[filter] || []).map(v => String(v).trim()).filter(Boolean))];
+
+  const getSelected = (filter) => {
+    const v = selectedFilters[filter];
+    return Array.isArray(v) ? v : v ? [v] : [];
   };
 
-  const handleFilterChange = (filter, value) => {
-    if (!value) return;
-    onFiltersChange({ ...selectedFilters, [filter]: value });
-  };
+  const updateFilter = (filter, value) =>
+    onFiltersChange({ ...selectedFilters, [filter]: value || undefined });
 
   const clearFilter = (filter) => {
     const next = { ...selectedFilters };
@@ -55,24 +55,22 @@ export default function ComFilters({
     onFiltersChange(next);
   };
 
-  const handleInputChange = (filter, e) => {
-    const value = e.target.value;
-    if (value === '') {
-      clearFilter(filter);
-    } else {
-      onFiltersChange({ ...selectedFilters, [filter]: value });
-    }
+  const handleMultiSelect = (filter, option) => {
+    const current = getSelected(filter);
+    const updated = current.includes(option)
+      ? current.filter(v => v !== option)
+      : [...current, option];
+    updateFilter(filter, updated.length ? updated : undefined);
   };
 
-  const handleHideCompletedToggle = () => {
-    onHideCompletedChange?.(!hideCompleted);
+  const handleSelectAll = (filter, options) => {
+    const current = getSelected(filter);
+    updateFilter(filter, current.length === options.length ? undefined : [...options]);
   };
 
-  const clearAllFilters = () => {
-    onFiltersChange({});
-    if (hideCompleted) {
-      onHideCompletedChange?.(false);
-    }
+  const handleMainPopoverChange = (open) => {
+    setIsFilterOpen(open);
+    if (!open) setOpenDropdown(null); // ✅ fix: no useEffect needed
   };
 
   return (
@@ -88,75 +86,67 @@ export default function ComFilters({
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-        <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
+        <Popover open={isFilterOpen} onOpenChange={handleMainPopoverChange}>
           <PopoverTrigger asChild>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="relative gap-1 sm:gap-2 dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300 px-2 sm:px-3 h-8 sm:h-10"
+            <Button
+              variant="outline"
+              size="sm"
+              className="relative gap-1 sm:gap-2 px-2 sm:px-3 h-8 sm:h-10 bg-white text-gray-900 border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300 dark:bg-gray-900"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="text-xs sm:text-sm whitespace-nowrap">Filters</span>
               {activeFilterCount > 0 && (
-                <Badge 
-                  variant="secondary" 
-                  className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[8px] sm:text-xs dark:bg-gray-700 dark:text-gray-200"
-                >
+                <Badge variant="secondary" className="absolute -top-2 -right-2 h-4 w-4 sm:h-5 sm:w-5 p-0 flex items-center justify-center text-[8px] sm:text-xs dark:bg-gray-700 dark:text-gray-200">
                   {activeFilterCount}
                 </Badge>
               )}
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent className="w-72 p-4 dark:bg-gray-900 dark:border-gray-800" align="end">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
+          {/* ✅ fix: z-[29] keeps it below your top nav (usually z-50) */}
+          <PopoverContent
+            className="w-64 p-3 dark:bg-gray-900 dark:border-gray-800 max-h-[min(80vh,600px)] overflow-y-auto z-[29]"
+            align="end"
+            sideOffset={5}
+            avoidCollisions={false}
+          >
+            <div className="space-y-3">
+              <div className="flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 pb-1 z-[29]">
                 <h4 className="font-medium text-sm dark:text-gray-200">Filter by</h4>
                 {activeFilterCount > 0 && (
-                  <Button variant="ghost" size="sm" onClick={clearAllFilters} className="h-8 text-xs dark:text-gray-300 dark:hover:bg-gray-800">
+                  <Button variant="ghost" size="sm" onClick={() => { onFiltersChange({}); onHideCompletedChange?.(false); }} className="h-7 text-xs dark:text-gray-300 dark:hover:bg-gray-800">
                     Clear all
                   </Button>
                 )}
               </div>
 
-              <div className="flex items-center justify-between py-2 px-1 bg-gray-50 dark:bg-gray-800/50 rounded-md">
+              <div className="flex items-center justify-between py-1.5 px-2 bg-gray-50 dark:bg-gray-800/50 rounded-md">
                 <div className="flex items-center gap-2">
-                  {hideCompleted ? (
-                    <EyeOff className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                  ) : (
-                    <Eye className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                  )}
+                  {hideCompleted ? <EyeOff className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" /> : <Eye className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />}
                   <span className="text-xs font-medium dark:text-gray-300">Hide Completed Tickets</span>
                 </div>
-                <Switch
-                  checked={hideCompleted}
-                  onCheckedChange={handleHideCompletedToggle}
-                  className="data-[state=checked]:bg-purple-600"
-                />
+                <Switch checked={hideCompleted} onCheckedChange={() => onHideCompletedChange?.(!hideCompleted)} className="data-[state=checked]:bg-purple-600" />
               </div>
 
               <div className="border-t border-gray-200 dark:border-gray-700" />
 
               {filtersForTab.map((filter) => {
-                const options = getOptionsForFilter(filter);
-                const currentValue = selectedFilters[filter] || '';
+                const options = getOptions(filter);
+                const selectedValues = getSelected(filter);
 
-                if (filter === 'Client' || filter === 'Manager') {
+                if (TEXT_INPUT_FILTERS.has(filter)) {
+                  const currentValue = selectedValues[0] || '';
                   return (
-                    <div key={filter} className="space-y-1.5">
+                    <div key={filter} className="space-y-1">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium dark:text-gray-300">{filter}</span>
-                        {currentValue && (
-                          <Button variant="ghost" size="icon" className="h-5 w-5 dark:text-gray-400 dark:hover:bg-gray-800" onClick={() => clearFilter(filter)}>
-                            <X className="h-3 w-3" />
-                          </Button>
-                        )}
+                        {currentValue && <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => clearFilter(filter)}><X className="h-3 w-3" /></Button>}
                       </div>
                       <div className="relative">
                         <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                         <Input
                           value={currentValue}
-                          onChange={(e) => handleInputChange(filter, e)}
+                          onChange={(e) => e.target.value ? updateFilter(filter, e.target.value) : clearFilter(filter)}
                           placeholder={`Search ${filter.toLowerCase()}...`}
                           className="pl-7 w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 text-xs h-8"
                         />
@@ -165,39 +155,52 @@ export default function ComFilters({
                   );
                 }
 
+                const isOpen = openDropdown === filter;
+                const allSelected = options.length > 0 && selectedValues.length === options.length;
+                const someSelected = selectedValues.length > 0 && !allSelected;
+
                 return (
-                  <div key={filter} className="space-y-1.5">
+                  <div key={filter} className="space-y-1 relative">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium dark:text-gray-300">{filter}</span>
-                      {currentValue && (
-                        <Button variant="ghost" size="icon" className="h-5 w-5 dark:text-gray-400 dark:hover:bg-gray-800" onClick={() => clearFilter(filter)}>
-                          <X className="h-3 w-3" />
-                        </Button>
-                      )}
+                      {selectedValues.length > 0 && <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => clearFilter(filter)}><X className="h-3 w-3" /></Button>}
                     </div>
 
-                    <Select
-                      value={currentValue || ''}
-                      onValueChange={(value) => handleFilterChange(filter, value)}
-                      disabled={!options.length}
-                    >
-                      <SelectTrigger className="w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 dark:focus:ring-gray-700 h-8 text-xs">
-                        <SelectValue placeholder={options.length ? `Select ${filter}` : 'No options'} />
-                      </SelectTrigger>
-                      <SelectContent className="dark:bg-gray-900 dark:border-gray-800">
-                        {options.length ? (
-                          options.map((opt) => (
-                            <SelectItem key={`${filter}-${opt}`} value={opt} className="dark:text-gray-200 dark:focus:bg-gray-800 dark:focus:text-gray-100 text-xs">
-                              {opt}
-                            </SelectItem>
-                          ))
-                        ) : (
-                          <SelectItem value="no-options" disabled className="dark:text-gray-500 text-xs">
-                            No options available
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={isOpen} onOpenChange={(open) => setOpenDropdown(open ? filter : null)}>
+                      <PopoverTrigger asChild>
+                        <button className="w-full flex items-center justify-between px-3 py-1.5 text-xs border rounded-md bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                          <span className="truncate">{selectedValues.length ? `${selectedValues.length} selected` : `Select ${filter}`}</span>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 p-0 dark:bg-gray-800 dark:border-gray-700 z-[29]" align="start" side="bottom" sideOffset={5} avoidCollisions={true} collisionPadding={16}>
+                        <div className="max-h-60 overflow-y-auto">
+                          <div className="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+                            <label className="flex items-center gap-2 px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700 rounded cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={allSelected}
+                                ref={(el) => { if (el) el.indeterminate = someSelected; }}
+                                onChange={() => handleSelectAll(filter, options)}
+                                className="h-3.5 w-3.5 rounded border-gray-300"
+                              />
+                              <span className="text-xs font-medium dark:text-gray-300">Select All</span>
+                            </label>
+                          </div>
+                          {options.map((opt) => (
+                            <label key={opt} className="flex items-center gap-2 px-4 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedValues.includes(opt)}
+                                onChange={() => handleMultiSelect(filter, opt)}
+                                className="h-3.5 w-3.5 rounded border-gray-300"
+                              />
+                              <span className="text-xs dark:text-gray-300">{opt}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 );
               })}
@@ -205,11 +208,7 @@ export default function ComFilters({
           </PopoverContent>
         </Popover>
 
-        <Button
-          onClick={onCreateTicket}
-          size="sm"
-          className="gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10"
-        >
+        <Button onClick={onCreateTicket} size="sm" className="gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10">
           <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           <span className="text-xs sm:text-sm whitespace-nowrap">New</span>
         </Button>

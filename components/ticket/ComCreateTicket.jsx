@@ -266,17 +266,17 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
         body: JSON.stringify({
-          entrauserid:    tokenInfo?.account?.localAccountId,
-          entratenantid:  tokenInfo?.account?.tenantId,
-          title:          formData.title,
-          description:    formData.description,
-          usertimezone:   formData.timezone,
+          entrauserid: tokenInfo?.account?.localAccountId,
+          entratenantid: tokenInfo?.account?.tenantId,
+          title: formData.title,
+          description: formData.description,
+          usertimezone: formData.timezone,
           officelocation: formData.location?.toLowerCase(),
-          date:           supportCalls.map(c => format(c.date, 'yyyy-MM-dd')),
-          starttime:      supportCalls.map(c => c.fromTime),
-          endtime:        supportCalls.map(c => c.toTime),
-          attachments:    uploadedAttachments.map(a => a.url),
-          createdby:      tokenInfo?.account?.name,
+          date: supportCalls.map(c => format(c.date, 'yyyy-MM-dd')),
+          starttime: supportCalls.map(c => c.fromTime),
+          endtime: supportCalls.map(c => c.toTime),
+          attachments: uploadedAttachments.map(a => a.url),
+          createdby: tokenInfo?.account?.name,
         }),
       });
 
@@ -354,7 +354,13 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                   <h2 className="text-lg font-medium">Support Call Schedule</h2>
                   <p className="text-xs text-gray-500">Add one or more available date/time slots.</p>
                 </div>
-                <Button variant="outline" size="sm" onClick={handleAddCall} className="gap-1" disabled={submitting}>
+                <Button
+                  variant="outline" size="sm" onClick={handleAddCall}
+                  className="gap-1 bg-white text-gray-900 border-gray-300 hover:bg-gray-100
+    dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800
+    appearance-none"
+                  disabled={submitting}
+                >
                   <Plus className="w-4 h-4" /> Add
                 </Button>
               </div>
@@ -363,9 +369,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                 <div key={call.id} className="relative p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border mb-4 last:mb-0">
                   {supportCalls.length > 1 && (
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSupportCalls(prev => prev.filter(c => c.id !== call.id))}
+                      variant="ghost" size="icon" onClick={() => setSupportCalls(prev => prev.filter(c => c.id !== call.id))}
                       className="absolute top-2 right-2 h-8 w-8"
                       disabled={submitting}
                     >
@@ -381,7 +385,13 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                         onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}
                       >
                         <PopoverTrigger asChild>
-                          <Button variant="outline" className="w-full justify-start text-left" disabled={submitting}>
+                          <Button
+                            variant="outline"
+                            className="w-full justify-start text-left bg-white text-gray-900 border-gray-300 hover:bg-gray-100
+                              dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800
+                              appearance-none"
+                            disabled={submitting}
+                          >
                             <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
                             <span>{call.date ? format(call.date, "MM/dd/yyyy") : "Select date"}</span>
                           </Button>
@@ -422,7 +432,8 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                                 value={call[key]}
                                 onChange={e => handleCallChange(call.id, key, e.target.value)}
                                 step="900"
-                                className="pl-8 w-full text-sm"
+                                className="pl-8 h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none
+                                  dark:bg-gray-800 dark:text-white dark:border-gray-600"
                                 disabled={submitting}
                               />
                               <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
@@ -525,6 +536,9 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     setErrors({});
                   }}
                   disabled={submitting}
+                  className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100
+    dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800
+    appearance-none"
                 >
                   Clear
                 </Button>
