@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/router";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMsal } from "@azure/msal-react";
 import useFetchAllCompanyUsers from "@/hooks/UseFetchAllCompanyUsers";
@@ -38,6 +39,7 @@ const DEFAULT_ROWS = 10;
 
 export default function MyCompanyTab() {
   const { accounts } = useMsal();
+  const router = useRouter();
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
   const [localPage, setLocalPage] = useState(1);
   const [activeFilters, setActiveFilters] = useState({});
@@ -124,6 +126,13 @@ export default function MyCompanyTab() {
     setActiveFilters(newFilters);
     setLocalPage(1);
   };
+
+  const handleRowClick = useCallback((row) => {
+    const searchText = String(row?.v_username || "").trim();
+    if (!searchText) return;
+    const params = new URLSearchParams({ tab: "my-company", search: searchText });
+    router.push(`/ticket?${params.toString()}`);
+  }, [router]);
 
   const buildRoleString = useCallback((currentRole, roleName, checked) => {
     const rawRoles = String(currentRole || "")
@@ -357,7 +366,11 @@ export default function MyCompanyTab() {
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
             {pagedData.map((row, i) => (
-              <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+              <div
+                key={i}
+                onClick={() => handleRowClick(row)}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3 cursor-pointer hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+              >
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -416,7 +429,10 @@ export default function MyCompanyTab() {
                       <span className="font-semibold text-gray-900 dark:text-white">{row.v_completion ?? 0}%</span>
                     </div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between">
+                  <div
+                    className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between"
+                    onClick={(event) => event.stopPropagation()}
+                  >
                     <span className="text-xs text-gray-500 dark:text-gray-400">Admin</span>
                     <Switch
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
@@ -501,7 +517,11 @@ export default function MyCompanyTab() {
               </tr>
             ) : (
               pagedData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
+                <tr
+                  key={i}
+                  onClick={() => handleRowClick(row)}
+                  className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                >
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_managername || "N/A"}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{getRoleValue(row) === "SuperAdmin" ? "Super Admin" : getRoleValue(row) || "User"}</td>
@@ -521,12 +541,14 @@ export default function MyCompanyTab() {
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Switch
-                      className="data-[state=checked]:bg-blue-500 cursor-pointer"
-                      checked={hasRole(getRoleValue(row), "Admin")}
-                      onCheckedChange={(checked) => handleAdminToggle(row, checked)}
-                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin") || row.v_status !== "true"}
-                    />
+                    <div onClick={(event) => event.stopPropagation()}>
+                      <Switch
+                        className="data-[state=checked]:bg-blue-500 cursor-pointer"
+                        checked={hasRole(getRoleValue(row), "Admin")}
+                        onCheckedChange={(checked) => handleAdminToggle(row, checked)}
+                        disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin") || row.v_status !== "true"}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))

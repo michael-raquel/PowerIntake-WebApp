@@ -49,6 +49,7 @@ export default function TicketPage() {
 
   const initialUuid = searchParams.get('uuid') || null;
   const initialTab = searchParams.get('tab') || null;
+  const initialSearch = searchParams.get('search') || '';
 
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState(
@@ -57,7 +58,7 @@ export default function TicketPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [showCreateTicket, setShowCreateTicket] = useState(() => searchParams.get('create') === 'true');
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState(initialSearch);
   const [selectedFilters, setSelectedFilters] = useState({});
   const [filterOptions, setFilterOptions] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
@@ -140,7 +141,14 @@ export default function TicketPage() {
   }, [tickets, isLoading]);
 
   useEffect(() => {
-    const hasParams = searchParams.get('create') || searchParams.get('uuid') || searchParams.get('tab');
+    const param = searchParams.get('search');
+    if (param && param !== searchValue) {
+      setSearchValue(param);
+    }
+  }, [searchParams, searchValue]);
+
+  useEffect(() => {
+    const hasParams = searchParams.get('create') || searchParams.get('uuid') || searchParams.get('tab') || searchParams.get('search');
     if (hasParams) router.replace('/ticket', undefined, { shallow: true });
   }, [router, searchParams]);
 
