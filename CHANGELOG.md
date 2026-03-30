@@ -1,3 +1,10 @@
+# [1.4.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.4...v1.4.0-dev.5) (2026-03-30)
+
+
+### Bug Fixes
+
+* light and dark mode bug in IOS ([2131e8c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2131e8c0b185d68290f2cf7716f5e25e7660b898))
+
 # [1.4.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.3...v1.4.0-dev.4) (2026-03-29)
 
 
