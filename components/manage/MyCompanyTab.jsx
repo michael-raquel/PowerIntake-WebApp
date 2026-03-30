@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import CompanyFilter from "@/components/manage/MyCompanyFilter";
 import MyCompanyTable from "./table/MyCompanyTable";
+import { formatPercent } from "@/lib/utils";
 
 const DEFAULT_ROWS = 10;
 
@@ -331,7 +332,7 @@ export default function MyCompanyTab() {
     },
     {
       key: "completed",
-      label: "Completed Tickets",
+      label: "Completed",
       align: "center",
       minWidth: 160,
       defaultWidth: 170,
@@ -347,7 +348,7 @@ export default function MyCompanyTab() {
     },
     {
       key: "cancelled",
-      label: "Cancelled Tickets",
+      label: "Cancelled",
       align: "center",
       minWidth: 160,
       defaultWidth: 170,
@@ -597,7 +598,7 @@ export default function MyCompanyTab() {
                     </div>
                     <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                       <span>Completion</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_completion ?? 0}%</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{formatPercent(row.v_completion)}</span>
                     </div>
                   </div>
                   <div
@@ -648,9 +649,7 @@ export default function MyCompanyTab() {
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                   <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
-                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {filteredTotals.completionRate}%
-                  </p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{formatPercent(filteredTotals.completionRate)}</p>
                 </div>
               </div>
             </div>

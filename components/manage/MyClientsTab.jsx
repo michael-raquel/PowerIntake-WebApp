@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 
 import MyClientsTable, { CopyButton } from "./table/MyClientsTable";
+import { formatPercent } from "@/lib/utils";
 
 const TABLE_COLUMNS = [
   {
@@ -31,7 +32,8 @@ const TABLE_COLUMNS = [
   {
     key: "clientName",
     label: "Client Name",
-    align: "center",
+    align: "left",
+    headerClassName: "text-left pl-8",
     minWidth: 200,
     defaultWidth: 260,
     sortValue: (row) => row?.v_tenantname ?? "",
@@ -46,7 +48,7 @@ const TABLE_COLUMNS = [
   },
   {
     key: "completed",
-    label: "Completed Tickets",
+    label: "Completed",
     align: "center",
     minWidth: 150,
     defaultWidth: 160,
@@ -62,7 +64,7 @@ const TABLE_COLUMNS = [
   },
   {
     key: "cancelled",
-    label: "Cancelled Tickets",
+    label: "Cancelled",
     align: "center",
     minWidth: 160,
     defaultWidth: 170,
@@ -390,7 +392,7 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 col-span-2">
                     <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
-                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completion ?? 0}%</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{formatPercent(row.v_completion)}</p>
                   </div>
                 </div>
               </div>
@@ -427,9 +429,7 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                   <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
-                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.completionRate ?? 0}%
-                  </p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{formatPercent(totals?.completionRate)}</p>
                 </div>
               </div>
             </div>

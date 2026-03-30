@@ -2,6 +2,7 @@
 
 import { ArrowUpDown, ChevronDown, ChevronUp } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
+import { formatPercent } from "@/lib/utils";
 
 export default function MyCompanyTable({
 	columns,
@@ -103,7 +104,7 @@ export default function MyCompanyTable({
 									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_completed ?? 0}</td>
 									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_openticket}</td>
 									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_cancelled ?? 0}</td>
-									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_completion ?? 0}%</td>
+									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{formatPercent(row.v_completion)}</td>
 									<td className="px-4 py-3 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">
 										<span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
 											row.v_status === "true"
@@ -135,7 +136,7 @@ export default function MyCompanyTable({
 							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{filteredTotals.completedTickets}</td>
 							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{filteredTotals.openTickets}</td>
 							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{filteredTotals.cancelledTickets}</td>
-							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{filteredTotals.completionRate}%</td>
+							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{formatPercent(filteredTotals.completionRate)}</td>
 							<td className="px-4 py-3 border-r border-gray-200 dark:border-gray-800" />
 							<td className="px-4 py-3" />
 						</tr>

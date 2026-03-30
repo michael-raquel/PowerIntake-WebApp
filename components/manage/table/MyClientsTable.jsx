@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ArrowUpDown, ChevronUp, ChevronDown, Copy, Check } from "lucide-react";
+import { formatPercent } from "@/lib/utils";
 
 export function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
@@ -116,12 +117,12 @@ export default function MyClientsTable({
                       <CopyButton value={row.v_tenantid} />
                     </div>
                   </td>
-                  <td className="py-3 text-gray-900 dark:text-white whitespace-nowrap text-center px-4 border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden truncate">{row.v_tenantname}</td>
+                  <td className="py-3 text-gray-900 dark:text-white whitespace-nowrap text-left pl-8 border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden truncate">{row.v_tenantname}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_totalticket ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_completed ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_openticket ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_cancelled ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_completion ?? 0}%</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{formatPercent(row.v_completion)}</td>
                 </tr>
               ))
             )}
@@ -134,7 +135,7 @@ export default function MyClientsTable({
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{totals?.completedTickets ?? 0}</td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{totals?.openTickets ?? 0}</td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{totals?.cancelledTickets ?? 0}</td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{totals?.completionRate ?? 0}%</td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{formatPercent(totals?.completionRate)}</td>
             </tr>
           </tfoot>
         </table>
