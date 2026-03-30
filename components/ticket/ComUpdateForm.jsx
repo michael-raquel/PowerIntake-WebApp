@@ -273,7 +273,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
             <div className="space-y-3 lg:space-y-4">
               <h3 className="text-xs lg:text-sm font-semibold text-gray-500 dark:text-gray-400">Ticket Details</h3>
-              <div className="grid grid-cols-2 gap-2 lg:gap-3 md:flex md:flex-wrap md:gap-3 lg:gap-4">
+              <div className="grid grid-cols-2 gap-2 lg:gap-3 md:flex md:flex-wrap md:gap-3 lg:gap-4 sm:space-y-0">
                 {[
                   { label: 'Source', value: ticket.v_source },
                   { label: 'Category', value: ticket.v_ticketcategory },
@@ -321,7 +321,12 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
               <div className="flex items-center justify-between">
                 <h3 className="text-xs lg:text-sm font-semibold text-gray-500 dark:text-gray-400">Support Calls</h3>
                 {canEdit && (
-                  <Button variant="outline" size="sm" onClick={handleAddCall} className="gap-1 h-8 lg:h-9 dark:border-gray-600 dark:hover:bg-gray-800">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddCall}
+                    className="gap-1 h-8 lg:h-9 border-gray-300 bg-white text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-800"
+                  >
                     <Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> Add
                   </Button>
                 )}
@@ -344,7 +349,15 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                             onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}
                           >
                             <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-9 text-sm dark:border-gray-600 dark:hover:bg-gray-800 px-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full justify-start text-left font-normal h-9 text-sm px-2
+                                  bg-white text-gray-900 border-gray-300
+                                  dark:bg-gray-800 dark:text-white dark:border-gray-600
+                                  dark:hover:bg-gray-800 hover:bg-gray-100
+                                  appearance-none"
+                              >
                                 <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0" />
                                 <span className="truncate flex-1">{call.date ? format(call.date, "MMM d, yyyy") : "Select date"}</span>
                               </Button>
@@ -368,29 +381,43 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                             </PopoverContent>
                           </Popover>
                         ) : (
-                          <p className="text-sm lg:text-base text-gray-900 dark:text-white truncate">{call.date ? format(call.date, "MMM d, yyyy") : '—'}</p>
+                          <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{call.date ? format(call.date, "MMM d, yyyy") : '—'}</span>
                         )}
                       </div>
                       <div className="w-full">
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">Start</p>
                         {canEdit ? (
-                          <Input type="time" value={call.fromTime}
+                          <Input
+                            type="time"
+                            value={call.fromTime}
                             onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
-                            className="h-9 text-sm w-full" />
-                        ) : (
-                          <p className="text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</p>
-                        )}
-                      </div>
-                      <div className="w-full">
-                        <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">End</p>
-                        {canEdit ? (
-                          <Input type="time" value={call.toTime}
-                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
-                            className="h-9 text-sm w-full" />
-                        ) : (
-                          <p className="text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</p>
-                        )}
-                      </div>
+                            className="h-9 text-sm w-full min-w-0 max-w-full truncate
+        bg-white text-gray-900 border border-gray-300
+        dark:bg-gray-800 dark:text-white dark:border-gray-600
+        focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500
+        px-3 py-2 lg:px-4 lg:py-3 appearance-none"
+    />
+  ) : (
+    <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</span>
+  )}
+</div>
+<div className="w-full">
+  <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">End</p>
+  {canEdit ? (
+    <Input
+      type="time"
+      value={call.toTime}
+      onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
+      className="h-9 text-sm w-full min-w-0 max-w-full truncate
+        bg-white text-gray-900 border border-gray-300
+        dark:bg-gray-800 dark:text-white dark:border-gray-600
+        focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500
+        px-3 py-2 lg:px-4 lg:py-3 appearance-none"
+    />
+  ) : (
+    <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</span>
+  )}
+</div>
                     </div>
 
                   </div>

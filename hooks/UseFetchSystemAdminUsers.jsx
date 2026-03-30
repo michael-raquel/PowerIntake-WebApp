@@ -2,24 +2,26 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
-export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = null) {
+const appendListParam = (params, key, value) => {
+  if (Array.isArray(value)) {
+    if (value.length > 0) params.append(key, value.join(","));
+    return;
+  }
+  if (value) params.append(key, value);
+};
+
+export default function useFetchSuperAdminUsers(_initialPage = 1, initialLimit = null, options = {}) {
   const { instance, accounts } = useMsal();
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
-  const [page,       setPage]       = useState(initialPage);
-  const [limit, setLimit]           = useState(initialLimit);
-  const [total,      setTotal]      = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0 });
-  const [allRoleData, setAllRoleData] = useState([]);
   const filterOptions = {
     roles: ["Super Admin", "Admin", "Manager", "User"],
     statuses: ["true", "false"],
     clientnames: [],
   };
-  const lastTotalsKeyRef            = useRef("");
   const limitRef                    = useRef(initialLimit);
+  const fetchAll                     = Boolean(options?.fetchAll);
 
   const resolveApiUrl = useCallback((path) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -45,89 +47,6 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     return token?.accessToken ?? null;
   }, [accounts, instance]);
 
-  const fetchTotals = useCallback(async (filters, totalCount) => {
-    if (!totalCount) {
-      setTotals({ totalTickets: 0, openTickets: 0 });
-      return;
-    }
-
-    const params = new URLSearchParams({ page: 1, limit: totalCount });
-
-    if (filters.search)     params.append("search",     filters.search);
-    if (filters.clientname) params.append("clientname", filters.clientname);
-    if (filters.role)       params.append("role",       filters.role);
-    if (filters.selectedRoles && filters.selectedRoles.length > 0) {
-      params.append("role", filters.selectedRoles.join(","));
-    }
-    if (filters.status)     params.append("status",     filters.status);
-
-    const accessToken = await getAccessToken();
-    const url = resolveApiUrl(`/manageusers/superadmin?${params}`);
-
-    const res = await fetch(url, {
-      headers: {
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      },
-    });
-
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`${res.status} ${res.statusText} — ${body}`);
-    }
-
-    const json = await res.json();
-    const rows = json.data || [];
-    const totalTickets = rows.reduce(
-      (sum, row) => sum + Number(row?.v_totalticket ?? 0),
-      0
-    );
-    const openTickets = rows.reduce(
-      (sum, row) => sum + Number(row?.v_openticket ?? 0),
-      0
-    );
-
-    setTotals({ totalTickets, openTickets });
-  }, [getAccessToken, resolveApiUrl]);
-
-  const fetchAllRoleData = useCallback(async (filters, totalCount) => {
-    const hasRole = filters?.role || (filters?.selectedRoles && filters.selectedRoles.length > 0);
-    if (!hasRole || !totalCount) {
-      setAllRoleData([]);
-      return;
-    }
-
-    try {
-      const params = new URLSearchParams({ page: 1, limit: totalCount });
-
-      if (filters.search)     params.append("search",     filters.search);
-      if (filters.clientname) params.append("clientname", filters.clientname);
-      if (filters.role)       params.append("role",       filters.role);
-      if (filters.selectedRoles && filters.selectedRoles.length > 0) {
-        params.append("role", filters.selectedRoles.join(","));
-      }
-      if (filters.status)     params.append("status",     filters.status);
-
-      const accessToken = await getAccessToken();
-      const url = resolveApiUrl(`/manageusers/superadmin?${params}`);
-
-      const res = await fetch(url, {
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-      });
-
-      if (!res.ok) {
-        setAllRoleData([]);
-        return;
-      }
-
-      const json = await res.json();
-      setAllRoleData(json.data || []);
-    } catch (err) {
-      setAllRoleData([]);
-    }
-  }, [getAccessToken, resolveApiUrl]);
-
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
     if (!accounts?.[0]) return;
     setLoading(true);
@@ -138,12 +57,12 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
       if (limitRef.current != null) params.append("limit", limitRef.current);
 
       if (filters.search)     params.append("search",     filters.search);
-      if (filters.clientname) params.append("clientname", filters.clientname);
+      appendListParam(params, "clientname", filters.clientname);
       if (filters.role)       params.append("role",       filters.role);
       if (filters.selectedRoles && filters.selectedRoles.length > 0) {
         params.append("role", filters.selectedRoles.join(","));
       }
-      if (filters.status)     params.append("status",     filters.status);
+      appendListParam(params, "status",     filters.status);
 
       const accessToken = await getAccessToken();
       const url = resolveApiUrl(`/manageusers/superadmin?${params}`);
@@ -160,19 +79,35 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
 
       const json = await res.json();
       const totalCount = json.total || 0;
+      let rows = json.data || [];
 
-      setData(json.data || []);
-      setTotal(totalCount);
-      setTotalPages(json.totalPages || 1);
-      setPage(currentPage);
+      if (fetchAll && totalCount > rows.length) {
+        const allParams = new URLSearchParams({ page: 1, limit: totalCount });
 
-      await fetchAllRoleData(filters, totalCount);
+        if (filters.search)     allParams.append("search",     filters.search);
+        appendListParam(allParams, "clientname", filters.clientname);
+        if (filters.role)       allParams.append("role",       filters.role);
+        if (filters.selectedRoles && filters.selectedRoles.length > 0) {
+          allParams.append("role", filters.selectedRoles.join(","));
+        }
+        appendListParam(allParams, "status",     filters.status);
 
-      const totalsKey = JSON.stringify({ total: totalCount, filters });
-      if (totalsKey !== lastTotalsKeyRef.current) {
-        lastTotalsKeyRef.current = totalsKey;
-        await fetchTotals(filters, totalCount);
+        const accessToken = await getAccessToken();
+        const allUrl = resolveApiUrl(`/manageusers/superadmin?${allParams}`);
+
+        const allRes = await fetch(allUrl, {
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
+
+        if (allRes.ok) {
+          const allJson = await allRes.json();
+          rows = allJson.data || rows;
+        }
       }
+
+      setData(rows);
     } catch (err) {
       if (err instanceof TypeError) {
         setError("Network error. Check API base URL, CORS, and server availability.");
@@ -180,17 +115,15 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
         setError(err?.message || String(err));
       }
       setData([]);
-      setTotals({ totalTickets: 0, openTickets: 0 });
     } finally {
       setLoading(false);
     }
-  }, [accounts, fetchAllRoleData, fetchTotals, getAccessToken, resolveApiUrl]);
+  }, [accounts, fetchAll, getAccessToken, resolveApiUrl]);
 
   useEffect(() => {
     if (!accounts?.[0]) return;
     if (initialLimit !== limitRef.current) {
       limitRef.current = initialLimit;
-      setLimit(initialLimit);
       fetchData(1);
     }
   }, [accounts, initialLimit, fetchData]);
@@ -204,14 +137,6 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     data,
     loading,
     error,
-    page,
-    limit,
-    total,
-    totals,
-    allRoleData,
-    totalPages,
-    hasNext: page < totalPages,
-    hasPrev: page > 1,
     fetchData,
     filterOptions,
   };

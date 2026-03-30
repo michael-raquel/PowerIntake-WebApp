@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter } from "next/router";
 import { RefreshCw, ChevronLeft, ChevronRight, Copy, Check, Search, X } from "lucide-react";
 import useFetchMyClients from "@/hooks/UseFetchMyClientUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
@@ -16,12 +17,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const TABLE_HEADERS = ["Tenant ID", "Client Name", "Total Tickets", "Open Tickets"];
+const TABLE_HEADERS = ["Tenant ID", "Client Name", "Tickets", "Completed Tickets", "In Progress", "Cancelled Tickets", "Completion Rate"];
 const DEFAULT_ROWS = 10;
 
 function CopyButton({ value }) {
   const [copied, setCopied] = useState(false);
-  const handleCopy = async () => {
+  const handleCopy = async (event) => {
+    event?.stopPropagation();
     await navigator.clipboard.writeText(value);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -40,8 +42,9 @@ function CopyButton({ value }) {
   );
 }
 
-export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
+export default function MyClientsTab({ searchValue = "", onSearchChange = () => {} }) {
   const { accounts } = useMsal();
+  const router = useRouter();
   const [localPage, setLocalPage] = useState(1);
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
 
@@ -64,10 +67,9 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
   const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
 
   const {
-    data, loading, error,
-    page, total, totalPages,
-    hasNext, hasPrev, fetchData,
-    totals, filterOptions,
+    data, loading,
+    fetchData,
+    totals,
   } = useFetchMyClients(1, effectiveLimit);
 
   useEffect(() => {
@@ -107,6 +109,13 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
       }
     }
   };
+
+  const handleRowClick = useCallback((row) => {
+    const searchText = String(row?.v_tenantname || "").trim();
+    if (!searchText) return;
+    const params = new URLSearchParams({ tab: "my-client", search: searchText });
+    router.push(`/ticket?${params.toString()}`);
+  }, [router]);
 
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
@@ -159,6 +168,21 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
             </button>
           )}
         </div>
+        <div className="md:hidden">
+          <Select value={String(selectedRowsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
+            <SelectTrigger size="sm" className="h-8 px-2 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -195,7 +219,11 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
             {pagedData.map((row, i) => (
-              <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+              <div
+                key={i}
+                onClick={() => handleRowClick(row)}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3 cursor-pointer hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+              >
                 <div className="flex items-center gap-3 ">
                   <div className="w-9 h-9 rounded-md bg-violet-600 dark:bg-violet-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
                     {row.v_tenantname?.charAt(0).toUpperCase()}
@@ -213,12 +241,24 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                 <div className="border-t border-gray-100 dark:border-gray-700" />
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completed ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 col-span-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completion ?? 0}%</p>
                   </div>
                 </div>
               </div>
@@ -228,17 +268,35 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">Totals</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">All records</span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-3 gap-2">
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                     {totals?.totalTickets ?? 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.completedTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                     {totals?.openTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.cancelledTickets ?? 0}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {totals?.completionRate ?? 0}%
                   </p>
                 </div>
               </div>
@@ -247,13 +305,16 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
         )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
+      <div className="hidden md:flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
               {TABLE_HEADERS.map((header) => (
-                <th key={header} className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
+                <th
+                  key={header}
+                  className={`py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap ${header === "Client Name" ? "text-left pl-8" : "text-center px-4"}`}
+                >
                   {header}
                 </th>
               ))}
@@ -274,16 +335,23 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
               </tr>
             ) : (
               pagedData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">
+                <tr
+                  key={i}
+                  onClick={() => handleRowClick(row)}
+                  className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                >
+                  <td className="px-4 py-3 whitespace-nowrap max-w-[220px]">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="text-gray-600 dark:text-gray-300 truncate max-w-[120px] block">{row.v_tenantid}</span>
+                      <span className="text-gray-600 dark:text-gray-300 truncate block max-w-full font-mono">{row.v_tenantid}</span>
                       <CopyButton value={row.v_tenantid} />
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
+                  <td className="py-3 text-gray-900 dark:text-white whitespace-nowrap text-left pl-8">{row.v_tenantname}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket ?? 0}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completed ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket ?? 0}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_cancelled ?? 0}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completion ?? 0}%</td>
                 </tr>
               ))
             )}
@@ -296,7 +364,16 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                 {totals?.totalTickets ?? 0}
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.completedTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
                 {totals?.openTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.cancelledTickets ?? 0}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {totals?.completionRate ?? 0}%
               </td>
             </tr>
           </tfoot>
@@ -316,6 +393,7 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="5">5</SelectItem>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="15">15</SelectItem>
                 <SelectItem value="20">20</SelectItem>

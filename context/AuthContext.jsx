@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
@@ -76,10 +76,10 @@ export function AuthProvider({ children }) {
               },
             });
           } catch (popupErr) {
-            console.error("Token popup failed:", popupErr);
+            console.error("[TOKEN] Popup failed:", popupErr);
           }
         } else {
-          console.error("Token acquisition failed:", err);
+          console.error("[TOKEN] Acquisition failed:", err);
         }
       }
     };
@@ -119,7 +119,7 @@ export function AuthProvider({ children }) {
 
   // ── Login sync ───────────────────────────────────────────
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken || !tokenInfo) return;
 
     const syncUser = async () => {
       try {
@@ -136,30 +136,72 @@ export function AuthProvider({ children }) {
         }
 
         if (!res.ok) {
-          const err = await res.json();
-          console.error("Login sync failed:", err);
-          return;
+          console.warn("[AUTH] login-sync failed:", res.status);
+          
+        } else {
+          const data = await res.json();
+          setUserInfo(data.user ?? null);
         }
 
-        const data = await res.json();
-        const user = data.user ?? null;
-        setUserInfo(user);
+        const entrauserid   = tokenInfo.account.localAccountId;
+        const entratenantid = tokenInfo.account.tenantId;
 
-        if (user?.v_entrauserid) {
+        const joinRooms = () => {
+          socket.emit("join", entrauserid);
+          // console.log("[WS] Joined room:", entrauserid);
+          if (entratenantid) {
+            socket.emit("join", entratenantid);
+            // console.log("[WS] Joined tenant room:", entratenantid);
+          }
+        };
+
+        if (!socket.connected) {
           socket.connect();
-          socket.emit("join", user.v_entrauserid);
-          console.log("[WS] Joined room:", user.v_entrauserid);
+          socket.once("connect", joinRooms);
+        } else {
+          joinRooms();
         }
       } catch (err) {
-        console.error("Failed to sync user on login:", err);
+        console.error("[AUTH] syncUser error:", err);
       }
     };
 
     syncUser();
-  }, [accessToken]);
+  }, [accessToken, tokenInfo]);
 
   useEffect(() => {
-    if (!account) socket.disconnect();
+    if (!tokenInfo?.account?.localAccountId) return;
+
+    const handleReconnect = () => {
+      console.log("[WS] Reconnected — re-joining rooms");
+      socket.emit("join", tokenInfo.account.localAccountId);
+      if (tokenInfo?.account?.tenantId) {
+        socket.emit("join", tokenInfo.account.tenantId);
+      }
+    };
+
+    socket.on("connect", handleReconnect);
+    return () => socket.off("connect", handleReconnect);
+  }, [tokenInfo?.account?.localAccountId, tokenInfo?.account?.tenantId]);
+
+  useEffect(() => {
+    const onDisconnect   = (reason) => console.log("[WS] socket disconnected:", reason);
+    const onConnectError = (err)    => console.error("[WS] connect_error:", err.message);
+
+    socket.on("disconnect",    onDisconnect);
+    socket.on("connect_error", onConnectError);
+
+    return () => {
+      socket.off("disconnect",    onDisconnect);
+      socket.off("connect_error", onConnectError);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!account) {
+      socket.disconnect();
+      console.log("[WS] Disconnected on logout");
+    }
   }, [account]);
 
   return (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/router";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMsal } from "@azure/msal-react";
 import useFetchAllCompanyUsers from "@/hooks/UseFetchAllCompanyUsers";
@@ -25,17 +26,22 @@ const TABLE_HEADERS = [
   "User Name",
   "Role",
   "Department",
-  "Total Ticket",
-  "Open Ticket",
+  "Tickets",
+  "Completed Tickets",
+  "In Progress",
+  "Cancelled Tickets",
+  "Completion Rate",
   "Status",
   "Admin",
 ];
 
 const DEFAULT_ROWS = 10;
 
-export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
+export default function MyCompanyTab() {
   const { accounts } = useMsal();
+  const router = useRouter();
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
+  const [localPage, setLocalPage] = useState(1);
   const [activeFilters, setActiveFilters] = useState({});
   const [roleOverrides, setRoleOverrides] = useState({});
   const hasUserSelectionRef = useRef(false);
@@ -63,17 +69,9 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
   const {
     data,
     loading,
-    error,
-    page,
-    total,
-    totalPages,
-    hasNext,
-    hasPrev,
     fetchData,
-    totals,
     filterOptions,
-    allRoleData,
-  } = useFetchAllCompanyUsers(1, effectiveLimit);
+  } = useFetchAllCompanyUsers(1, effectiveLimit, { fetchAll: true });
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
   const {
@@ -94,13 +92,14 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
   const { updateUserRole } = useUpdateUserRole();
   useEffect(() => {
     if (selectedRowsPerPage !== null) {
-      fetchData(1, activeFilters);
+      fetchData(1, {});
+      setLocalPage(1);
     }
-  }, [selectedRowsPerPage, fetchData, activeFilters]);
+  }, [selectedRowsPerPage, fetchData]);
 
   const handleSync = async () => {
     await syncUsers();
-    fetchData(page, activeFilters);
+    fetchData(1, {});
   };
 
   const handleRecordsPerPageChange = async (value) => {
@@ -125,8 +124,15 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
 
   const handleFilter = (newFilters) => {
     setActiveFilters(newFilters);
-    fetchData(1, newFilters);
+    setLocalPage(1);
   };
+
+  const handleRowClick = useCallback((row) => {
+    const searchText = String(row?.v_username || "").trim();
+    if (!searchText) return;
+    const params = new URLSearchParams({ tab: "my-company", search: searchText });
+    router.push(`/ticket?${params.toString()}`);
+  }, [router]);
 
   const buildRoleString = useCallback((currentRole, roleName, checked) => {
     const rawRoles = String(currentRole || "")
@@ -191,7 +197,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
       });
     } catch (err) {
     } finally {
-      await fetchData(page, activeFilters);
+      await fetchData(1, {});
       if (userKey) {
         setRoleOverrides((prev) => {
           const next = { ...prev };
@@ -223,36 +229,84 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
       .includes(target);
   };
 
-  const roleIsActive = Boolean(activeFilters?.selectedRoles && activeFilters.selectedRoles.length > 0);
+  const filteredData = useMemo(() => {
+    const searchValue = String(activeFilters?.search ?? "").trim().toLowerCase();
+    const managerValue = String(activeFilters?.manager ?? "").trim().toLowerCase();
+    const selectedRoles = Array.isArray(activeFilters?.selectedRoles)
+      ? activeFilters.selectedRoles
+      : activeFilters?.selectedRoles
+        ? [activeFilters.selectedRoles]
+        : [];
+    const selectedDepartments = Array.isArray(activeFilters?.department)
+      ? activeFilters.department
+      : activeFilters?.department
+        ? [activeFilters.department]
+        : [];
+    const selectedStatuses = Array.isArray(activeFilters?.status)
+      ? activeFilters.status
+      : activeFilters?.status
+        ? [activeFilters.status]
+        : [];
+    const normalizedRoles = selectedRoles.map((role) => normalizeRole(role));
 
-  const exactRoleData = useMemo(() => {
-    if (!roleIsActive) return [];
-    const selectedRoles = activeFilters.selectedRoles || [];
-    return allRoleData.filter((row) => 
-      selectedRoles.some((selectedRole) => 
-        normalizeRole(getRoleValue(row)) === normalizeRole(selectedRole)
-      )
-    );
-  }, [activeFilters?.selectedRoles, allRoleData, getRoleValue, normalizeRole, roleIsActive]);
+    return data.filter((row) => {
+      if (searchValue) {
+        const username = String(row.v_username || "").toLowerCase();
+        if (!username.includes(searchValue)) return false;
+      }
+
+      if (managerValue) {
+        const managerName = String(row.v_managername || "").toLowerCase();
+        if (!managerName.includes(managerValue)) return false;
+      }
+
+      if (normalizedRoles.length > 0) {
+        const roleValue = normalizeRole(getRoleValue(row));
+        if (!normalizedRoles.includes(roleValue)) return false;
+      }
+
+      if (selectedDepartments.length > 0) {
+        const deptValue = row.v_department ?? "";
+        if (!selectedDepartments.includes(deptValue)) return false;
+      }
+
+      if (selectedStatuses.length > 0) {
+        if (!selectedStatuses.includes(String(row.v_status))) return false;
+      }
+
+      return true;
+    });
+  }, [activeFilters, data, getRoleValue, normalizeRole]);
+
+  const displayTotal = filteredData.length;
+  const displayTotalPages = effectiveLimit > 0
+    ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit))
+    : 1;
+  const displayHasPrev = localPage > 1;
+  const displayHasNext = localPage < displayTotalPages;
 
   const pagedData = useMemo(() => {
-    if (!roleIsActive) return data;
-    const start = (page - 1) * effectiveLimit;
-    return exactRoleData.slice(start, start + effectiveLimit);
-  }, [data, exactRoleData, effectiveLimit, page, roleIsActive]);
+    const start = (localPage - 1) * effectiveLimit;
+    return filteredData.slice(start, start + effectiveLimit);
+  }, [filteredData, effectiveLimit, localPage]);
 
-  const displayTotal = roleIsActive ? exactRoleData.length : (total ?? 0);
-  const displayTotalPages = roleIsActive
-    ? (effectiveLimit > 0 ? Math.max(1, Math.ceil(exactRoleData.length / effectiveLimit)) : 1)
-    : totalPages;
-  const displayHasPrev = roleIsActive ? page > 1 : hasPrev;
-  const displayHasNext = roleIsActive ? page < displayTotalPages : hasNext;
+  const filteredTotals = useMemo(() => {
+    const totalTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_totalticket ?? 0), 0);
+    const openTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_openticket ?? 0), 0);
+    const completedTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_completed ?? 0), 0);
+    const cancelledTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_cancelled ?? 0), 0);
+    const completionRate = totalTickets > 0
+      ? Number(((completedTickets / totalTickets) * 100).toFixed(1))
+      : 0;
+
+    return { totalTickets, openTickets, completedTickets, cancelledTickets, completionRate };
+  }, [filteredData]);
 
   useEffect(() => {
-    if (roleIsActive && page > displayTotalPages) {
-      fetchData(1, activeFilters);
+    if (localPage > displayTotalPages) {
+      setLocalPage(1);
     }
-  }, [activeFilters, displayTotalPages, fetchData, page, roleIsActive]);
+  }, [localPage, displayTotalPages]);
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
 
@@ -262,6 +316,9 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
         roles={roles}
         departments={departments}
         statuses={statuses}
+        rowsPerPage={selectedRowsPerPage ?? DEFAULT_ROWS}
+        onRowsPerPageChange={handleRecordsPerPageChange}
+        rowsPerPageDisabled={updating}
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -309,7 +366,11 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
             {pagedData.map((row, i) => (
-              <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+              <div
+                key={i}
+                onClick={() => handleRowClick(row)}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3 cursor-pointer hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+              >
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -352,11 +413,26 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                       <span className="font-semibold text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</span>
                     </div>
                     <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                      <span>Open</span>
+                      <span>Completed</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_completed ?? 0}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>In Progress</span>
                       <span className="font-semibold text-gray-900 dark:text-white">{row.v_openticket ?? 0}</span>
                     </div>
+                    <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Cancelled</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</span>
+                    </div>
+                    <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Completion</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_completion ?? 0}%</span>
+                    </div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between">
+                  <div
+                    className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between"
+                    onClick={(event) => event.stopPropagation()}
+                  >
                     <span className="text-xs text-gray-500 dark:text-gray-400">Admin</span>
                     <Switch
                       className="data-[state=checked]:bg-blue-500 cursor-pointer"
@@ -374,17 +450,35 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                 <span className="text-sm font-semibold text-gray-900 dark:text-white">Totals</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">All records</span>
               </div>
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 grid grid-cols-3 gap-2">
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Total Tickets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.totalTickets ?? 0}
+                    {filteredTotals.totalTickets}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Open Tickets</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.openTickets ?? 0}
+                    {filteredTotals.completedTickets}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {filteredTotals.openTickets}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {filteredTotals.cancelledTickets}
+                  </p>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
+                    {filteredTotals.completionRate}%
                   </p>
                 </div>
               </div>
@@ -393,7 +487,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
         )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
+      <div className="hidden md:flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>
@@ -423,13 +517,20 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
               </tr>
             ) : (
               pagedData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
+                <tr
+                  key={i}
+                  onClick={() => handleRowClick(row)}
+                  className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                >
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_managername || "N/A"}</td>
                   <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{getRoleValue(row) === "SuperAdmin" ? "Super Admin" : getRoleValue(row) || "User"}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_department || "N/A"}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completed ?? 0}</td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_cancelled ?? 0}</td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completion ?? 0}%</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                       row.v_status === "true"
@@ -440,12 +541,14 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Switch
-                      className="data-[state=checked]:bg-blue-500 cursor-pointer"
-                      checked={hasRole(getRoleValue(row), "Admin")}
-                      onCheckedChange={(checked) => handleAdminToggle(row, checked)}
-                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin") || row.v_status !== "true"}
-                    />
+                    <div onClick={(event) => event.stopPropagation()}>
+                      <Switch
+                        className="data-[state=checked]:bg-blue-500 cursor-pointer"
+                        checked={hasRole(getRoleValue(row), "Admin")}
+                        onCheckedChange={(checked) => handleAdminToggle(row, checked)}
+                        disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || hasRole(getRoleValue(row), "SuperAdmin") || row.v_status !== "true"}
+                      />
+                    </div>
                   </td>
                 </tr>
               ))
@@ -456,10 +559,19 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
               <td colSpan={4} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.totalTickets ?? 0}
+                {filteredTotals.totalTickets}
               </td>
               <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.openTickets ?? 0}
+                {filteredTotals.completedTickets}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {filteredTotals.openTickets}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {filteredTotals.cancelledTickets}
+              </td>
+              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
+                {filteredTotals.completionRate}%
               </td>
               <td className="px-4 py-3" />
               <td className="px-4 py-3" />
@@ -479,6 +591,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="5">5</SelectItem>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="15">15</SelectItem>
                 <SelectItem value="20">20</SelectItem>
@@ -489,7 +602,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => fetchData(page - 1, activeFilters)}
+              onClick={() => setLocalPage((current) => Math.max(1, current - 1))}
               disabled={!displayHasPrev || loading}
               className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
@@ -498,14 +611,14 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
 
             {[...Array(displayTotalPages)].map((_, i) => {
               const pageNum = i + 1;
-              if (pageNum === 1 || pageNum === displayTotalPages || Math.abs(pageNum - page) <= 1) {
+              if (pageNum === 1 || pageNum === displayTotalPages || Math.abs(pageNum - localPage) <= 1) {
                 return (
                   <button
                     key={pageNum}
-                    onClick={() => fetchData(pageNum, activeFilters)}
+                    onClick={() => setLocalPage(pageNum)}
                     disabled={loading}
                     className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                      pageNum === page
+                      pageNum === localPage
                         ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
                         : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                     }`}
@@ -514,14 +627,14 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                   </button>
                 );
               }
-              if (Math.abs(pageNum - page) === 2) {
+              if (Math.abs(pageNum - localPage) === 2) {
                 return <span key={pageNum} className="text-xs text-gray-400 px-1">...</span>;
               }
               return null;
             })}
 
             <button
-              onClick={() => fetchData(page + 1, activeFilters)}
+              onClick={() => setLocalPage((current) => Math.min(displayTotalPages, current + 1))}
               disabled={!displayHasNext || loading}
               className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >

@@ -62,7 +62,8 @@ export default function ComAttachment({
       blobName: a.v_attachment?.split('/').pop()?.split('?')[0] || '',
       url: a.v_attachment,
       createdAt: a.v_createdat,
-      attachmentuuid: a.v_attachmentuuid
+      attachmentuuid: a.v_attachmentuuid,
+      annotationid:   a.v_annotationid ?? null,
     }));
     onChange(formatted.length ? formatted : []);
   }, [fetchedAttachments, onChange]);
@@ -127,15 +128,28 @@ export default function ComAttachment({
   const handleRemove = async (attachment, index) => {
     if (!canModify) return;
 
+    console.log("[REMOVE] attachment object:", attachment);
+    console.log("[REMOVE] annotationid:", attachment.annotationid);
+    console.log("[REMOVE] removedAnnotationIds being sent:", attachment.annotationid ? [attachment.annotationid] : []);
+
     try {
       const blobName = attachment.url.split('/').pop()?.split('?')[0];
       if (blobName) await deleteImage(blobName);
 
       const remaining = attachments.filter((_, i) => i !== index).map(a => a.url);
-      await updateAttachments({ ticketuuid, attachments: remaining, modifiedby: modifiedby || createdby });
+
+      await updateAttachments({
+        ticketuuid,
+        attachments:          remaining,
+        newAttachments:       [],
+        removedAnnotationIds: attachment.annotationid ? [attachment.annotationid] : [],
+        modifiedby:           modifiedby || createdby,
+      });
+
       await fetchAttachments();
       toast.success('Removed', { description: attachment.name });
     } catch (err) {
+      console.error('[REMOVE] error:', err);
       toast.error('Failed to remove', { description: 'Please try again.' });
     }
   };
