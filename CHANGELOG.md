@@ -1,3 +1,10 @@
+# [1.4.0-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.10...v1.4.0-dev.11) (2026-03-30)
+
+
+### Bug Fixes
+
+* added hidecompleted ticket on mobile cards ([6a1a7cb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6a1a7cbe10cd04913c758f01abc2bac7e50ba57e))
+
 # [1.4.0-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.9...v1.4.0-dev.10) (2026-03-30)
 
 
