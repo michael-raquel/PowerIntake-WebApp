@@ -17,6 +17,8 @@ import ComUserInformation from './tabs/ComUserInformtaion';
 import ComClosureDate from './tabs/ComClosureDate';
 import ComAttachment from './tabs/ComAttachment';
 import ComTimelineView from './tabs/ComTimelineView';
+import socket from "@/lib/socket";
+import { useEffect } from 'react'; 
 
 const TABS = [
   { id: 'notes', icon: StickyNote, label: 'Notes' },
@@ -236,6 +238,18 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     const [h, m] = t.split(':').map(Number);
     return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
   };
+
+  useEffect(() => {
+  const handleTicketUpdated = ({ ticketuuid, ticket: updated }) => {
+    if (!updated || String(updated.v_ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+
+    setTitle(prev => prev === (ticket?.v_title || '') ? (updated.v_title || '') : prev);
+    setDescription(prev => prev === (ticket?.v_description || '') ? (updated.v_description || '') : prev);
+  };
+
+  socket.on("ticket:updated", handleTicketUpdated);
+  return () => socket.off("ticket:updated", handleTicketUpdated);
+}, [ticket?.v_ticketuuid, ticket?.v_title, ticket?.v_description]);
 
   const inputClass = "text-sm lg:text-base bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 px-3 py-2 lg:px-4 lg:py-3";
   const readonlyClass = "bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700 text-sm lg:text-base text-gray-900 dark:text-white px-3 py-2 lg:px-4 lg:py-3";
