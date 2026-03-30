@@ -1,3 +1,11 @@
+# [1.4.0-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.7...v1.4.0-dev.8) (2026-03-30)
+
+
+### Bug Fixes
+
+* Added a checkbox filter ([ecf46eb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ecf46eb88caf38ca4ca895de16e3236c1a3abda2))
+* Support multi-select filters and client-side paging ([70a5c7e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/70a5c7eef43d3091ac131e355ab4b7ae6e1892f2))
+
 # [1.4.0-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.6...v1.4.0-dev.7) (2026-03-30)
 
 
