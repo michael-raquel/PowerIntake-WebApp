@@ -1,3 +1,10 @@
+# [1.4.0-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.11...v1.4.0-dev.12) (2026-03-30)
+
+
+### Bug Fixes
+
+* st-2145-tenant-id-column-fix ([5568d92](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5568d920fdab5025d6905a37934ea27514c206ed))
+
 # [1.4.0-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.10...v1.4.0-dev.11) (2026-03-30)
 
 
