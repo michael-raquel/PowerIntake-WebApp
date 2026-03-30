@@ -93,7 +93,10 @@ export default function ComFilters({
             <Button 
               variant="outline" 
               size="sm" 
-              className="relative gap-1 sm:gap-2 dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300 px-2 sm:px-3 h-8 sm:h-10"
+              className="relative gap-1 sm:gap-2 px-2 sm:px-3 h-8 sm:h-10
+                bg-white text-gray-900 border-gray-300
+                hover:bg-gray-100
+                dark:border-gray-700 dark:hover:bg-gray-800 dark:text-gray-300 dark:bg-gray-900"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               <span className="text-xs sm:text-sm whitespace-nowrap">Filters</span>
