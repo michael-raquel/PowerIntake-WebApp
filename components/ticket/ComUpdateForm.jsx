@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from 'react';
-import { X, StickyNote, ChevronLeft, User, CalendarCheck, Paperclip, GitBranch, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { X, StickyNote, ChevronLeft, User, CalendarCheck, Paperclip, GitBranch, Plus, Calendar as CalendarIcon, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { useAuth } from '@/context/AuthContext';
 import { useUpdateTicket } from '@/hooks/UseUpdateTicket';
+import { useReactivateTicket } from '@/hooks/UseReactivateTicket';
 import { toast } from "sonner";
 import ComNotes from './tabs/ComNotes';
 import ComUserInformation from './tabs/ComUserInformtaion';
@@ -18,7 +19,6 @@ import ComClosureDate from './tabs/ComClosureDate';
 import ComAttachment from './tabs/ComAttachment';
 import ComTimelineView from './tabs/ComTimelineView';
 import socket from "@/lib/socket";
-import { useEffect } from 'react'; 
 
 const TABS = [
   { id: 'notes', icon: StickyNote, label: 'Notes' },
@@ -53,6 +53,8 @@ const PRIORITY_COLORS = {
 };
 
 const CALL_DURATION_MS = 2 * 60 * 60 * 1000;
+const CLOSED_STATUSES = ['Work Completed', 'Problem Solved', 'Technician Rejected', 'Cancelled', 'Merged'];
+const REACTIVATABLE_STATUSES = ['Work Completed', 'Problem Solved', 'Cancelled', 'Merged'];
 
 const toHHMM = (date) => `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
@@ -91,7 +93,8 @@ const calcEndTime = (date, startTime) => {
 
 export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const { account } = useAuth();
-  const { updateTicket, loading } = useUpdateTicket({ account });
+  const { updateTicket, loading: updateLoading } = useUpdateTicket({ account });
+  const { reactivateTicket, loading: reactivateLoading } = useReactivateTicket();
   const [activeTab, setActiveTab] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [openPopovers, setOpenPopovers] = useState({});
@@ -135,17 +138,34 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     return false;
   }, [title, description, supportCalls, original]);
 
-  const closedStatuses = ['Work Completed', 'Problem Solved', 'Technician Rejected', 'Cancelled', 'Merged'];
-  const isEditableStatus = ticket ? !closedStatuses.includes(ticket.v_status) : false;
+  const isEditableStatus = ticket ? !CLOSED_STATUSES.includes(ticket.v_status) : false;
   const canEdit = ticket ? (ticket.v_entrauserid === account?.localAccountId && ticket.v_status === 'New') : false;
   const canEditAttachments = isEditableStatus;
+  const canReactivate = ticket ? (ticket.v_entrauserid === account?.localAccountId && REACTIVATABLE_STATUSES.includes(ticket.v_status)) : false;
 
   const selectedDates = useMemo(() => supportCalls.map(c => c.date?.toDateString()).filter(Boolean), [supportCalls]);
+
+  const handleTicketUpdated = useCallback(({ ticketuuid, ticket: updated }) => {
+    if (!updated || String(updated.v_ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+    
+    setTitle(prev => prev === (ticket?.v_title || '') ? (updated.v_title || '') : prev);
+    setDescription(prev => prev === (ticket?.v_description || '') ? (updated.v_description || '') : prev);
+    
+    if (ticket?.v_status !== updated.v_status) {
+      toast.info("Ticket Updated", { description: `Status changed to ${updated.v_status}` });
+    }
+  }, [ticket?.v_ticketuuid, ticket?.v_title, ticket?.v_description, ticket?.v_status]);
+
+  useEffect(() => {
+    socket.on("ticket:updated", handleTicketUpdated);
+    return () => socket.off("ticket:updated", handleTicketUpdated);
+  }, [handleTicketUpdated]);
 
   if (!ticket) return null;
 
   const isToday = (date) => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const today = new Date(); 
+    today.setHours(0, 0, 0, 0);
     return new Date(date).toDateString() === today.toDateString();
   };
 
@@ -213,6 +233,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const handleUpdate = async () => {
     if (!ticket.v_ticketuuid || !canEdit || !hasChanges) return;
+    
     const currentTime = toHHMM(new Date());
     for (const call of supportCalls) {
       if (isToday(call.date) && call.fromTime < currentTime) {
@@ -224,13 +245,32 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
         return;
       }
     }
+    
     await updateTicket({
       ticketuuid: ticket.v_ticketuuid,
       formData: { title, description, timezone: ticket.v_usertimezone, location: ticket.v_officelocation },
       supportCalls: supportCalls.map(c => ({ date: c.date, fromTime: c.fromTime, toTime: c.toTime })),
     });
+    
     onUpdated?.(ticket.v_ticketuuid);
     onClose?.();
+  };
+
+  const handleReactivate = async () => {
+    if (!ticket.v_ticketuuid || !canReactivate) return;
+    
+    try {
+      await reactivateTicket({ ticketuuid: ticket.v_ticketuuid });
+      toast.success("Ticket Reactivated", { 
+        description: `Ticket #${ticket.v_ticketnumber} has been reactivated successfully` 
+      });
+      onUpdated?.(ticket.v_ticketuuid);
+      onClose?.();
+    } catch (error) {
+      toast.error("Reactivation Failed", { 
+        description: error.message || "Unable to reactivate ticket. Please try again." 
+      });
+    }
   };
 
   const formatTime = (t) => {
@@ -238,18 +278,6 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     const [h, m] = t.split(':').map(Number);
     return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
   };
-
-  useEffect(() => {
-  const handleTicketUpdated = ({ ticketuuid, ticket: updated }) => {
-    if (!updated || String(updated.v_ticketuuid) !== String(ticket?.v_ticketuuid)) return;
-
-    setTitle(prev => prev === (ticket?.v_title || '') ? (updated.v_title || '') : prev);
-    setDescription(prev => prev === (ticket?.v_description || '') ? (updated.v_description || '') : prev);
-  };
-
-  socket.on("ticket:updated", handleTicketUpdated);
-  return () => socket.off("ticket:updated", handleTicketUpdated);
-}, [ticket?.v_ticketuuid, ticket?.v_title, ticket?.v_description]);
 
   const inputClass = "text-sm lg:text-base bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 px-3 py-2 lg:px-4 lg:py-3";
   const readonlyClass = "bg-gray-50 dark:bg-gray-800/50 rounded-md border border-gray-200 dark:border-gray-700 text-sm lg:text-base text-gray-900 dark:text-white px-3 py-2 lg:px-4 lg:py-3";
@@ -267,9 +295,23 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
             <span className="text-xs lg:text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-md">#{ticket.v_ticketnumber}</span>
             <span className={cn('text-xs lg:text-sm font-medium px-2.5 py-1 rounded-md border', STATUS_COLORS[ticket.v_status])}>{ticket.v_status}</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
-            <X className="w-4 h-4 lg:w-5 lg:h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {canReactivate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReactivate}
+                disabled={reactivateLoading}
+                className="gap-2 border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-950/30"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5", reactivateLoading && "animate-spin")} />
+                {reactivateLoading ? 'Reactivating...' : 'Reactivate'}
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+              <X className="w-4 h-4 lg:w-5 lg:h-5" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
@@ -406,34 +448,33 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                             value={call.fromTime}
                             onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
                             className="h-9 text-sm w-full min-w-0 max-w-full truncate
-        bg-white text-gray-900 border border-gray-300
-        dark:bg-gray-800 dark:text-white dark:border-gray-600
-        focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500
-        px-3 py-2 lg:px-4 lg:py-3 appearance-none"
-    />
-  ) : (
-    <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</span>
-  )}
-</div>
-<div className="w-full">
-  <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">End</p>
-  {canEdit ? (
-    <Input
-      type="time"
-      value={call.toTime}
-      onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
-      className="h-9 text-sm w-full min-w-0 max-w-full truncate
-        bg-white text-gray-900 border border-gray-300
-        dark:bg-gray-800 dark:text-white dark:border-gray-600
-        focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500
-        px-3 py-2 lg:px-4 lg:py-3 appearance-none"
-    />
-  ) : (
-    <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</span>
-  )}
-</div>
+                              bg-white text-gray-900 border border-gray-300
+                              dark:bg-gray-800 dark:text-white dark:border-gray-600
+                              focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500
+                              px-3 py-2 lg:px-4 lg:py-3 appearance-none"
+                          />
+                        ) : (
+                          <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</span>
+                        )}
+                      </div>
+                      <div className="w-full">
+                        <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">End</p>
+                        {canEdit ? (
+                          <Input
+                            type="time"
+                            value={call.toTime}
+                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
+                            className="h-9 text-sm w-full min-w-0 max-w-full truncate
+                              bg-white text-gray-900 border border-gray-300
+                              dark:bg-gray-800 dark:text-white dark:border-gray-600
+                              focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500
+                              px-3 py-2 lg:px-4 lg:py-3 appearance-none"
+                          />
+                        ) : (
+                          <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</span>
+                        )}
+                      </div>
                     </div>
-
                   </div>
                 ))}
                 {!supportCalls.length && <p className="text-sm lg:text-base text-gray-500 dark:text-gray-400 italic text-center py-4">No support calls scheduled.</p>}
@@ -442,8 +483,8 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
             {canEdit && (
               <div className="flex justify-end pt-2">
-                <Button onClick={handleUpdate} disabled={loading || !hasChanges} className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-2 lg:py-2.5 text-sm lg:text-base">
-                  {loading ? 'Updating...' : 'Update'}
+                <Button onClick={handleUpdate} disabled={updateLoading || !hasChanges} className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-2 lg:py-2.5 text-sm lg:text-base">
+                  {updateLoading ? 'Updating...' : 'Update'}
                 </Button>
               </div>
             )}
@@ -453,8 +494,13 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
             {TABS.map(({ id, icon: Icon, label }) => (
               <button key={id}
                 onClick={() => {
-                  if (activeTab === id) { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); }
-                  else { setActiveTab(id); setPanelOpen(true); }
+                  if (activeTab === id) { 
+                    setPanelOpen(false); 
+                    setTimeout(() => setActiveTab(null), 200); 
+                  } else { 
+                    setActiveTab(id); 
+                    setPanelOpen(true); 
+                  }
                 }}
                 title={label}
                 className={cn(
