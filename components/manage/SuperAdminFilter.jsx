@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -14,9 +13,28 @@ export default function SuperAdminFilter({
   const [search,     setSearch]     = useState("");
   const [clientname, setClientname] = useState("");
   const [selectedRoles, setSelectedRoles] = useState([]);
-  const [status,     setStatus]     = useState("");
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const initializedRolesRef = useRef(false);
 
-  const activeFilterCount = [clientname, selectedRoles.length > 0, status].filter(Boolean).length;
+  useEffect(() => {
+    if (initializedRolesRef.current || roles.length === 0) return;
+    setSelectedRoles(roles);
+    initializedRolesRef.current = true;
+  }, [roles]);
+
+  const allRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
+  const roleFilterActive = selectedRoles.length > 0 && !allRolesSelected;
+
+  const resolveRoles = (nextRoles) => {
+    if (roles.length === 0) return nextRoles;
+    return nextRoles.length === roles.length ? [] : nextRoles;
+  };
+
+  const activeFilterCount = [
+    clientname,
+    roleFilterActive,
+    selectedStatuses.length > 0,
+  ].filter(Boolean).length;
 
   const handleSearch = (e) => {
     const newSearch = e.target.value;
@@ -24,8 +42,8 @@ export default function SuperAdminFilter({
     onFilter({
       search: newSearch,
       clientname,
-      selectedRoles,
-      status,
+      selectedRoles: resolveRoles(selectedRoles),
+      status: selectedStatuses,
     });
   };
 
@@ -35,8 +53,8 @@ export default function SuperAdminFilter({
     onFilter({
       search,
       clientname: newClientname,
-      selectedRoles,
-      status,
+      selectedRoles: resolveRoles(selectedRoles),
+      status: selectedStatuses,
     });
   };
 
@@ -44,47 +62,50 @@ export default function SuperAdminFilter({
     const updated = selectedRoles.includes(roleValue)
       ? selectedRoles.filter(r => r !== roleValue)
       : [...selectedRoles, roleValue];
-    setSelectedRoles(updated);
+    const nextRoles = updated.length === 0 ? roles : updated;
+    setSelectedRoles(nextRoles);
     onFilter({
       search,
       clientname,
-      selectedRoles: updated,
-      status,
+      selectedRoles: resolveRoles(nextRoles),
+      status: selectedStatuses,
     });
   };
 
-  const handleStatus = (val) => {
-    const newStatus = val === "__all__" ? "" : val;
-    setStatus(newStatus);
+  const handleStatus = (statusValue) => {
+    const updated = selectedStatuses.includes(statusValue)
+      ? selectedStatuses.filter((s) => s !== statusValue)
+      : [...selectedStatuses, statusValue];
+    setSelectedStatuses(updated);
     onFilter({
       search,
       clientname,
-      selectedRoles,
-      status: newStatus,
+      selectedRoles: resolveRoles(selectedRoles),
+      status: updated,
     });
   };
 
   const clearOne = (key) => {
     if (key === "clientname") {
       setClientname("");
-      onFilter({ search, clientname: "", selectedRoles, status });
+      onFilter({ search, clientname: "", selectedRoles: resolveRoles(selectedRoles), status: selectedStatuses });
     }
     if (key === "role") {
-      setSelectedRoles([]);
-      onFilter({ search, clientname, selectedRoles: [], status });
+      setSelectedRoles(roles);
+      onFilter({ search, clientname, selectedRoles: resolveRoles(roles), status: selectedStatuses });
     }
     if (key === "status") {
-      setStatus("");
-      onFilter({ search, clientname, selectedRoles, status: "" });
+      setSelectedStatuses([]);
+      onFilter({ search, clientname, selectedRoles: resolveRoles(selectedRoles), status: [] });
     }
   };
 
   const clearAll = () => {
     setSearch("");
     setClientname("");
-    setSelectedRoles([]);
-    setStatus("");
-    onFilter({ search: "", clientname: "", selectedRoles: [], status: "" });
+    setSelectedRoles(roles);
+    setSelectedStatuses([]);
+    onFilter({ search: "", clientname: "", selectedRoles: resolveRoles(roles), status: [] });
   };
 
   return (
@@ -102,7 +123,7 @@ export default function SuperAdminFilter({
           <button
             onClick={() => {
               setSearch("");
-              onFilter({ search: "", clientname, selectedRoles, status });
+              onFilter({ search: "", clientname, selectedRoles: resolveRoles(selectedRoles), status: selectedStatuses });
             }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
@@ -170,7 +191,7 @@ export default function SuperAdminFilter({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Role</label>
-                {selectedRoles.length > 0 && (
+                {roleFilterActive && (
                   <button onClick={() => clearOne("role")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
@@ -197,23 +218,30 @@ export default function SuperAdminFilter({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                {status && (
+                {selectedStatuses.length > 0 && (
                   <button onClick={() => clearOne("status")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
               </div>
-              <Select value={status || "__all__"} onValueChange={handleStatus}>
-                <SelectTrigger className="h-9 text-sm w-full">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All Statuses</SelectItem>
-                  {statuses.map((s) => (
-                    <SelectItem key={s} value={s}>{s == "true" ? "Active" : "Inactive"}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {statuses.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
+                )}
+                {statuses.map((s) => (
+                  <label key={s} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes(s)}
+                      onChange={() => handleStatus(s)}
+                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
+                      {s === "true" ? "Active" : "Inactive"}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
 
           </div>

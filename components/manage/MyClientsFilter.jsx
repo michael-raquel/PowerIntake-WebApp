@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -12,16 +11,16 @@ export default function ClientsFilter({
   statuses    = [],
 }) {
   const [search,     setSearch]     = useState("");
-  const [tenantname, setTenantname] = useState("");
-  const [status,     setStatus]     = useState("");
+  const [selectedTenantnames, setSelectedTenantnames] = useState([]);
+  const [selectedStatuses,    setSelectedStatuses]    = useState([]);
 
-  const activeFilterCount = [tenantname, status].filter(Boolean).length;
+  const activeFilterCount = [selectedTenantnames.length > 0, selectedStatuses.length > 0].filter(Boolean).length;
 
   const emit = (overrides = {}) => {
     onFilter({
       search,
-      tenantname,
-      status,
+      tenantname: selectedTenantnames,
+      status: selectedStatuses,
       ...overrides,
     });
   };
@@ -31,26 +30,32 @@ export default function ClientsFilter({
     emit({ search: e.target.value });
   };
 
-  const handleTenantname = (val) => {
-    const v = val === "__all__" ? "" : val;
-    setTenantname(v);
-    emit({ tenantname: v });
+  const handleTenantname = (value) => {
+    const updated = selectedTenantnames.includes(value)
+      ? selectedTenantnames.filter((t) => t !== value)
+      : [...selectedTenantnames, value];
+    setSelectedTenantnames(updated);
+    emit({ tenantname: updated });
   };
 
-  const handleStatus = (val) => {
-    const v = val === "__all__" ? "" : val;
-    setStatus(v);
-    emit({ status: v });
+  const handleStatus = (value) => {
+    const updated = selectedStatuses.includes(value)
+      ? selectedStatuses.filter((s) => s !== value)
+      : [...selectedStatuses, value];
+    setSelectedStatuses(updated);
+    emit({ status: updated });
   };
 
   const clearOne = (key) => {
-    if (key === "tenantname") { setTenantname(""); emit({ tenantname: "" }); }
-    if (key === "status")     { setStatus("");     emit({ status: "" }); }
+    if (key === "tenantname") { setSelectedTenantnames([]); emit({ tenantname: [] }); }
+    if (key === "status")     { setSelectedStatuses([]);    emit({ status: [] }); }
   };
 
   const clearAll = () => {
-    setSearch(""); setTenantname(""); setStatus("");
-    onFilter({ search: "", tenantname: "", status: "" });
+    setSearch("");
+    setSelectedTenantnames([]);
+    setSelectedStatuses([]);
+    onFilter({ search: "", tenantname: [], status: [] });
   };
 
   return (
@@ -113,47 +118,57 @@ export default function ClientsFilter({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Client Name</label>
-                {tenantname && (
+                {selectedTenantnames.length > 0 && (
                   <button onClick={() => clearOne("tenantname")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
               </div>
-              <Select value={tenantname || "__all__"} onValueChange={handleTenantname}>
-                <SelectTrigger className="h-9 text-sm w-full">
-                  <SelectValue placeholder="All Clients" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All Clients</SelectItem>
-                  {tenantnames.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                {tenantnames.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">No clients available</p>
+                )}
+                {tenantnames.map((t) => (
+                  <label key={t} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedTenantnames.includes(t)}
+                      onChange={() => handleTenantname(t)}
+                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">{t}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                {status && (
+                {selectedStatuses.length > 0 && (
                   <button onClick={() => clearOne("status")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
               </div>
-              <Select value={status || "__all__"} onValueChange={handleStatus}>
-                <SelectTrigger className="h-9 text-sm w-full">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="__all__">All Statuses</SelectItem>
-                  {statuses.map((s) => (
-                    <SelectItem key={s} value={s}>
+              <div className="space-y-2">
+                {statuses.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
+                )}
+                {statuses.map((s) => (
+                  <label key={s} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes(s)}
+                      onChange={() => handleStatus(s)}
+                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       {s === "true" ? "Active" : "Inactive"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
 
           </div>

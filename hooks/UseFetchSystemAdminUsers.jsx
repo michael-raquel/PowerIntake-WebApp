@@ -2,7 +2,15 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
-export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = null) {
+const appendListParam = (params, key, value) => {
+  if (Array.isArray(value)) {
+    if (value.length > 0) params.append(key, value.join(","));
+    return;
+  }
+  if (value) params.append(key, value);
+};
+
+export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = null, options = {}) {
   const { instance, accounts } = useMsal();
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
@@ -20,6 +28,7 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
   };
   const lastTotalsKeyRef            = useRef("");
   const limitRef                    = useRef(initialLimit);
+  const fetchAll                     = Boolean(options?.fetchAll);
 
   const resolveApiUrl = useCallback((path) => {
     const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -54,12 +63,12 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     const params = new URLSearchParams({ page: 1, limit: totalCount });
 
     if (filters.search)     params.append("search",     filters.search);
-    if (filters.clientname) params.append("clientname", filters.clientname);
+    appendListParam(params, "clientname", filters.clientname);
     if (filters.role)       params.append("role",       filters.role);
     if (filters.selectedRoles && filters.selectedRoles.length > 0) {
       params.append("role", filters.selectedRoles.join(","));
     }
-    if (filters.status)     params.append("status",     filters.status);
+    appendListParam(params, "status",     filters.status);
 
     const accessToken = await getAccessToken();
     const url = resolveApiUrl(`/manageusers/superadmin?${params}`);
@@ -115,12 +124,12 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
       const params = new URLSearchParams({ page: 1, limit: totalCount });
 
       if (filters.search)     params.append("search",     filters.search);
-      if (filters.clientname) params.append("clientname", filters.clientname);
+      appendListParam(params, "clientname", filters.clientname);
       if (filters.role)       params.append("role",       filters.role);
       if (filters.selectedRoles && filters.selectedRoles.length > 0) {
         params.append("role", filters.selectedRoles.join(","));
       }
-      if (filters.status)     params.append("status",     filters.status);
+      appendListParam(params, "status",     filters.status);
 
       const accessToken = await getAccessToken();
       const url = resolveApiUrl(`/manageusers/superadmin?${params}`);
@@ -153,12 +162,12 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
       if (limitRef.current != null) params.append("limit", limitRef.current);
 
       if (filters.search)     params.append("search",     filters.search);
-      if (filters.clientname) params.append("clientname", filters.clientname);
+      appendListParam(params, "clientname", filters.clientname);
       if (filters.role)       params.append("role",       filters.role);
       if (filters.selectedRoles && filters.selectedRoles.length > 0) {
         params.append("role", filters.selectedRoles.join(","));
       }
-      if (filters.status)     params.append("status",     filters.status);
+      appendListParam(params, "status",     filters.status);
 
       const accessToken = await getAccessToken();
       const url = resolveApiUrl(`/manageusers/superadmin?${params}`);
@@ -175,18 +184,47 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
 
       const json = await res.json();
       const totalCount = json.total || 0;
+      let rows = json.data || [];
 
-      setData(json.data || []);
+      if (fetchAll && totalCount > rows.length) {
+        const allParams = new URLSearchParams({ page: 1, limit: totalCount });
+
+        if (filters.search)     allParams.append("search",     filters.search);
+        appendListParam(allParams, "clientname", filters.clientname);
+        if (filters.role)       allParams.append("role",       filters.role);
+        if (filters.selectedRoles && filters.selectedRoles.length > 0) {
+          allParams.append("role", filters.selectedRoles.join(","));
+        }
+        appendListParam(allParams, "status",     filters.status);
+
+        const accessToken = await getAccessToken();
+        const allUrl = resolveApiUrl(`/manageusers/superadmin?${allParams}`);
+
+        const allRes = await fetch(allUrl, {
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
+
+        if (allRes.ok) {
+          const allJson = await allRes.json();
+          rows = allJson.data || rows;
+        }
+      }
+
+      setData(rows);
       setTotal(totalCount);
       setTotalPages(json.totalPages || 1);
       setPage(currentPage);
 
-      await fetchAllRoleData(filters, totalCount);
+      if (!fetchAll) {
+        await fetchAllRoleData(filters, totalCount);
 
-      const totalsKey = JSON.stringify({ total: totalCount, filters });
-      if (totalsKey !== lastTotalsKeyRef.current) {
-        lastTotalsKeyRef.current = totalsKey;
-        await fetchTotals(filters, totalCount);
+        const totalsKey = JSON.stringify({ total: totalCount, filters });
+        if (totalsKey !== lastTotalsKeyRef.current) {
+          lastTotalsKeyRef.current = totalsKey;
+          await fetchTotals(filters, totalCount);
+        }
       }
     } catch (err) {
       if (err instanceof TypeError) {
@@ -199,7 +237,7 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     } finally {
       setLoading(false);
     }
-  }, [accounts, fetchAllRoleData, fetchTotals, getAccessToken, resolveApiUrl]);
+  }, [accounts, fetchAll, fetchAllRoleData, fetchTotals, getAccessToken, resolveApiUrl]);
 
   useEffect(() => {
     if (!accounts?.[0]) return;

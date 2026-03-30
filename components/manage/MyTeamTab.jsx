@@ -102,6 +102,12 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
+    const selectedStatuses = Array.isArray(selectedFilters.status)
+      ? selectedFilters.status
+      : selectedFilters.status
+        ? [selectedFilters.status]
+        : [];
+
     return data.filter((row) => {
       // Text search
       if (searchValue && searchValue.trim()) {
@@ -115,15 +121,15 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
       }
 
       // Status filter
-      if (selectedFilters.status && selectedFilters.status.trim()) {
-        if (row.v_status !== selectedFilters.status) {
+      if (selectedStatuses.length > 0) {
+        if (!selectedStatuses.includes(String(row.v_status))) {
           return false;
         }
       }
 
       return true;
     });
-  }, [data, searchValue, selectedFilters]);
+  }, [data, searchValue, selectedFilters.status]);
 
   const displayTotal = filteredData.length;
   const displayTotalPages = effectiveLimit > 0 ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit)) : 1;

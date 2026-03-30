@@ -1,23 +1,34 @@
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSearch, statuses = [], selectedFilters = {} }) {
-  const activeFilterCount = Object.entries(selectedFilters).filter(
-    ([key, v]) => key !== "search" && v && typeof v === "string" && v.trim() !== ""
-  ).length;
+  const selectedStatuses = Array.isArray(selectedFilters.status)
+    ? selectedFilters.status
+    : selectedFilters.status
+      ? [selectedFilters.status]
+      : [];
 
-  const handleFilterChange = (filter, value) => {
-    if (!value) return;
-    onFiltersChange({ ...selectedFilters, [filter]: value });
+  const activeFilterCount = selectedStatuses.length > 0 ? 1 : 0;
+
+  const toggleStatus = (value) => {
+    const next = selectedStatuses.includes(value)
+      ? selectedStatuses.filter((s) => s !== value)
+      : [...selectedStatuses, value];
+    if (next.length === 0) {
+      const updated = { ...selectedFilters };
+      delete updated.status;
+      onFiltersChange(updated);
+      return;
+    }
+    onFiltersChange({ ...selectedFilters, status: next });
   };
 
-  const clearFilter = (filter) => {
+  const clearStatus = () => {
     const next = { ...selectedFilters };
-    delete next[filter];
+    delete next.status;
     onFiltersChange(next);
   };
 
@@ -79,33 +90,30 @@ export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSear
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                {selectedFilters.status && (
-                  <button onClick={() => clearFilter("status")}>
+                {selectedStatuses.length > 0 && (
+                  <button onClick={clearStatus}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
                 )}
               </div>
-              <Select
-                value={selectedFilters.status || ""}
-                onValueChange={(value) => {
-                  if (value === "") {
-                    clearFilter("status");
-                  } else {
-                    handleFilterChange("status", value);
-                  }
-                }}
-              >
-                <SelectTrigger className="h-9 text-sm w-full dark:bg-gray-800 dark:border-gray-700 dark:text-gray-200">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-gray-900 dark:border-gray-800">
-                  {statuses.map((s) => (
-                    <SelectItem key={s} value={s} className="dark:text-gray-200">
+              <div className="space-y-2">
+                {statuses.length === 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500">No statuses available</p>
+                )}
+                {statuses.map((s) => (
+                  <label key={s} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedStatuses.includes(s)}
+                      onChange={() => toggleStatus(s)}
+                      className="w-4 h-4 rounded border-gray-300 text-violet-600 cursor-pointer"
+                    />
+                    <span className="text-sm text-gray-700 dark:text-gray-300">
                       {s === "true" ? "Active" : "Inactive"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </PopoverContent>
