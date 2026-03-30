@@ -337,9 +337,9 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
                   onClick={() => handleRowClick(row)}
                   className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors cursor-pointer"
                 >
-                  <td className="px-4 py-3 whitespace-nowrap">
+                  <td className="px-4 py-3 whitespace-nowrap max-w-[220px]">
                     <div className="flex items-center justify-center gap-1">
-                      <span className="text-gray-600 dark:text-gray-300 truncate max-w-[120px] block">{row.v_tenantid}</span>
+                      <span className="text-gray-600 dark:text-gray-300 truncate block max-w-full font-mono">{row.v_tenantid}</span>
                       <CopyButton value={row.v_tenantid} />
                     </div>
                   </td>
