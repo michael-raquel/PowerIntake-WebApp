@@ -1,3 +1,11 @@
+# [1.4.0-dev.18](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.17...v1.4.0-dev.18) (2026-03-30)
+
+
+### Features
+
+* Refactor filters; add sortable resizable tables ([0981e49](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0981e4974ef3165f4348ab95474c92ee8bd01a0b))
+* Refactor filters; add sortable resizable tables ([ede17f7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ede17f7257cae3874f1abd2ab44540dc546bbd65))
+
 # [1.4.0-dev.17](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.16...v1.4.0-dev.17) (2026-03-30)
 
 
