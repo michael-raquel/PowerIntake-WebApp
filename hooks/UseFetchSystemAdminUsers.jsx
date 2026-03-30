@@ -10,23 +10,16 @@ const appendListParam = (params, key, value) => {
   if (value) params.append(key, value);
 };
 
-export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = null, options = {}) {
+export default function useFetchSuperAdminUsers(_initialPage = 1, initialLimit = null, options = {}) {
   const { instance, accounts } = useMsal();
   const [data,       setData]       = useState([]);
   const [loading,    setLoading]    = useState(false);
   const [error,      setError]      = useState(null);
-  const [page,       setPage]       = useState(initialPage);
-  const [limit, setLimit]           = useState(initialLimit);
-  const [total,      setTotal]      = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0, completedTickets: 0, cancelledTickets: 0, completionRate: 0 });
-  const [allRoleData, setAllRoleData] = useState([]);
   const filterOptions = {
     roles: ["Super Admin", "Admin", "Manager", "User"],
     statuses: ["true", "false"],
     clientnames: [],
   };
-  const lastTotalsKeyRef            = useRef("");
   const limitRef                    = useRef(initialLimit);
   const fetchAll                     = Boolean(options?.fetchAll);
 
@@ -53,104 +46,6 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
 
     return token?.accessToken ?? null;
   }, [accounts, instance]);
-
-  const fetchTotals = useCallback(async (filters, totalCount) => {
-    if (!totalCount) {
-      setTotals({ totalTickets: 0, openTickets: 0, completedTickets: 0, cancelledTickets: 0, completionRate: 0 });
-      return;
-    }
-
-    const params = new URLSearchParams({ page: 1, limit: totalCount });
-
-    if (filters.search)     params.append("search",     filters.search);
-    appendListParam(params, "clientname", filters.clientname);
-    if (filters.role)       params.append("role",       filters.role);
-    if (filters.selectedRoles && filters.selectedRoles.length > 0) {
-      params.append("role", filters.selectedRoles.join(","));
-    }
-    appendListParam(params, "status",     filters.status);
-
-    const accessToken = await getAccessToken();
-    const url = resolveApiUrl(`/manageusers/superadmin?${params}`);
-
-    const res = await fetch(url, {
-      headers: {
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      },
-    });
-
-    if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`${res.status} ${res.statusText} — ${body}`);
-    }
-
-    const json = await res.json();
-    const rows = json.data || [];
-    const totalTickets = rows.reduce(
-      (sum, row) => sum + Number(row?.v_totalticket ?? 0),
-      0
-    );
-    const openTickets = rows.reduce(
-      (sum, row) => sum + Number(row?.v_openticket ?? 0),
-      0
-    );
-
-    const completedTickets = rows.reduce(
-      (sum, row) => sum + Number(row?.v_completed ?? 0),
-      0
-    );
-
-    const cancelledTickets = rows.reduce(
-      (sum, row) => sum + Number(row?.v_cancelled ?? 0),
-      0
-    );
-
-    let completionRate = 0;
-    if (totalTickets > 0) {
-      completionRate = Number(((completedTickets / totalTickets) * 100).toFixed(1));
-    }
-
-    setTotals({ totalTickets, openTickets, completedTickets, cancelledTickets, completionRate });
-  }, [getAccessToken, resolveApiUrl]);
-
-  const fetchAllRoleData = useCallback(async (filters, totalCount) => {
-    const hasRole = filters?.role || (filters?.selectedRoles && filters.selectedRoles.length > 0);
-    if (!hasRole || !totalCount) {
-      setAllRoleData([]);
-      return;
-    }
-
-    try {
-      const params = new URLSearchParams({ page: 1, limit: totalCount });
-
-      if (filters.search)     params.append("search",     filters.search);
-      appendListParam(params, "clientname", filters.clientname);
-      if (filters.role)       params.append("role",       filters.role);
-      if (filters.selectedRoles && filters.selectedRoles.length > 0) {
-        params.append("role", filters.selectedRoles.join(","));
-      }
-      appendListParam(params, "status",     filters.status);
-
-      const accessToken = await getAccessToken();
-      const url = resolveApiUrl(`/manageusers/superadmin?${params}`);
-
-      const res = await fetch(url, {
-        headers: {
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-      });
-
-      if (!res.ok) {
-        setAllRoleData([]);
-        return;
-      }
-
-      const json = await res.json();
-      setAllRoleData(json.data || []);
-    } catch (err) {
-      setAllRoleData([]);
-    }
-  }, [getAccessToken, resolveApiUrl]);
 
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
     if (!accounts?.[0]) return;
@@ -213,19 +108,6 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
       }
 
       setData(rows);
-      setTotal(totalCount);
-      setTotalPages(json.totalPages || 1);
-      setPage(currentPage);
-
-      if (!fetchAll) {
-        await fetchAllRoleData(filters, totalCount);
-
-        const totalsKey = JSON.stringify({ total: totalCount, filters });
-        if (totalsKey !== lastTotalsKeyRef.current) {
-          lastTotalsKeyRef.current = totalsKey;
-          await fetchTotals(filters, totalCount);
-        }
-      }
     } catch (err) {
       if (err instanceof TypeError) {
         setError("Network error. Check API base URL, CORS, and server availability.");
@@ -233,17 +115,15 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
         setError(err?.message || String(err));
       }
       setData([]);
-      setTotals({ totalTickets: 0, openTickets: 0 });
     } finally {
       setLoading(false);
     }
-  }, [accounts, fetchAll, fetchAllRoleData, fetchTotals, getAccessToken, resolveApiUrl]);
+  }, [accounts, fetchAll, getAccessToken, resolveApiUrl]);
 
   useEffect(() => {
     if (!accounts?.[0]) return;
     if (initialLimit !== limitRef.current) {
       limitRef.current = initialLimit;
-      setLimit(initialLimit);
       fetchData(1);
     }
   }, [accounts, initialLimit, fetchData]);
@@ -257,14 +137,6 @@ export default function useFetchSuperAdminUsers(initialPage = 1, initialLimit = 
     data,
     loading,
     error,
-    page,
-    limit,
-    total,
-    totals,
-    allRoleData,
-    totalPages,
-    hasNext: page < totalPages,
-    hasPrev: page > 1,
     fetchData,
     filterOptions,
   };

@@ -40,7 +40,7 @@ function CopyButton({ value }) {
   );
 }
 
-export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
+export default function MyClientsTab({ searchValue = "", onSearchChange = () => {} }) {
   const { accounts } = useMsal();
   const [localPage, setLocalPage] = useState(1);
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
@@ -64,10 +64,9 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
   const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
 
   const {
-    data, loading, error,
-    page, total, totalPages,
-    hasNext, hasPrev, fetchData,
-    totals, filterOptions,
+    data, loading,
+    fetchData,
+    totals,
   } = useFetchMyClients(1, effectiveLimit);
 
   useEffect(() => {
@@ -159,6 +158,21 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
             </button>
           )}
         </div>
+        <div className="md:hidden">
+          <Select value={String(selectedRowsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
+            <SelectTrigger size="sm" className="h-8 px-2 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -228,6 +242,10 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                     <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</p>
                   </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 col-span-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completion ?? 0}%</p>
+                  </div>
                 </div>
               </div>
             ))}
@@ -273,7 +291,7 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
         )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
+      <div className="hidden md:flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>

@@ -36,7 +36,7 @@ const TABLE_HEADERS = [
 
 const DEFAULT_ROWS = 10;
 
-export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
+export default function SuperAdminTab() {
   const { accounts } = useMsal();
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
   const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
@@ -45,7 +45,6 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
   const {
     data,
     loading,
-    error,
     fetchData,
     filterOptions,
   } = useFetchSuperAdminUsers(1, effectiveLimit, { fetchAll: true });
@@ -294,6 +293,9 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
         onFilter={handleFilter}
         roles={roles}
         statuses={statuses}
+        rowsPerPage={selectedRowsPerPage ?? DEFAULT_ROWS}
+        onRowsPerPageChange={handleRecordsPerPageChange}
+        rowsPerPageDisabled={updating}
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -423,7 +425,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">Totals</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">All records</span>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="mt-3 grid grid-cols-3 gap-2">
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                       <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
@@ -431,7 +433,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Completed Tickets</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                         {filteredTotals.completedTickets}
                       </p>
@@ -443,7 +445,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled Tickets</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
                         {filteredTotals.cancelledTickets}
                       </p>
@@ -460,7 +462,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
+      <div className="hidden md:flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>

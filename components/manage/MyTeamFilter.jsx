@@ -3,33 +3,57 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSearch, statuses = [], selectedFilters = {} }) {
-  const selectedStatuses = Array.isArray(selectedFilters.status)
+export default function MyTeamFilter({
+  onFiltersChange,
+  searchValue = "",
+  onSearch,
+  statuses = [],
+  selectedFilters = {},
+  rowsPerPage = 10,
+  onRowsPerPageChange,
+  rowsPerPageDisabled = false,
+}) {
+  const rawSelectedStatuses = Array.isArray(selectedFilters.status)
     ? selectedFilters.status
     : selectedFilters.status
       ? [selectedFilters.status]
       : [];
+  const selectedStatuses = rawSelectedStatuses.length === 0 && statuses.length > 0
+    ? statuses
+    : rawSelectedStatuses;
 
-  const activeFilterCount = selectedStatuses.length > 0 ? 1 : 0;
+  const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
+  const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
+  const activeFilterCount = statusFilterActive ? 1 : 0;
+
+  const rowsValue = String(rowsPerPage ?? 10);
 
   const toggleStatus = (value) => {
     const next = selectedStatuses.includes(value)
       ? selectedStatuses.filter((s) => s !== value)
       : [...selectedStatuses, value];
-    if (next.length === 0) {
-      const updated = { ...selectedFilters };
-      delete updated.status;
-      onFiltersChange(updated);
-      return;
-    }
-    onFiltersChange({ ...selectedFilters, status: next });
+    const nextStatuses = next.length === 0 && statuses.length > 0 ? statuses : next;
+    const updated = { ...selectedFilters, status: nextStatuses };
+    if (nextStatuses.length === 0) delete updated.status;
+    onFiltersChange(updated);
   };
 
   const clearStatus = () => {
-    const next = { ...selectedFilters };
-    delete next.status;
-    onFiltersChange(next);
+    if (statuses.length === 0) {
+      const next = { ...selectedFilters };
+      delete next.status;
+      onFiltersChange(next);
+      return;
+    }
+    onFiltersChange({ ...selectedFilters, status: statuses });
   };
 
   return (
@@ -79,7 +103,7 @@ export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSear
               <span className="text-sm font-medium text-gray-900 dark:text-white">Filters</span>
               {activeFilterCount > 0 && (
                 <button
-                  onClick={() => onFiltersChange({})}
+                  onClick={() => onFiltersChange(statuses.length > 0 ? { status: statuses } : {})}
                   className="text-xs text-violet-600 dark:text-violet-400 hover:underline"
                 >
                   Clear all
@@ -90,7 +114,7 @@ export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSear
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                {selectedStatuses.length > 0 && (
+                {statusFilterActive && (
                   <button onClick={clearStatus}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>
@@ -118,6 +142,24 @@ export default function MyTeamFilter({ onFiltersChange, searchValue = "", onSear
           </div>
         </PopoverContent>
       </Popover>
+
+      {onRowsPerPageChange && (
+        <div className="md:hidden">
+          <Select value={rowsValue} onValueChange={onRowsPerPageChange} disabled={rowsPerPageDisabled}>
+            <SelectTrigger size="sm" className="h-8 px-2 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </div>
   );
 }

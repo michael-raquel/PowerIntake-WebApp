@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -13,15 +13,33 @@ export default function ClientsFilter({
   const [search,     setSearch]     = useState("");
   const [selectedTenantnames, setSelectedTenantnames] = useState([]);
   const [selectedStatuses,    setSelectedStatuses]    = useState([]);
+  const initializedStatusesRef = useRef(false);
 
-  const activeFilterCount = [selectedTenantnames.length > 0, selectedStatuses.length > 0].filter(Boolean).length;
+  useEffect(() => {
+    if (initializedStatusesRef.current || statuses.length === 0) return;
+    setSelectedStatuses(statuses);
+    initializedStatusesRef.current = true;
+  }, [statuses]);
+
+  const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
+  const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
+
+  const activeFilterCount = [selectedTenantnames.length > 0, statusFilterActive].filter(Boolean).length;
+
+  const resolveStatuses = (nextStatuses) => {
+    if (statuses.length === 0) return nextStatuses;
+    return nextStatuses.length === statuses.length ? [] : nextStatuses;
+  };
 
   const emit = (overrides = {}) => {
+    const statusValue = Object.prototype.hasOwnProperty.call(overrides, "status")
+      ? overrides.status
+      : selectedStatuses;
     onFilter({
       search,
       tenantname: selectedTenantnames,
-      status: selectedStatuses,
       ...overrides,
+      status: resolveStatuses(statusValue),
     });
   };
 
@@ -42,20 +60,21 @@ export default function ClientsFilter({
     const updated = selectedStatuses.includes(value)
       ? selectedStatuses.filter((s) => s !== value)
       : [...selectedStatuses, value];
-    setSelectedStatuses(updated);
-    emit({ status: updated });
+    const nextStatuses = updated.length === 0 ? statuses : updated;
+    setSelectedStatuses(nextStatuses);
+    emit({ status: nextStatuses });
   };
 
   const clearOne = (key) => {
     if (key === "tenantname") { setSelectedTenantnames([]); emit({ tenantname: [] }); }
-    if (key === "status")     { setSelectedStatuses([]);    emit({ status: [] }); }
+    if (key === "status")     { setSelectedStatuses(statuses);    emit({ status: statuses }); }
   };
 
   const clearAll = () => {
     setSearch("");
     setSelectedTenantnames([]);
-    setSelectedStatuses([]);
-    onFilter({ search: "", tenantname: [], status: [] });
+    setSelectedStatuses(statuses);
+    onFilter({ search: "", tenantname: [], status: resolveStatuses(statuses) });
   };
 
   return (
@@ -145,7 +164,7 @@ export default function ClientsFilter({
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                {selectedStatuses.length > 0 && (
+                {statusFilterActive && (
                   <button onClick={() => clearOne("status")}>
                     <X className="w-3 h-3 text-gray-400 hover:text-gray-600" />
                   </button>

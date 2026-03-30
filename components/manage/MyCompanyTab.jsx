@@ -36,7 +36,7 @@ const TABLE_HEADERS = [
 
 const DEFAULT_ROWS = 10;
 
-export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
+export default function MyCompanyTab() {
   const { accounts } = useMsal();
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
   const [localPage, setLocalPage] = useState(1);
@@ -67,7 +67,6 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
   const {
     data,
     loading,
-    error,
     fetchData,
     filterOptions,
   } = useFetchAllCompanyUsers(1, effectiveLimit, { fetchAll: true });
@@ -308,6 +307,9 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
         roles={roles}
         departments={departments}
         statuses={statuses}
+        rowsPerPage={selectedRowsPerPage ?? DEFAULT_ROWS}
+        onRowsPerPageChange={handleRecordsPerPageChange}
+        rowsPerPageDisabled={updating}
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -409,6 +411,10 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
                       <span>Cancelled</span>
                       <span className="font-semibold text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</span>
                     </div>
+                    <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>Completion</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_completion ?? 0}%</span>
+                    </div>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between">
                     <span className="text-xs text-gray-500 dark:text-gray-400">Admin</span>
@@ -465,7 +471,7 @@ export default function MyCompanyTab({ recordsPerPage: parentRecordsPerPage, tab
         )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
+      <div className="hidden md:flex flex-col flex-1 min-h-0">
         <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
         <table className="w-full text-sm">
           <thead>
