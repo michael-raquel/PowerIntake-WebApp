@@ -33,7 +33,7 @@ export default function ComTableCompany({
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
   const { tickets, loading, error, setTickets } = useFetchTicket({
-    entrauserid: tokenInfo?.account?.localAccountId,
+    entratenantid: tokenInfo?.account?.tenantId,
     refreshKey,
   });
 
