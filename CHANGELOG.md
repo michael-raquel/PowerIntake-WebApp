@@ -1,3 +1,10 @@
+# [1.4.0-dev.16](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.15...v1.4.0-dev.16) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket websocket on update ([cc58918](https://github.com/michael-raquel/PowerIntake-WebApp/commit/cc58918747a4c7b6aefe371c22f63ecd2f5c6ab4))
+
 # [1.4.0-dev.15](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.14...v1.4.0-dev.15) (2026-03-30)
 
 
