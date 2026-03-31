@@ -80,18 +80,20 @@ function AppContent({ Component, pageProps }) {
                 <Component {...pageProps} />
               </div>
             ) : (
-              /* AuthGuard owns the entire layout for protected pages */
               <AuthGuard
                 requiredRoles={requiredRoles}
                 showSidebar={showSidebar}
               >
-                <Component {...pageProps} />
+                <>
+                  <Component {...pageProps} />
+                  <SpartaAssistWidget hasMobileBottomNav={showSidebar} />
+                </>
               </AuthGuard>
             )}
 
-            {showAssistWidget && (
+            {/* {showAssistWidget && (
               <SpartaAssistWidget hasMobileBottomNav={showSidebar} />
-            )}
+            )} */}
             <Toaster />
           </ThemeProvider>
         </AuthProvider>
