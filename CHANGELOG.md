@@ -1,3 +1,10 @@
+# [1.4.0-dev.23](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.22...v1.4.0-dev.23) (2026-03-31)
+
+
+### Bug Fixes
+
+* Force login prompt and tidy no-consent page ([4074bd3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4074bd352331de86bcd32b32adca75f0ba6dedc7))
+
 # [1.4.0-dev.22](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.21...v1.4.0-dev.22) (2026-03-31)
 
 
