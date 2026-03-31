@@ -24,6 +24,8 @@ import SuperAdminTable from "./table/SuperAdminTable";
 import { formatPercent } from "@/lib/utils";
 
 const DEFAULT_ROWS = 10;
+const SPARTA_TENANT_NAME = "Sparta Services LLC";
+const SPARTA_TENANT_NAME_NORMALIZED = SPARTA_TENANT_NAME.toLowerCase();
 
 const compareSortValues = (aValue, bValue) => {
   const aEmpty = aValue === null || aValue === undefined || aValue === "";
@@ -285,6 +287,11 @@ export default function SuperAdminTab() {
       .map((role) => normalizeRole(role))
       .includes(target);
   }, [normalizeRole]);
+
+  const isSpartaTenant = useCallback(
+    (row) => String(row?.v_tenantname || "").trim().toLowerCase() === SPARTA_TENANT_NAME_NORMALIZED,
+    [],
+  );
 
   const columns = useMemo(() => [
     {
@@ -600,7 +607,7 @@ export default function SuperAdminTab() {
                             className="data-[state=checked]:bg-blue-500 cursor-pointer"
                             checked={hasRole(getRoleValue(row), "SuperAdmin")}
                             onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
-                            disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || row.v_status !== "true"}
+                            disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || row.v_status !== "true" || !isSpartaTenant(row)}
                           />
                         </div>
                       </div>
@@ -665,6 +672,7 @@ export default function SuperAdminTab() {
         demoting={demoting}
         fetchingGroupId={fetchingGroupId}
         demoteGroupLoading={demoteGroupLoading}
+        isSpartaTenant={isSpartaTenant}
       />
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 pr-20">

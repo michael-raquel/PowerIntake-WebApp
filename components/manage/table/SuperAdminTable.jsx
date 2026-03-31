@@ -21,6 +21,7 @@ export default function SuperAdminTable({
 	demoting,
 	fetchingGroupId,
 	demoteGroupLoading,
+	isSpartaTenant,
 }) {
 	return (
 		<div className="hidden md:flex flex-col flex-1 min-h-0">
@@ -124,7 +125,7 @@ export default function SuperAdminTable({
 												className="data-[state=checked]:bg-blue-500 cursor-pointer"
 												checked={hasRole(getRoleValue(row), "SuperAdmin")}
 												onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
-												disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || row.v_status !== "true"}
+												disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || row.v_status !== "true" || !isSpartaTenant(row)}
 											/>
 										</div>
 									</td>
