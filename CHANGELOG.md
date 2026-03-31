@@ -1,3 +1,10 @@
+# [1.4.0-dev.26](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.25...v1.4.0-dev.26) (2026-03-31)
+
+
+### Bug Fixes
+
+* Add SpartaAssistContext and widget toggle ([0d21f75](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0d21f75df5e884d0a0bf07ab353eebf9e5486f61))
+
 # [1.4.0-dev.25](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.24...v1.4.0-dev.25) (2026-03-31)
 
 
