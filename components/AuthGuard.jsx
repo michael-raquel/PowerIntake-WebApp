@@ -2,13 +2,17 @@ import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { loginRequest } from "@/lib/msalConfig";
+import dynamic from "next/dynamic";
 
-export default function AuthGuard({ children, requiredRoles }) {
+const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
+  ssr: false,
+});
+
+export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   const isAuthenticated = useIsAuthenticated();
   const { instance, accounts } = useMsal();
   const router = useRouter();
 
-  // null = unknown, true = verified, false = not verified
   const [verified, setVerified] = useState(null);
 
   // ── Auth redirect ───────────────────────────────────────
@@ -21,15 +25,11 @@ export default function AuthGuard({ children, requiredRoles }) {
   // ── Consent gate ────────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) return;
-
     const isVerified = sessionStorage.getItem("consent_verified") === "1";
-
     if (isVerified) {
       setVerified(true);
     } else {
-      // Not verified yet — send to /checking before rendering anything
       router.replace("/checking");
-      // Keep verified=null so children never flash
     }
   }, [isAuthenticated, router]);
 
@@ -46,31 +46,31 @@ export default function AuthGuard({ children, requiredRoles }) {
     }
   }, [isAuthenticated, verified, requiredRoles, hasRequiredRole, router]);
 
-  // ── Render gates — children NEVER render until verified=true ──
-  if (!isAuthenticated) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <p className="text-zinc-500 text-sm">Redirecting to Microsoft login...</p>
-      </div>
-    );
-  }
-
-  // verified=null means we're mid-redirect to /checking — show nothing
-  if (verified !== true) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
+  // ── Loading shell ────────────────────────────────────────
+  const loadingScreen = (message) => (
+    <div className="flex min-h-screen items-center justify-center bg-black">
+      {message ? (
+        <p className="text-zinc-500 text-sm">{message}</p>
+      ) : (
         <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-violet-500 animate-spin" />
-      </div>
-    );
-  }
+      )}
+    </div>
+  );
 
-  if (requiredRoles?.length > 0 && !hasRequiredRole) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <p className="text-zinc-500 text-sm">Checking permissions...</p>
-      </div>
-    );
-  }
+  if (!isAuthenticated) return loadingScreen("Redirecting to Microsoft login...");
+  if (verified !== true) return loadingScreen(null);
+  if (requiredRoles?.length > 0 && !hasRequiredRole) return loadingScreen("Checking permissions...");
 
-  return children;
+  // ── Verified: render full layout ─────────────────────────
+  return (
+    <div className="flex h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300 w-full">
+      {showSidebar && <SideNavbar />}
+      <main className="flex-1 min-h-0 overflow-y-auto">
+        {showSidebar && <div className="md:hidden h-14" />}
+        <div className={showSidebar ? "min-h-full pb-16 md:pb-0" : "min-h-full pb-0"}>
+          {children}
+        </div>
+      </main>
+    </div>
+  );
 }

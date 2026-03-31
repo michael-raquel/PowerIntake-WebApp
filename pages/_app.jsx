@@ -11,9 +11,6 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { Toaster } from "sonner";
 import Clarity from "@microsoft/clarity";
 
-const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
-  ssr: false,
-});
 const AuthGuard = dynamic(() => import("@/components/AuthGuard"), {
   ssr: false,
 });
@@ -28,13 +25,12 @@ const noSidebarPages = [
   "/",
   "/register",
   "/login",
-  "/checking",        // ← add this
+  "/checking",
   "/consent-callback",
   "/unauthorized",
   "/no-consent",
 ];
 
-// Optional route-level role restrictions (all non-public routes still require login)
 const routeRoleMap = {
   "/manage": ["SuperAdmin", "SystemAdmin", "Manager"],
 };
@@ -78,36 +74,20 @@ function AppContent({ Component, pageProps }) {
       <MsalProvider instance={msalInstance}>
         <AuthProvider>
           <ThemeProvider>
-            <div
-              suppressHydrationWarning
-              className={`flex min-h-dvh text-gray-900 dark:text-white transition-colors duration-300 ${
-                isPublicPage ? "bg-black" : "bg-white dark:bg-black"
-              } ${
-                isPublicPage ? "overflow-x-hidden" : "h-screen overflow-hidden"
-              }`}
-            >
-              {showSidebar && <SideNavbar />}
-              <main
-                className={`flex-1 min-h-0 ${
-                  isPublicPage ? "overflow-y-auto" : "overflow-y-auto"
-                } ${showSidebar ? "md:ml-0" : ""}`}
+            {/* Public pages get their own simple full-screen wrapper */}
+            {isPublicPage ? (
+              <div className="min-h-dvh bg-black overflow-x-hidden">
+                <Component {...pageProps} />
+              </div>
+            ) : (
+              /* AuthGuard owns the entire layout for protected pages */
+              <AuthGuard
+                requiredRoles={requiredRoles}
+                showSidebar={showSidebar}
               >
-                {showSidebar && <div className="md:hidden h-14" />}
-                <div
-                  className={
-                    showSidebar ? "min-h-full pb-16 md:pb-0" : "min-h-full pb-0"
-                  }
-                >
-                  {isPublicPage ? (
-                    <Component {...pageProps} />
-                  ) : (
-                    <AuthGuard requiredRoles={requiredRoles}>
-                      <Component {...pageProps} />
-                    </AuthGuard>
-                  )}
-                </div>
-              </main>
-            </div>
+                <Component {...pageProps} />
+              </AuthGuard>
+            )}
 
             {showAssistWidget && (
               <SpartaAssistWidget hasMobileBottomNav={showSidebar} />

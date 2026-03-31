@@ -1,3 +1,11 @@
+# [1.4.0-dev.21](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.20...v1.4.0-dev.21) (2026-03-31)
+
+
+### Bug Fixes
+
+* issue 2149 Remove Refresh Button on Manage Page for User and Manager ([3bce630](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3bce6308c7c8eca9fe9c85558db5fdb56d138bd4))
+* Move layout and sidebar into AuthGuard ([c7ab116](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c7ab116418dadefd3fbc80c159d570261c23a4e3))
+
 # [1.4.0-dev.20](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.19...v1.4.0-dev.20) (2026-03-30)
 
 
