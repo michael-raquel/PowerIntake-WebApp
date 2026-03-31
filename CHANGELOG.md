@@ -1,3 +1,10 @@
+# [1.4.0-dev.22](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.21...v1.4.0-dev.22) (2026-03-31)
+
+
+### Bug Fixes
+
+* ST-2155 Disable Toggle button for Users not under Sparta on Super Admin Tab on Manage Page ([cda4845](https://github.com/michael-raquel/PowerIntake-WebApp/commit/cda4845de6a5587b7e21e58191877b82a8b4e85c))
+
 # [1.4.0-dev.21](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.20...v1.4.0-dev.21) (2026-03-31)
 
 
