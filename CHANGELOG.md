@@ -1,3 +1,10 @@
+# [1.4.0-dev.25](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.24...v1.4.0-dev.25) (2026-03-31)
+
+
+### Bug Fixes
+
+* Only Display Sparta upon Authenticated ([4de5c56](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4de5c5647b93eb78c7a82142492554c1d624bf53))
+
 # [1.4.0-dev.24](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.23...v1.4.0-dev.24) (2026-03-31)
 
 
