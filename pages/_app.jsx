@@ -8,6 +8,10 @@ import dynamic from "next/dynamic";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider as NextThemeProvider } from "next-themes";
 import { ThemeProvider } from "@/context/ThemeContext";
+import {
+  SpartaAssistProvider,
+  useSpartaAssist,
+} from "@/context/SpartaAssistContext";
 import { Toaster } from "sonner";
 import Clarity from "@microsoft/clarity";
 
@@ -37,12 +41,10 @@ const routeRoleMap = {
 
 function AppContent({ Component, pageProps }) {
   const router = useRouter();
+  const { spartaAssistEnabled } = useSpartaAssist();
   const isPublicPage = noSidebarPages.includes(router.pathname);
   const showSidebar = !isPublicPage;
   const requiredRoles = routeRoleMap[router.pathname] ?? [];
-
-  const hideAssistRoutes = ["/offline"];
-  const showAssistWidget = !hideAssistRoutes.includes(router.pathname);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -64,6 +66,30 @@ function AppContent({ Component, pageProps }) {
     }
   }, []);
 
+  const shouldShowWidget = spartaAssistEnabled === true && !isPublicPage;
+
+  return (
+    <>
+      {isPublicPage ? (
+        <div className="min-h-dvh bg-black overflow-x-hidden">
+          <Component {...pageProps} />
+        </div>
+      ) : (
+        <AuthGuard requiredRoles={requiredRoles} showSidebar={showSidebar}>
+          <>
+            <Component {...pageProps} />
+            {shouldShowWidget && (
+              <SpartaAssistWidget hasMobileBottomNav={showSidebar} />
+            )}
+          </>
+        </AuthGuard>
+      )}
+      <Toaster />
+    </>
+  );
+}
+
+export default function App(props) {
   return (
     <NextThemeProvider
       attribute="class"
@@ -74,34 +100,14 @@ function AppContent({ Component, pageProps }) {
       <MsalProvider instance={msalInstance}>
         <AuthProvider>
           <ThemeProvider>
-            {/* Public pages get their own simple full-screen wrapper */}
-            {isPublicPage ? (
-              <div className="min-h-dvh bg-black overflow-x-hidden">
-                <Component {...pageProps} />
-              </div>
-            ) : (
-              <AuthGuard
-                requiredRoles={requiredRoles}
-                showSidebar={showSidebar}
-              >
-                <>
-                  <Component {...pageProps} />
-                  <SpartaAssistWidget hasMobileBottomNav={showSidebar} />
-                </>
-              </AuthGuard>
-            )}
-
-            {/* {showAssistWidget && (
-              <SpartaAssistWidget hasMobileBottomNav={showSidebar} />
-            )} */}
-            <Toaster />
+            <SpartaAssistProvider>
+              {" "}
+              {/* ← now inside AuthProvider */}
+              <AppContent {...props} />
+            </SpartaAssistProvider>
           </ThemeProvider>
         </AuthProvider>
       </MsalProvider>
     </NextThemeProvider>
   );
-}
-
-export default function App(props) {
-  return <AppContent {...props} />;
 }

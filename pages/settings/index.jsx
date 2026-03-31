@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
+import { useSpartaAssist } from '@/context/SpartaAssistContext'; // ← ADD
 import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateUserSettings } from '@/hooks/UseUpdateUserSettings';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ export default function SettingsPage() {
   const { accounts } = useMsal();
   const { account } = useAuth();
   const { isDarkMode, toggleTheme } = useAppTheme();
+  const { updateSpartaAssist } = useSpartaAssist(); // ← ADD
   const [localSettings, setLocalSettings] = useState({});
   const [initialSettings, setInitialSettings] = useState({});
   const [isSaving, setIsSaving] = useState(false);
@@ -53,6 +55,7 @@ export default function SettingsPage() {
       setLocalSettings(newSettings);
       setInitialSettings(newSettings);
       setSettingsLoaded(true);
+      updateSpartaAssist(newSettings.spartaassist); // ← ADD: sync on initial load
     }
   }, [userSettings, entrauserid, settingsLoaded]);
 
@@ -66,6 +69,12 @@ export default function SettingsPage() {
     setLoadingToggles((prev) => ({ ...prev, [setting]: true }));
     const updatedSettings = { ...localSettings, [setting]: value };
     setLocalSettings(updatedSettings);
+
+    // ← ADD: instantly update context when spartaassist is toggled
+    if (setting === 'spartaassist') {
+      updateSpartaAssist(value);
+    }
+
     try {
       await updateUserSettings({
         ...updatedSettings,
@@ -74,6 +83,10 @@ export default function SettingsPage() {
       setInitialSettings(updatedSettings);
     } catch {
       setLocalSettings(localSettings);
+      // ← ADD: revert context on failure
+      if (setting === 'spartaassist') {
+        updateSpartaAssist(localSettings.spartaassist);
+      }
     } finally {
       setLoadingToggles((prev) => ({ ...prev, [setting]: false }));
     }
@@ -97,6 +110,7 @@ export default function SettingsPage() {
       };
       setLocalSettings(resetSettings);
       setInitialSettings(resetSettings);
+      updateSpartaAssist(true); // ← ADD: reset also updates context
       await updateUserSettings(resetSettings);
       if (!isDarkMode) await toggleTheme();
     } catch {
@@ -171,54 +185,47 @@ export default function SettingsPage() {
       </div>
 
       <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
-      <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
-
-        <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
-          <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
-          <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">Sparta Services, LLC</p>
-        </div>
-
-        <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3 sm:pr-14">
-          <div className="hidden sm:flex items-center gap-1">
-            {[
-              { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
-              { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
-              { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
-              { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
-            ].map((link, i, arr) => (
-              <span key={link.label} className="flex items-center">
-                <a href={link.href} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap">
+        <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
+            <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+            <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">Sparta Services, LLC</p>
+          </div>
+          <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3 sm:pr-14">
+            <div className="hidden sm:flex items-center gap-1">
+              {[
+                { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
+                { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
+                { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
+                { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
+              ].map((link, i, arr) => (
+                <span key={link.label} className="flex items-center">
+                  <a href={link.href} target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap">
+                    {link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
+                  </a>
+                  {i < arr.length - 1 && <span className="w-px h-3 bg-gray-300 dark:bg-gray-700 mx-0.5 shrink-0" />}
+                </span>
+              ))}
+            </div>
+            <div className="grid sm:hidden grid-cols-2 gap-x-0 gap-y-0">
+              {[
+                { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
+                { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
+                { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
+                { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
+              ].map((link, i) => (
+                <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
                   {link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
                 </a>
-                {i < arr.length - 1 && <span className="w-px h-3 bg-gray-300 dark:bg-gray-700 mx-0.5 shrink-0" />}
-              </span>
-            ))}
+              ))}
+            </div>
           </div>
-
-          <div className="grid sm:hidden grid-cols-2 gap-x-0 gap-y-0">
-            {[
-              { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
-              { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
-              { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
-              { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
-            ].map((link, i) => (
-              <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap ${i % 2 === 0 ? 'justify-end' : 'justify-start'
-                  }`}>
-                {link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
-              </a>
-            ))}
-          </div>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">
+            &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
+          </p>
         </div>
-
-        <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">
-          &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
-        </p>
-
-      </div>
-    </footer>
-
+      </footer>
     </div>
   );
 }
