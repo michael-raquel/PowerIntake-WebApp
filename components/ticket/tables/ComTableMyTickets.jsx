@@ -78,13 +78,16 @@ export default function ComTableMyTickets({
         // toast.success("Ticket(s) has been removed.");
       };
 
-      const handleTicketUpdated = ({ ticketuuid, ticket }) => {
-        if (!ticket) return;
-        setTickets(prev =>
-          prev.map(t => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
-        );
-        onUpdated?.();  
-      };
+     const handleTicketUpdated = ({ ticketuuid, ticket }) => {
+      if (!ticket) return;
+      setTickets(prev =>
+        prev.map(t => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
+      );
+      setSelectedTicket(prev =>
+        prev && String(prev.v_ticketuuid) === String(ticketuuid) ? { ...prev, ...ticket } : prev
+      );
+      onUpdated?.();  
+    };
 
     socket.on("ticket:synced",      handleTicketSynced);
     socket.on("ticket:sync_failed", handleTicketSyncFailed);
