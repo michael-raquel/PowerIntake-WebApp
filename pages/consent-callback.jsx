@@ -6,21 +6,21 @@ export default function ConsentCallback() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!router.isReady) return;
+  if (!router.isReady) return;
 
-    const { consent } = router.query;
+  const { consent } = router.query;
 
-    const timer = setTimeout(() => {
-      if (consent === "success") {
-        sessionStorage.setItem("consent_verified", "1");
-        router.replace("/home"); 
-      } else {
-        router.replace("/no-consent?reason=not-registered");
-      }
-    }, 2500);
+  const timer = setTimeout(() => {
+    if (consent === "success") {
+      sessionStorage.setItem("consent_verified", "1");
+      window.location.href = "/home";  // ✅ hard navigation, forces full page load
+    } else {
+      window.location.href = "/no-consent?reason=not-registered";
+    }
+  }, 2500);
 
-    return () => clearTimeout(timer);
-  }, [router.isReady, router.query]);
+  return () => clearTimeout(timer);
+}, [router.isReady, router.query]);
 
   const { consent } = router.query;
   const isSuccess = consent === "success";
