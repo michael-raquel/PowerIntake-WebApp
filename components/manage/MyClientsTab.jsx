@@ -47,12 +47,12 @@ const TABLE_COLUMNS = [
     sortValue: (row) => Number(row?.v_totalticket ?? 0),
   },
   {
-    key: "completed",
-    label: "Completed",
+    key: "new",
+    label: "New",
     align: "center",
-    minWidth: 150,
-    defaultWidth: 160,
-    sortValue: (row) => Number(row?.v_completed ?? 0),
+    minWidth: 130,
+    defaultWidth: 140,
+    sortValue: (row) => Number(row?.v_newticket ?? 0),
   },
   {
     key: "inProgress",
@@ -63,12 +63,12 @@ const TABLE_COLUMNS = [
     sortValue: (row) => Number(row?.v_openticket ?? 0),
   },
   {
-    key: "cancelled",
-    label: "Cancelled",
+    key: "completed",
+    label: "Completed",
     align: "center",
-    minWidth: 160,
-    defaultWidth: 170,
-    sortValue: (row) => Number(row?.v_cancelled ?? 0),
+    minWidth: 150,
+    defaultWidth: 160,
+    sortValue: (row) => Number(row?.v_completed ?? 0),
   },
   {
     key: "completionRate",
@@ -379,16 +379,16 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
-                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completed ?? 0}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">New</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_newticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                     <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
-                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completed ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 col-span-2">
                     <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
@@ -410,9 +410,9 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">New</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.completedTickets ?? 0}
+                    {totals?.newTickets ?? 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
@@ -422,9 +422,9 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.cancelledTickets ?? 0}
+                    {totals?.completedTickets ?? 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
