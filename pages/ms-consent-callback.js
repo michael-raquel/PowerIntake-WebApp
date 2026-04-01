@@ -37,7 +37,7 @@ export default function MsConsentCallback() {
         params.set("tenant", tenant);
         if (admin_consent) params.set("admin_consent", admin_consent);
 
-        const url = `${process.env.NEXT_PUBLIC_APP_URL}/consent/consent-callback?${params.toString()}`;
+        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-callback?${params.toString()}`;
         console.log("[MS-CONSENT-CALLBACK] Fetching:", url);
 
         const res = await fetch(url);
