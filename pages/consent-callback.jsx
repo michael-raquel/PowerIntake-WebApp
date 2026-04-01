@@ -12,9 +12,8 @@ export default function ConsentCallback() {
 
     const timer = setTimeout(() => {
       if (consent === "success") {
-        // Clear the session flag so /checking re-runs and picks up isconsented=true
-        sessionStorage.removeItem("consent_verified");
-        router.replace("/checking");
+        sessionStorage.setItem("consent_verified", "1");
+        router.replace("/home"); 
       } else {
         router.replace("/no-consent?reason=not-registered");
       }
