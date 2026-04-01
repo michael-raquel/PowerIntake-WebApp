@@ -267,10 +267,10 @@ export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} 
     }
   };
 
-  const roles       = filterOptions?.roles ?? [];
-  const departments = filterOptions?.departments ?? [];
-  const statuses    = filterOptions?.statuses ?? [];
-  const managers    = filterOptions?.managers ?? [];
+  const roles = useMemo(() => filterOptions?.roles ?? [], [filterOptions?.roles]);
+  const departments = useMemo(() => filterOptions?.departments ?? [], [filterOptions?.departments]);
+  const statuses = useMemo(() => filterOptions?.statuses ?? [], [filterOptions?.statuses]);
+  const managers = useMemo(() => filterOptions?.managers ?? [], [filterOptions?.managers]);
 
   const normalizeRole = useCallback((role) =>
     String(role || "")

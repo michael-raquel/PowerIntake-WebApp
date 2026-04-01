@@ -268,8 +268,8 @@ export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {}
     window.removeEventListener("mouseup", stopResize);
   }, [handleResize, stopResize]);
 
-  const roles    = filterOptions?.roles ?? [];
-  const statuses = filterOptions?.statuses ?? [];
+  const roles = useMemo(() => filterOptions?.roles ?? [], [filterOptions?.roles]);
+  const statuses = useMemo(() => filterOptions?.statuses ?? [], [filterOptions?.statuses]);
 
   const normalizeRole = useCallback((role) =>
     String(role || "")
