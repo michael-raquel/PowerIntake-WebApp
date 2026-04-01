@@ -1,3 +1,10 @@
+# [1.4.0-dev.27](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.26...v1.4.0-dev.27) (2026-04-01)
+
+
+### Bug Fixes
+
+* st-2118-ticketpage-filter-v2 ([07b1103](https://github.com/michael-raquel/PowerIntake-WebApp/commit/07b11035b4ec94fea84d1f7e07283b6609bb23fb))
+
 # [1.4.0-dev.26](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.25...v1.4.0-dev.26) (2026-03-31)
 
 
