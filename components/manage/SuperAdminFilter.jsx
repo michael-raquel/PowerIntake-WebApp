@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -14,31 +13,37 @@ import {
 
 export default function SuperAdminFilter({
   onFilter,
+  filters = {},
   roles       = [],
   statuses    = [],
   rowsPerPage = 10,
   onRowsPerPageChange,
   rowsPerPageDisabled = false,
 }) {
-  const [search,     setSearch]     = useState("");
-  const [clientname, setClientname] = useState("");
-  const [roleSelection, setRoleSelection] = useState(null);
-  const [statusSelection, setStatusSelection] = useState(null);
+  const search = filters?.search ?? "";
+  const clientname = filters?.clientname ?? "";
+  const rawSelectedRoles = Array.isArray(filters?.selectedRoles)
+    ? filters.selectedRoles
+    : filters?.selectedRoles
+      ? [filters.selectedRoles]
+      : [];
+  const rawSelectedStatuses = Array.isArray(filters?.status)
+    ? filters.status
+    : filters?.status
+      ? [filters.status]
+      : [];
 
-  const selectedRoles = useMemo(() => {
-    if (roleSelection === null) return roles;
-    return roleSelection.filter((role) => roles.includes(role));
-  }, [roleSelection, roles]);
-
-  const selectedStatuses = useMemo(() => {
-    if (statusSelection === null) return statuses;
-    return statusSelection.filter((status) => statuses.includes(status));
-  }, [statusSelection, statuses]);
+  const selectedRoles = rawSelectedRoles.length > 0
+    ? rawSelectedRoles.filter((role) => roles.includes(role))
+    : roles;
+  const selectedStatuses = rawSelectedStatuses.length > 0
+    ? rawSelectedStatuses.filter((status) => statuses.includes(status))
+    : statuses;
 
   const allRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
-  const roleFilterActive = selectedRoles.length > 0 && !allRolesSelected;
+  const roleFilterActive = rawSelectedRoles.length > 0 && !allRolesSelected;
   const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
-  const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
+  const statusFilterActive = rawSelectedStatuses.length > 0 && !allStatusesSelected;
 
   const resolveRoles = (nextRoles) => {
     if (roles.length === 0) return nextRoles;
@@ -80,90 +85,42 @@ export default function SuperAdminFilter({
 
   const handleSearch = (e) => {
     const newSearch = e.target.value;
-    setSearch(newSearch);
-    onFilter({
-      search: newSearch,
-      clientname,
-      selectedRoles: resolveRoles(selectedRoles),
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ search: newSearch });
   };
 
   const handleClientname = (e) => {
     const newClientname = e.target.value;
-    setClientname(newClientname);
-    onFilter({
-      search,
-      clientname: newClientname,
-      selectedRoles: resolveRoles(selectedRoles),
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ clientname: newClientname });
   };
 
   const handleRole = (roleValue) => {
     const updated = selectedRoles.includes(roleValue)
-      ? selectedRoles.filter(r => r !== roleValue)
+      ? selectedRoles.filter((role) => role !== roleValue)
       : [...selectedRoles, roleValue];
-    setRoleSelection(updated);
-    onFilter({
-      search,
-      clientname,
-      selectedRoles: resolveRoles(updated),
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ selectedRoles: resolveRoles(updated) });
   };
 
   const handleStatus = (statusValue) => {
     const updated = selectedStatuses.includes(statusValue)
-      ? selectedStatuses.filter((s) => s !== statusValue)
+      ? selectedStatuses.filter((status) => status !== statusValue)
       : [...selectedStatuses, statusValue];
-    setStatusSelection(updated);
-    onFilter({
-      search,
-      clientname,
-      selectedRoles: resolveRoles(selectedRoles),
-      status: resolveStatuses(updated),
-    });
+    onFilter?.({ status: resolveStatuses(updated) });
   };
 
   const handleSelectAllRoles = () => {
-    setRoleSelection(null);
-    onFilter({
-      search,
-      clientname,
-      selectedRoles: resolveRoles(roles),
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ selectedRoles: resolveRoles(roles) });
   };
 
   const handleUnselectAllRoles = () => {
-    setRoleSelection([]);
-    onFilter({
-      search,
-      clientname,
-      selectedRoles: resolveRoles([]),
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ selectedRoles: resolveRoles([]) });
   };
 
   const handleSelectAllStatuses = () => {
-    setStatusSelection(null);
-    onFilter({
-      search,
-      clientname,
-      selectedRoles: resolveRoles(selectedRoles),
-      status: resolveStatuses(statuses),
-    });
+    onFilter?.({ status: resolveStatuses(statuses) });
   };
 
   const handleUnselectAllStatuses = () => {
-    setStatusSelection([]);
-    onFilter({
-      search,
-      clientname,
-      selectedRoles: resolveRoles(selectedRoles),
-      status: resolveStatuses([]),
-    });
+    onFilter?.({ status: resolveStatuses([]) });
   };
 
   const handleToggleAllRoles = () => {
@@ -184,25 +141,23 @@ export default function SuperAdminFilter({
 
   const clearOne = (key) => {
     if (key === "clientname") {
-      setClientname("");
-      onFilter({ search, clientname: "", selectedRoles: resolveRoles(selectedRoles), status: resolveStatuses(selectedStatuses) });
+      onFilter?.({ clientname: "" });
     }
     if (key === "role") {
-      setRoleSelection(null);
-      onFilter({ search, clientname, selectedRoles: resolveRoles(roles), status: resolveStatuses(selectedStatuses) });
+      onFilter?.({ selectedRoles: resolveRoles(roles) });
     }
     if (key === "status") {
-      setStatusSelection(null);
-      onFilter({ search, clientname, selectedRoles: resolveRoles(selectedRoles), status: resolveStatuses(statuses) });
+      onFilter?.({ status: resolveStatuses(statuses) });
     }
   };
 
   const clearAll = () => {
-    setSearch("");
-    setClientname("");
-    setRoleSelection(null);
-    setStatusSelection(null);
-    onFilter({ search: "", clientname: "", selectedRoles: resolveRoles(roles), status: resolveStatuses(statuses) });
+    onFilter?.({
+      search: "",
+      clientname: "",
+      selectedRoles: resolveRoles(roles),
+      status: resolveStatuses(statuses),
+    });
   };
 
   return (
@@ -219,8 +174,7 @@ export default function SuperAdminFilter({
         {search && (
           <button
             onClick={() => {
-              setSearch("");
-              onFilter({ search: "", clientname, selectedRoles: resolveRoles(selectedRoles), status: resolveStatuses(selectedStatuses) });
+              onFilter?.({ search: "" });
             }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >

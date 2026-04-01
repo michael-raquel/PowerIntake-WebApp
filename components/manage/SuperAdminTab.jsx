@@ -45,7 +45,7 @@ const compareSortValues = (aValue, bValue) => {
   return String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: "base" });
 };
 
-export default function SuperAdminTab() {
+export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {} }) {
   const { accounts } = useMsal();
   const router = useRouter();
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
@@ -83,7 +83,6 @@ export default function SuperAdminTab() {
   const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
 
-  const [activeFilters, setActiveFilters] = useState({});
   const [roleOverrides, setRoleOverrides] = useState({});
 
   useEffect(() => {
@@ -207,8 +206,8 @@ export default function SuperAdminTab() {
   };
 
   const handleFilter = (newFilters) => {
-    setActiveFilters(newFilters);
     setLocalPage(1);
+    onFiltersChange?.(newFilters);
   };
 
   const handleRowClick = useCallback((row) => {
@@ -397,19 +396,23 @@ export default function SuperAdminTab() {
   }, [columns]);
 
   const filteredData = useMemo(() => {
-    const searchValue = String(activeFilters?.search ?? "").trim().toLowerCase();
-    const clientValue = String(activeFilters?.clientname ?? "").trim().toLowerCase();
-    const selectedRoles = Array.isArray(activeFilters?.selectedRoles)
-      ? activeFilters.selectedRoles
-      : activeFilters?.selectedRoles
-        ? [activeFilters.selectedRoles]
+    const searchValue = String(filters?.search ?? "").trim().toLowerCase();
+    const clientValue = String(filters?.clientname ?? "").trim().toLowerCase();
+    const selectedRoles = Array.isArray(filters?.selectedRoles)
+      ? filters.selectedRoles
+      : filters?.selectedRoles
+        ? [filters.selectedRoles]
         : [];
-    const selectedStatuses = Array.isArray(activeFilters?.status)
-      ? activeFilters.status
-      : activeFilters?.status
-        ? [activeFilters.status]
+    const selectedStatuses = Array.isArray(filters?.status)
+      ? filters.status
+      : filters?.status
+        ? [filters.status]
         : [];
     const normalizedRoles = selectedRoles.map((role) => normalizeRole(role));
+    const hasAllRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
+    const hasAllStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
+    const effectiveRoles = hasAllRolesSelected ? [] : normalizedRoles;
+    const effectiveStatuses = hasAllStatusesSelected ? [] : selectedStatuses;
 
     return data.filter((row) => {
       if (searchValue) {
@@ -422,18 +425,18 @@ export default function SuperAdminTab() {
         if (!clientName.includes(clientValue)) return false;
       }
 
-      if (normalizedRoles.length > 0) {
+      if (effectiveRoles.length > 0) {
         const roleValue = normalizeRole(getRoleValue(row));
-        if (!normalizedRoles.includes(roleValue)) return false;
+        if (!effectiveRoles.includes(roleValue)) return false;
       }
 
-      if (selectedStatuses.length > 0) {
-        if (!selectedStatuses.includes(String(row.v_status))) return false;
+      if (effectiveStatuses.length > 0) {
+        if (!effectiveStatuses.includes(String(row.v_status))) return false;
       }
 
       return true;
     });
-  }, [activeFilters, data, getRoleValue, normalizeRole]);
+  }, [filters, data, getRoleValue, normalizeRole, roles, statuses]);
 
   const displayTotal = filteredData.length;
   const displayTotalPages = effectiveLimit > 0
@@ -479,6 +482,7 @@ export default function SuperAdminTab() {
 
       <SuperAdminFilter
         onFilter={handleFilter}
+        filters={filters}
         roles={roles}
         statuses={statuses}
         rowsPerPage={selectedRowsPerPage ?? DEFAULT_ROWS}

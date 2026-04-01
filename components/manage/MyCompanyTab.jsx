@@ -43,12 +43,11 @@ const compareSortValues = (aValue, bValue) => {
   return String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: "base" });
 };
 
-export default function MyCompanyTab() {
+export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} }) {
   const { accounts } = useMsal();
   const router = useRouter();
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
   const [localPage, setLocalPage] = useState(1);
-  const [activeFilters, setActiveFilters] = useState({});
   const [roleOverrides, setRoleOverrides] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [columnWidths, setColumnWidths] = useState({});
@@ -132,8 +131,8 @@ export default function MyCompanyTab() {
   };
 
   const handleFilter = (newFilters) => {
-    setActiveFilters(newFilters);
     setLocalPage(1);
+    onFiltersChange?.(newFilters);
   };
 
   const handleRowClick = useCallback((row) => {
@@ -393,24 +392,28 @@ export default function MyCompanyTab() {
   }, [columns]);
 
   const filteredData = useMemo(() => {
-    const searchValue = String(activeFilters?.search ?? "").trim().toLowerCase();
-    const managerValue = String(activeFilters?.manager ?? "").trim().toLowerCase();
-    const selectedRoles = Array.isArray(activeFilters?.selectedRoles)
-      ? activeFilters.selectedRoles
-      : activeFilters?.selectedRoles
-        ? [activeFilters.selectedRoles]
+    const searchValue = String(filters?.search ?? "").trim().toLowerCase();
+    const managerValue = String(filters?.manager ?? "").trim().toLowerCase();
+    const selectedRoles = Array.isArray(filters?.selectedRoles)
+      ? filters.selectedRoles
+      : filters?.selectedRoles
+        ? [filters.selectedRoles]
         : [];
-    const selectedDepartments = Array.isArray(activeFilters?.department)
-      ? activeFilters.department
-      : activeFilters?.department
-        ? [activeFilters.department]
+    const selectedDepartments = Array.isArray(filters?.department)
+      ? filters.department
+      : filters?.department
+        ? [filters.department]
         : [];
-    const selectedStatuses = Array.isArray(activeFilters?.status)
-      ? activeFilters.status
-      : activeFilters?.status
-        ? [activeFilters.status]
+    const selectedStatuses = Array.isArray(filters?.status)
+      ? filters.status
+      : filters?.status
+        ? [filters.status]
         : [];
     const normalizedRoles = selectedRoles.map((role) => normalizeRole(role));
+    const hasAllRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
+    const hasAllStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
+    const effectiveRoles = hasAllRolesSelected ? [] : normalizedRoles;
+    const effectiveStatuses = hasAllStatusesSelected ? [] : selectedStatuses;
 
     return data.filter((row) => {
       if (searchValue) {
@@ -423,9 +426,9 @@ export default function MyCompanyTab() {
         if (!managerName.includes(managerValue)) return false;
       }
 
-      if (normalizedRoles.length > 0) {
+      if (effectiveRoles.length > 0) {
         const roleValue = normalizeRole(getRoleValue(row));
-        if (!normalizedRoles.includes(roleValue)) return false;
+        if (!effectiveRoles.includes(roleValue)) return false;
       }
 
       if (selectedDepartments.length > 0) {
@@ -433,13 +436,13 @@ export default function MyCompanyTab() {
         if (!selectedDepartments.includes(deptValue)) return false;
       }
 
-      if (selectedStatuses.length > 0) {
-        if (!selectedStatuses.includes(String(row.v_status))) return false;
+      if (effectiveStatuses.length > 0) {
+        if (!effectiveStatuses.includes(String(row.v_status))) return false;
       }
 
       return true;
     });
-  }, [activeFilters, data, getRoleValue, normalizeRole]);
+  }, [filters, data, getRoleValue, normalizeRole, roles, statuses]);
 
   const displayTotal = filteredData.length;
   const displayTotalPages = effectiveLimit > 0
@@ -484,6 +487,7 @@ export default function MyCompanyTab() {
 
       <CompanyFilter
         onFilter={handleFilter}
+        filters={filters}
         managers={managers}
         roles={roles}
         departments={departments}

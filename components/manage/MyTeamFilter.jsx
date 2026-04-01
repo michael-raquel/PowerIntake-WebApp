@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -22,24 +21,18 @@ export default function MyTeamFilter({
   onRowsPerPageChange,
   rowsPerPageDisabled = false,
 }) {
-  const initializedStatusesRef = useRef(false);
-
-  useEffect(() => {
-    if (initializedStatusesRef.current || statuses.length === 0) return;
-    if (typeof selectedFilters.status === "undefined") {
-      onFiltersChange({ ...selectedFilters, status: statuses });
-    }
-    initializedStatusesRef.current = true;
-  }, [statuses, selectedFilters, onFiltersChange]);
-
-  const selectedStatuses = Array.isArray(selectedFilters.status)
+  const rawSelectedStatuses = Array.isArray(selectedFilters.status)
     ? selectedFilters.status
     : selectedFilters.status
       ? [selectedFilters.status]
       : [];
 
+  const selectedStatuses = rawSelectedStatuses.length > 0
+    ? rawSelectedStatuses.filter((status) => statuses.includes(status))
+    : statuses;
+
   const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
-  const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
+  const statusFilterActive = rawSelectedStatuses.length > 0 && !allStatusesSelected;
   const activeFilterCount = statusFilterActive ? 1 : 0;
   const someStatusesSelected = selectedStatuses.length > 0 && !allStatusesSelected;
 
@@ -54,27 +47,28 @@ export default function MyTeamFilter({
         ? "All statuses"
         : statusNames.join(", ");
 
+  const resolveStatuses = (nextStatuses) => {
+    if (statuses.length === 0) return nextStatuses;
+    return nextStatuses.length === statuses.length ? [] : nextStatuses;
+  };
+
   const toggleStatus = (value) => {
     const next = selectedStatuses.includes(value)
       ? selectedStatuses.filter((s) => s !== value)
       : [...selectedStatuses, value];
-    onFiltersChange({ ...selectedFilters, status: next });
+    onFiltersChange({ status: resolveStatuses(next) });
   };
 
   const clearStatus = () => {
-    if (statuses.length === 0) {
-      onFiltersChange({ ...selectedFilters, status: [] });
-      return;
-    }
-    onFiltersChange({ ...selectedFilters, status: statuses });
+    onFiltersChange({ status: resolveStatuses([]) });
   };
 
   const handleSelectAllStatuses = () => {
-    onFiltersChange({ ...selectedFilters, status: statuses });
+    onFiltersChange({ status: resolveStatuses(statuses) });
   };
 
   const handleUnselectAllStatuses = () => {
-    onFiltersChange({ ...selectedFilters, status: [] });
+    onFiltersChange({ status: resolveStatuses([]) });
   };
 
   const handleToggleAllStatuses = () => {
@@ -86,7 +80,7 @@ export default function MyTeamFilter({
   };
 
   return (
-    <div className="flex flex-row items-center gap-1 sm:gap-2 w-full">
+    <div className="flex flex-row items-center gap-1 sm:gap-2 w-full px-4 py-3 border-b border-gray-200 dark:border-gray-800">
       <div className="relative flex-1 min-w-[100px] sm:min-w-[150px]">
         <Search className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 w-3.5 h-3.5 sm:w-4 sm:h-4" />
         <Input
@@ -135,7 +129,7 @@ export default function MyTeamFilter({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onFiltersChange(statuses.length > 0 ? { status: statuses } : {})}
+                  onClick={() => onFiltersChange({ status: resolveStatuses([]) })}
                   className="h-7 text-xs dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   Clear all
