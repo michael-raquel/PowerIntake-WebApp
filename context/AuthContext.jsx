@@ -1,9 +1,8 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
 import socket from "@/lib/socket";
-import { toast } from "sonner";
 
 const AuthContext = createContext(null);
 
@@ -25,45 +24,6 @@ export function AuthProvider({ children }) {
   const [tokenInfo, setTokenInfo]         = useState(null);
   const [userInfo, setUserInfo]           = useState(null);
   const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
-
-  // ── Token acquisition and user sync ───────────────────────────────(Will remove if it fails -Jasper)
-  const logoutIntervalRef = useRef(null);
-  const logoutToastIdRef = useRef(null);
-
-  const startLogoutCountdown = useCallback((seconds = 10) => {
-    if (logoutIntervalRef.current) {
-      clearInterval(logoutIntervalRef.current);
-      logoutIntervalRef.current = null;
-    }
-    if (logoutToastIdRef.current) {
-      toast.dismiss(logoutToastIdRef.current);
-      logoutToastIdRef.current = null;
-    }
-
-    let remaining = Math.max(1, Number(seconds) || 10);
-    const message = (value) =>
-      `Your account was updated. You will be logged out in ${value}s.`;
-
-    logoutToastIdRef.current = toast.warning(message(remaining), { duration: Infinity });
-
-    logoutIntervalRef.current = setInterval(() => {
-      remaining -= 1;
-      if (remaining <= 0) {
-        clearInterval(logoutIntervalRef.current);
-        logoutIntervalRef.current = null;
-        toast.dismiss(logoutToastIdRef.current);
-        logoutToastIdRef.current = null;
-        instance.logoutRedirect({ postLogoutRedirectUri: "/" });
-        return;
-      }
-
-      toast.warning(message(remaining), {
-        id: logoutToastIdRef.current,
-        duration: Infinity,
-      });
-    }, 1000);
-  }, [instance]);
-  //
 
   // ── Your API token ──────────────────────────────────────
   useEffect(() => {
@@ -128,8 +88,6 @@ export function AuthProvider({ children }) {
   }, [account, instance]);
 
   // ── Graph token — only for wids / Global Admin check ────
-  // This tells us if the logged-in user is a Global Admin in their Azure AD tenant.
-  // It does NOT determine consent — consent is checked via the DB in AuthGuard.
   useEffect(() => {
     if (!account) return;
 
@@ -143,13 +101,9 @@ export function AuthProvider({ children }) {
         const claims = decodeJwt(graphRes.accessToken);
         const wids   = claims?.wids ?? [];
 
-        console.log("[AUTH] Graph wids:", wids);
         setIsGlobalAdmin(wids.includes(GLOBAL_ADMIN_WID));
-
       } catch (err) {
-        // This is expected for tenants that haven't consented yet.
-        // isGlobalAdmin stays false — AuthGuard handles the redirect.
-        console.warn("[AUTH] Could not get Graph token (expected for unconsented tenants):", err.errorCode ?? err.message);
+        console.warn("[AUTH] Could not get Graph token:", err.errorCode ?? err.message);
         setIsGlobalAdmin(false);
       }
     };
@@ -168,31 +122,28 @@ export function AuthProvider({ children }) {
           { method: "POST", headers: { Authorization: `Bearer ${accessToken}` } },
         );
 
-        // 403 = tenant not in DB yet (expected for new/unconsented tenants)
-        // AuthGuard will handle redirecting them. Don't treat as fatal.
+        // 403 = tenant not registered — AuthGuard handles redirect
         if (res.status === 403) {
-          console.warn("[LOGIN SYNC] Tenant not registered — skipping sync, AuthGuard will redirect.");
+          console.warn("[LOGIN SYNC] Tenant not registered — AuthGuard will redirect.");
           return;
         }
 
+        // Any other non-2xx — log and bail, don't cascade into res.json()
         if (!res.ok) {
-          console.warn("[AUTH] login-sync failed:", res.status);
-          
-        } else {
-          const data = await res.json();
-          setUserInfo(data.user ?? null);
+          console.warn("[LOGIN SYNC] Skipping sync — server returned:", res.status);
+          return;
         }
 
+        const data = await res.json();
+        setUserInfo(data.user ?? null);
+
+        // Socket join only runs on successful sync
         const entrauserid   = tokenInfo.account.localAccountId;
         const entratenantid = tokenInfo.account.tenantId;
 
         const joinRooms = () => {
           socket.emit("join", entrauserid);
-          // console.log("[WS] Joined room:", entrauserid);
-          if (entratenantid) {
-            socket.emit("join", entratenantid);
-            // console.log("[WS] Joined tenant room:", entratenantid);
-          }
+          if (entratenantid) socket.emit("join", entratenantid);
         };
 
         if (!socket.connected) {
@@ -201,6 +152,7 @@ export function AuthProvider({ children }) {
         } else {
           joinRooms();
         }
+
       } catch (err) {
         console.error("[AUTH] syncUser error:", err);
       }
@@ -209,11 +161,11 @@ export function AuthProvider({ children }) {
     syncUser();
   }, [accessToken, tokenInfo]);
 
+  // ── Reconnect handler ────────────────────────────────────
   useEffect(() => {
     if (!tokenInfo?.account?.localAccountId) return;
 
     const handleReconnect = () => {
-      console.log("[WS] Reconnected — re-joining rooms");
       socket.emit("join", tokenInfo.account.localAccountId);
       if (tokenInfo?.account?.tenantId) {
         socket.emit("join", tokenInfo.account.tenantId);
@@ -224,6 +176,7 @@ export function AuthProvider({ children }) {
     return () => socket.off("connect", handleReconnect);
   }, [tokenInfo?.account?.localAccountId, tokenInfo?.account?.tenantId]);
 
+  // ── Socket error logging ─────────────────────────────────
   useEffect(() => {
     const onDisconnect   = (reason) => console.log("[WS] socket disconnected:", reason);
     const onConnectError = (err)    => console.error("[WS] connect_error:", err.message);
@@ -236,34 +189,11 @@ export function AuthProvider({ children }) {
       socket.off("connect_error", onConnectError);
     };
   }, []);
-//Change role from another session or admin portal triggers a logout in all sessions with a countdown and toast notification. (Will change if it fails -Jasper)
-  useEffect(() => {
-    if (!tokenInfo?.account?.localAccountId) return;
 
-    const onRoleChanged = (payload) => {
-      const targetId = payload?.entrauserid;
-      if (targetId && targetId !== tokenInfo.account.localAccountId) return;
-      startLogoutCountdown(payload?.countdownSeconds ?? 10);
-    };
-
-    socket.on("user:role_changed", onRoleChanged);
-    return () => {
-      socket.off("user:role_changed", onRoleChanged);
-      if (logoutIntervalRef.current) {
-        clearInterval(logoutIntervalRef.current);
-        logoutIntervalRef.current = null;
-      }
-      if (logoutToastIdRef.current) {
-        toast.dismiss(logoutToastIdRef.current);
-        logoutToastIdRef.current = null;
-      }
-    };
-  }, [tokenInfo?.account?.localAccountId, startLogoutCountdown]);
-//
+  // ── Logout ───────────────────────────────────────────────
   useEffect(() => {
     if (!account) {
       socket.disconnect();
-      console.log("[WS] Disconnected on logout");
     }
   }, [account]);
 
