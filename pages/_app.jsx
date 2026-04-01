@@ -31,6 +31,7 @@ const noSidebarPages = [
   "/login",
   "/checking",
   "/consent-callback",
+  "/ms-consent-callback",
   "/unauthorized",
   "/no-consent",
 ];
