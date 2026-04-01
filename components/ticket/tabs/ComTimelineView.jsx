@@ -108,27 +108,26 @@ export default function ComTimelineView({ ticket }) {
   const [statuses, setStatuses] = useState(ticket?.v_ticketstatuses || []);
 
   useEffect(() => {
+    setStatuses(ticket?.v_ticketstatuses || []);
+  }, [ticket?.v_ticketstatuses]);
 
-  setStatuses(ticket?.v_ticketstatuses || []);
-}, [ticket?.v_ticketstatuses]);
+// useEffect(() => {
+//   const handleTicketUpdated = ({ ticketuuid, ticket: updated }) => {
+//     if (!updated) return;
 
-useEffect(() => {
-  const handleTicketUpdated = ({ ticketuuid, ticket: updated }) => {
-    if (!updated) return;
+//     if (String(updated.v_ticketuuid) !== String(ticket?.v_ticketuuid)) return;
 
-    if (String(updated.v_ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+//     if (updated.v_ticketstatuses) {
+//       setStatuses(updated.v_ticketstatuses);
+//     }
+//   };
 
-    if (updated.v_ticketstatuses) {
-      setStatuses(updated.v_ticketstatuses);
-    }
-  };
+//   socket.on("ticket:updated", handleTicketUpdated);
 
-  socket.on("ticket:updated", handleTicketUpdated);
-
-  return () => {
-    socket.off("ticket:updated", handleTicketUpdated);
-  };
-}, [ticket?.v_ticketuuid]);
+//   return () => {
+//     socket.off("ticket:updated", handleTicketUpdated);
+//   };
+// }, [ticket?.v_ticketuuid]);
 
   if (!statuses.length) {
     return (
