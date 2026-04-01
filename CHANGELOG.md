@@ -1,3 +1,10 @@
+# [1.4.0-dev.30](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.29...v1.4.0-dev.30) (2026-04-01)
+
+
+### Bug Fixes
+
+* ST-user force logout after changing the userrole ([4023af2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4023af2941ee73c927dbc6c45783ca2d569abe42))
+
 # [1.4.0-dev.29](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.28...v1.4.0-dev.29) (2026-04-01)
 
 
