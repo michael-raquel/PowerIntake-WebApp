@@ -1,3 +1,10 @@
+# [1.4.0-dev.37](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.36...v1.4.0-dev.37) (2026-04-01)
+
+
+### Features
+
+* changed the metrics for superadmin and my team ([01b6d31](https://github.com/michael-raquel/PowerIntake-WebApp/commit/01b6d31c554edd70625f0bef36c34c20d0f40179))
+
 # [1.4.0-dev.36](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.35...v1.4.0-dev.36) (2026-04-01)
 
 
