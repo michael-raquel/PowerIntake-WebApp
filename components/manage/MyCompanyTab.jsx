@@ -331,12 +331,12 @@ export default function MyCompanyTab() {
       sortValue: (row) => Number(row?.v_totalticket ?? 0),
     },
     {
-      key: "completed",
-      label: "Completed",
+      key: "new",
+      label: "New",
       align: "center",
-      minWidth: 160,
-      defaultWidth: 170,
-      sortValue: (row) => Number(row?.v_completed ?? 0),
+      minWidth: 130,
+      defaultWidth: 140,
+      sortValue: (row) => Number(row?.v_newticket ?? 0),
     },
     {
       key: "inProgress",
@@ -347,12 +347,12 @@ export default function MyCompanyTab() {
       sortValue: (row) => Number(row?.v_openticket ?? 0),
     },
     {
-      key: "cancelled",
-      label: "Cancelled",
+      key: "completed",
+      label: "Completed",
       align: "center",
       minWidth: 160,
       defaultWidth: 170,
-      sortValue: (row) => Number(row?.v_cancelled ?? 0),
+      sortValue: (row) => Number(row?.v_completed ?? 0),
     },
     {
       key: "completionRate",
@@ -466,12 +466,12 @@ export default function MyCompanyTab() {
     const totalTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_totalticket ?? 0), 0);
     const openTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_openticket ?? 0), 0);
     const completedTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_completed ?? 0), 0);
-    const cancelledTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_cancelled ?? 0), 0);
     const completionRate = totalTickets > 0
       ? Number(((completedTickets / totalTickets) * 100).toFixed(1))
       : 0;
 
-    return { totalTickets, openTickets, completedTickets, cancelledTickets, completionRate };
+    const newTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_newticket ?? 0), 0);
+    return { totalTickets, newTickets, openTickets, completedTickets, completionRate };
   }, [filteredData]);
 
   useEffect(() => {
@@ -585,16 +585,16 @@ export default function MyCompanyTab() {
                       <span className="font-semibold text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</span>
                     </div>
                     <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                      <span>Completed</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_completed ?? 0}</span>
+                      <span>New</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_newticket ?? 0}</span>
                     </div>
                     <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                       <span>In Progress</span>
                       <span className="font-semibold text-gray-900 dark:text-white">{row.v_openticket ?? 0}</span>
                     </div>
                     <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                      <span>Cancelled</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</span>
+                      <span>Completed</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{row.v_completed ?? 0}</span>
                     </div>
                     <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                       <span>Completion</span>
@@ -630,9 +630,9 @@ export default function MyCompanyTab() {
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">New</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {filteredTotals.completedTickets}
+                    {filteredTotals.newTickets}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
@@ -642,9 +642,9 @@ export default function MyCompanyTab() {
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {filteredTotals.cancelledTickets}
+                    {filteredTotals.completedTickets}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">

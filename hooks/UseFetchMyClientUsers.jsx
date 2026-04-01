@@ -19,7 +19,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
   const [limit, setLimit]           = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0, completionRate: 0, cancelledTickets: 0, completedTickets: 0 });
+  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0, completionRate: 0, newTickets: 0, completedTickets: 0 });
   const filterOptions = {
     tenantnames: [],
     statuses: ["true", "false"],
@@ -76,8 +76,8 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
       0
     );
     const completionRate = totalTickets > 0 ? Math.round((openTickets / totalTickets) * 100) : 0;
-    const cancelledTickets = rows.reduce(   
-    (sum, row) => sum + Number(row?.v_cancelled ?? 0),
+    const newTickets = rows.reduce(
+      (sum, row) => sum + Number(row?.v_newticket ?? 0),
       0
     );
     const completedTickets = rows.reduce(   
@@ -85,7 +85,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
       0
     );
 
-    setTotals({ totalTickets, openTickets, completionRate, cancelledTickets, completedTickets });
+    setTotals({ totalTickets, openTickets, completionRate, newTickets, completedTickets });
   }, [getAccessToken]);
 
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
@@ -130,7 +130,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
       }
     } catch (err) {
       setError(err.message);
-      setTotals({ totalTickets: 0, openTickets: 0, completionRate: 0, cancelledTickets: 0, completedTickets: 0 });
+      setTotals({ totalTickets: 0, openTickets: 0, completionRate: 0, newTickets: 0, completedTickets: 0 });
     } finally {
       setLoading(false);
     }
