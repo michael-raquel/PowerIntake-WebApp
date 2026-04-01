@@ -190,6 +190,30 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  //Change role from another session or admin portal triggers a logout in all sessions with a countdown and toast notification. (Will change if it fails -Jasper)
+  useEffect(() => {
+    if (!tokenInfo?.account?.localAccountId) return;
+
+    const onRoleChanged = (payload) => {
+      const targetId = payload?.entrauserid;
+      if (targetId && targetId !== tokenInfo.account.localAccountId) return;
+      startLogoutCountdown(payload?.countdownSeconds ?? 10);
+    };
+
+    socket.on("user:role_changed", onRoleChanged);
+    return () => {
+      socket.off("user:role_changed", onRoleChanged);
+      if (logoutIntervalRef.current) {
+        clearInterval(logoutIntervalRef.current);
+        logoutIntervalRef.current = null;
+      }
+      if (logoutToastIdRef.current) {
+        toast.dismiss(logoutToastIdRef.current);
+        logoutToastIdRef.current = null;
+      }
+    };
+  }, [tokenInfo?.account?.localAccountId, startLogoutCountdown]);
+  
   // ── Logout ───────────────────────────────────────────────
   useEffect(() => {
     if (!account) {
