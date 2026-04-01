@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback  } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
@@ -25,6 +25,43 @@ export function AuthProvider({ children }) {
   const [userInfo, setUserInfo]           = useState(null);
   const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
 
+  const logoutIntervalRef = useRef(null);
+  const logoutToastIdRef = useRef(null);
+  
+   const startLogoutCountdown = useCallback((seconds = 10) => {
+    if (logoutIntervalRef.current) {
+      clearInterval(logoutIntervalRef.current);
+      logoutIntervalRef.current = null;
+    }
+    if (logoutToastIdRef.current) {
+      toast.dismiss(logoutToastIdRef.current);
+      logoutToastIdRef.current = null;
+    }
+
+    let remaining = Math.max(1, Number(seconds) || 10);
+    const message = (value) =>
+      `Your account was updated. You will be logged out in ${value}s.`;
+
+    logoutToastIdRef.current = toast.warning(message(remaining), { duration: Infinity });
+
+    logoutIntervalRef.current = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(logoutIntervalRef.current);
+        logoutIntervalRef.current = null;
+        toast.dismiss(logoutToastIdRef.current);
+        logoutToastIdRef.current = null;
+        instance.logoutRedirect({ postLogoutRedirectUri: "/" });
+        return;
+      }
+
+      toast.warning(message(remaining), {
+        id: logoutToastIdRef.current,
+        duration: Infinity,
+      });
+    }, 1000);
+  }, [instance]);
+  
   // ── Your API token ──────────────────────────────────────
   useEffect(() => {
     if (!account) return;
@@ -213,7 +250,7 @@ export function AuthProvider({ children }) {
       }
     };
   }, [tokenInfo?.account?.localAccountId, startLogoutCountdown]);
-  
+
   // ── Logout ───────────────────────────────────────────────
   useEffect(() => {
     if (!account) {
