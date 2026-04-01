@@ -1,3 +1,10 @@
+# [1.4.0-dev.38](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.37...v1.4.0-dev.38) (2026-04-01)
+
+
+### Bug Fixes
+
+* Use /checking redirect and disable MSAL navigation ([4de6c11](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4de6c11526495e0e4cac9d5254d00df1b1b229e6))
+
 # [1.4.0-dev.37](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.36...v1.4.0-dev.37) (2026-04-01)
 
 
