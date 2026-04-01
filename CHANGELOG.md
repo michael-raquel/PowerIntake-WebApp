@@ -1,3 +1,10 @@
+# [1.4.0-dev.29](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.28...v1.4.0-dev.29) (2026-04-01)
+
+
+### Bug Fixes
+
+* ST-user create on login when missing on database ([0ba2c88](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0ba2c88bc1f3d8a8201c86f477bb15824c5184f5))
+
 # [1.4.0-dev.28](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.27...v1.4.0-dev.28) (2026-04-01)
 
 
