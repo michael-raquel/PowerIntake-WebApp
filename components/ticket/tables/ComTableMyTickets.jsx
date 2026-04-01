@@ -17,6 +17,13 @@ const cardFields = [
   { key: 'v_status',         label: 'Status'     },
 ];
 
+const FIELD_LABELS = {
+  Source:   { key: 'v_source',         label: 'Source'   },
+  Priority: { key: 'v_priority',       label: 'Priority' },
+  Category: { key: 'v_ticketcategory', label: 'Category' },
+  Status:   { key: 'v_status',         label: 'Status'   },
+};
+
 export default function ComTableMyTickets({
   currentPage,
   recordsPerPage,
@@ -31,7 +38,7 @@ export default function ComTableMyTickets({
   onSyncFailed,
   onDeleted,
   onUpdated,
-   hideCompleted = false,
+  hideCompleted = false,
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -51,34 +58,33 @@ export default function ComTableMyTickets({
   );
 
   useEffect(() => {
-   const handleTicketSynced = ({ ticketuuid, ticket }) => {
-        if (!ticket) return;
-        setTickets(prev => {
-          const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
-          if (exists) {
-            return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
-          } else {
-            return [ticket, ...prev];
-          }
-        });
-        onSynced?.();
-      };
-
-      const handleTicketSyncFailed = ({ ticketuuid }) => {
-        console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
-        onSyncFailed?.();  
-      };
-
-      const handleTicketDeleted = ({ ticketuuid }) => {
-        setTickets(prev => prev.filter(t => t.v_ticketuuid !== ticketuuid));
-        if (selectedTicket && String(selectedTicket.v_ticketuuid) === String(ticketuuid)) {
-          setSelectedTicket(null);
+    const handleTicketSynced = ({ ticketuuid, ticket }) => {
+      if (!ticket) return;
+      setTickets(prev => {
+        const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
+        if (exists) {
+          return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
+        } else {
+          return [ticket, ...prev];
         }
-        onDeleted?.(); 
-        // toast.success("Ticket(s) has been removed.");
-      };
+      });
+      onSynced?.();
+    };
 
-     const handleTicketUpdated = ({ ticketuuid, ticket }) => {
+    const handleTicketSyncFailed = ({ ticketuuid }) => {
+      console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
+      onSyncFailed?.();
+    };
+
+    const handleTicketDeleted = ({ ticketuuid }) => {
+      setTickets(prev => prev.filter(t => t.v_ticketuuid !== ticketuuid));
+      if (selectedTicket && String(selectedTicket.v_ticketuuid) === String(ticketuuid)) {
+        setSelectedTicket(null);
+      }
+      onDeleted?.();
+    };
+
+    const handleTicketUpdated = ({ ticketuuid, ticket }) => {
       if (!ticket) return;
       setTickets(prev =>
         prev.map(t => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
@@ -86,7 +92,7 @@ export default function ComTableMyTickets({
       setSelectedTicket(prev =>
         prev && String(prev.v_ticketuuid) === String(ticketuuid) ? { ...prev, ...ticket } : prev
       );
-      onUpdated?.();  
+      onUpdated?.();
     };
 
     socket.on("ticket:synced",      handleTicketSynced);
@@ -103,34 +109,39 @@ export default function ComTableMyTickets({
   }, [setTickets, onSynced, onSyncFailed, onDeleted, onUpdated, selectedTicket]);
 
   const filteredTickets = useMemo(
-  () => myTickets.filter(t => {
-    const s = searchValue.toLowerCase().trim();
-    const matchesSearch =
-      !s ||
-      t.v_title?.toLowerCase().includes(s) ||
-      t.v_ticketnumber?.toLowerCase().includes(s) ||
-      t.v_ticketcategory?.toLowerCase().includes(s);
+    () => myTickets.filter(t => {
+      const s = searchValue.toLowerCase().trim();
+      const matchesSearch =
+        !s ||
+        t.v_title?.toLowerCase().includes(s) ||
+        t.v_ticketnumber?.toLowerCase().includes(s) ||
+        t.v_ticketcategory?.toLowerCase().includes(s);
 
-    const matchesFilter = (filterValue, ticketValue) => {
-      if (!filterValue) return true;
-      if (Array.isArray(filterValue)) {
-        return filterValue.length === 0 || filterValue.includes(ticketValue);
-      }
-      return String(ticketValue).toLowerCase().includes(String(filterValue).toLowerCase().trim());
-    };
+      const matchesFilter = (filterValue, ticketValue, fieldLabel) => {
+        if (!filterValue) return true;
+        const sentinel = `(No ${fieldLabel})`;
+const normalized =
+  ticketValue == null || String(ticketValue) === ''
+    ? sentinel
+    : String(ticketValue).trim();
+        if (Array.isArray(filterValue)) {
+          return filterValue.length === 0 || filterValue.includes(normalized);
+        }
+        return normalized.toLowerCase().includes(String(filterValue).toLowerCase().trim());
+      };
 
-    const matchesSource   = matchesFilter(filters.Source, t.v_source);
-    const matchesPriority = matchesFilter(filters.Priority, t.v_priority);
-    const matchesCategory = matchesFilter(filters.Category, t.v_ticketcategory);
-    const matchesStatus   = matchesFilter(filters.Status, t.v_status);
-    const matchesCompleted = !hideCompleted ||
-      (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
+      const matchesSource   = matchesFilter(filters.Source,   t.v_source,         'Source');
+      const matchesPriority = matchesFilter(filters.Priority, t.v_priority,       'Priority');
+      const matchesCategory = matchesFilter(filters.Category, t.v_ticketcategory, 'Category');
+      const matchesStatus   = matchesFilter(filters.Status,   t.v_status,         'Status');
+      const matchesCompleted = !hideCompleted ||
+        (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
 
-    return matchesSearch && matchesSource && matchesPriority && matchesCategory && 
-           matchesStatus && matchesCompleted;
-  }),
-  [myTickets, searchValue, filters, hideCompleted]
-);
+      return matchesSearch && matchesSource && matchesPriority && matchesCategory &&
+             matchesStatus && matchesCompleted;
+    }),
+    [myTickets, searchValue, filters, hideCompleted]
+  );
 
   const paginated = useMemo(
     () => filteredTickets.slice((currentPage - 1) * recordsPerPage, currentPage * recordsPerPage),
@@ -141,12 +152,14 @@ export default function ComTableMyTickets({
     const myTicketsChanged = JSON.stringify(prevMyTicketsRef.current) !== JSON.stringify(myTickets);
     if (myTicketsChanged) {
       prevMyTicketsRef.current = myTickets;
-      onFilterOptionsChange?.({
-        Source:   [...new Set(myTickets.map(t => t.v_source).filter(Boolean))],
-        Category: [...new Set(myTickets.map(t => t.v_ticketcategory).filter(Boolean))],
-        Priority: [...new Set(myTickets.map(t => t.v_priority).filter(Boolean))],
-        Status:   [...new Set(myTickets.map(t => t.v_status).filter(Boolean))],
-      });
+      const options = {};
+      for (const [filterName, { key, label }] of Object.entries(FIELD_LABELS)) {
+        const values = myTickets.map(t => t[key]);
+        const hasNull = values.some(v => v == null || String(v).trim() === '');
+        const unique = [...new Set(values.filter(v => v != null && String(v).trim() !== '').map(v => String(v).trim()))];
+        options[filterName] = hasNull ? [...unique, `(No ${label})`] : unique;
+      }
+      onFilterOptionsChange?.(options);
     }
   }, [myTickets, onFilterOptionsChange]);
 
@@ -225,10 +238,7 @@ export default function ComTableMyTickets({
           <thead>
             <tr className="border-b border-gray-200 dark:border-gray-800">
               {['TICKET ID','SOURCE','TITLE','CATEGORY','PRIORITY','CREATED AT','TARGET','STATUS','TECHNICIAN'].map(header => (
-                <th
-                  key={header}
-                  className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
-                >
+                <th key={header} className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
                   {header}
                 </th>
               ))}
@@ -237,9 +247,7 @@ export default function ComTableMyTickets({
           <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
             {paginated.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  No tickets found.
-                </td>
+                <td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No tickets found.</td>
               </tr>
             ) : (
               paginated.map(t => {
@@ -248,14 +256,10 @@ export default function ComTableMyTickets({
                   <tr
                     key={t.v_ticketuuid}
                     onClick={() => !isSyncing && setSelectedTicket(t)}
-                    className={`transition-colors text-center ${
-                      isSyncing
-                        ? 'bg-violet-50 dark:bg-violet-950/20 cursor-wait'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
-                    }`}
+                    className={`transition-colors text-center ${isSyncing ? 'bg-violet-50 dark:bg-violet-950/20 cursor-wait' : 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'}`}
                   >
                     <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
-                        {isSyncing ? (
+                      {isSyncing ? (
                         <span className="inline-flex items-center gap-1.5 text-violet-500 dark:text-violet-400 text-xs font-medium">
                           <RefreshCw className="w-3 h-3 animate-spin" /> Finalizing...
                         </span>
@@ -263,33 +267,16 @@ export default function ComTableMyTickets({
                         <span className="text-gray-600 dark:text-gray-300"> {t.v_ticketnumber}</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                      {t.v_source || '—'}
-                    </td>
-               
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">
-                      {t.v_title}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">
-                      {t.v_ticketcategory}
-                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_source || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">{t.v_title}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">{t.v_ticketcategory}</td>
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
-                        {t.v_priority || '—'}
-                      </span>
+                      <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>{t.v_priority || '—'}</span>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                      {t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                      {t.v_target ? new Date(t.v_target).toLocaleString() : '—'}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                    {t.v_status}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                      {t.v_technicianname || '—'}
-                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_target ? new Date(t.v_target).toLocaleString() : '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">{t.v_status}</td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_technicianname || '—'}</td>
                   </tr>
                 );
               })
