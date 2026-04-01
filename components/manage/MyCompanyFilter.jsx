@@ -1,4 +1,3 @@
-import { useMemo, useState } from "react";
 import { ChevronDown, Search, SlidersHorizontal, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -14,6 +13,7 @@ import {
 
 export default function CompanyFilter({
   onFilter,
+  filters = {},
   managers    = [],
   roles       = [],
   departments = [],
@@ -22,25 +22,30 @@ export default function CompanyFilter({
   onRowsPerPageChange,
   rowsPerPageDisabled = false,
 }) {
-  const [search,     setSearch]     = useState("");
-  const [manager,    setManager]    = useState("");
-  const [roleSelection, setRoleSelection] = useState(null);
-  const [statusSelection, setStatusSelection] = useState(null);
+  const search = filters?.search ?? "";
+  const manager = filters?.manager ?? "";
+  const rawSelectedRoles = Array.isArray(filters?.selectedRoles)
+    ? filters.selectedRoles
+    : filters?.selectedRoles
+      ? [filters.selectedRoles]
+      : [];
+  const rawSelectedStatuses = Array.isArray(filters?.status)
+    ? filters.status
+    : filters?.status
+      ? [filters.status]
+      : [];
 
-  const selectedRoles = useMemo(() => {
-    if (roleSelection === null) return roles;
-    return roleSelection.filter((role) => roles.includes(role));
-  }, [roleSelection, roles]);
-
-  const selectedStatuses = useMemo(() => {
-    if (statusSelection === null) return statuses;
-    return statusSelection.filter((status) => statuses.includes(status));
-  }, [statusSelection, statuses]);
+  const selectedRoles = rawSelectedRoles.length > 0
+    ? rawSelectedRoles.filter((role) => roles.includes(role))
+    : roles;
+  const selectedStatuses = rawSelectedStatuses.length > 0
+    ? rawSelectedStatuses.filter((status) => statuses.includes(status))
+    : statuses;
 
   const allRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
-  const roleFilterActive = selectedRoles.length > 0 && !allRolesSelected;
+  const roleFilterActive = rawSelectedRoles.length > 0 && !allRolesSelected;
   const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
-  const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
+  const statusFilterActive = rawSelectedStatuses.length > 0 && !allStatusesSelected;
 
   const resolveRoles = (nextRoles) => {
     if (roles.length === 0) return nextRoles;
@@ -82,98 +87,42 @@ export default function CompanyFilter({
 
   const handleSearch = (e) => {
     const newSearch = e.target.value;
-    setSearch(newSearch);
-    onFilter({
-      search: newSearch,
-      manager,
-      selectedRoles: resolveRoles(selectedRoles),
-      department: [],
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ search: newSearch });
   };
 
   const handleManager = (e) => {
     const newManager = e.target.value;
-    setManager(newManager);
-    onFilter({
-      search,
-      manager: newManager,
-      selectedRoles: resolveRoles(selectedRoles),
-      department: [],
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ manager: newManager });
   };
 
   const handleRole = (roleValue) => {
     const updated = selectedRoles.includes(roleValue)
-      ? selectedRoles.filter(r => r !== roleValue)
+      ? selectedRoles.filter((role) => role !== roleValue)
       : [...selectedRoles, roleValue];
-    setRoleSelection(updated);
-    onFilter({
-      search,
-      manager,
-      selectedRoles: resolveRoles(updated),
-      department: [],
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ selectedRoles: resolveRoles(updated) });
   };
 
   const handleStatus = (statusValue) => {
     const updated = selectedStatuses.includes(statusValue)
       ? selectedStatuses.filter((s) => s !== statusValue)
       : [...selectedStatuses, statusValue];
-    setStatusSelection(updated);
-    onFilter({
-      search,
-      manager,
-      selectedRoles: resolveRoles(selectedRoles),
-      department: [],
-      status: resolveStatuses(updated),
-    });
+    onFilter?.({ status: resolveStatuses(updated) });
   };
 
   const handleSelectAllRoles = () => {
-    setRoleSelection(null);
-    onFilter({
-      search,
-      manager,
-      selectedRoles: resolveRoles(roles),
-      department: [],
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ selectedRoles: resolveRoles(roles) });
   };
 
   const handleUnselectAllRoles = () => {
-    setRoleSelection([]);
-    onFilter({
-      search,
-      manager,
-      selectedRoles: resolveRoles([]),
-      department: [],
-      status: resolveStatuses(selectedStatuses),
-    });
+    onFilter?.({ selectedRoles: resolveRoles([]) });
   };
 
   const handleSelectAllStatuses = () => {
-    setStatusSelection(null);
-    onFilter({
-      search,
-      manager,
-      selectedRoles: resolveRoles(selectedRoles),
-      department: [],
-      status: resolveStatuses(statuses),
-    });
+    onFilter?.({ status: resolveStatuses(statuses) });
   };
 
   const handleUnselectAllStatuses = () => {
-    setStatusSelection([]);
-    onFilter({
-      search,
-      manager,
-      selectedRoles: resolveRoles(selectedRoles),
-      department: [],
-      status: resolveStatuses([]),
-    });
+    onFilter?.({ status: resolveStatuses([]) });
   };
 
   const handleToggleAllRoles = () => {
@@ -194,25 +143,23 @@ export default function CompanyFilter({
 
   const clearOne = (key) => {
     if (key === "manager") {
-      setManager("");
-      onFilter({ search, manager: "", selectedRoles: resolveRoles(selectedRoles), department: [], status: resolveStatuses(selectedStatuses) });
+      onFilter?.({ manager: "" });
     }
     if (key === "role") {
-      setRoleSelection(null);
-      onFilter({ search, manager, selectedRoles: resolveRoles(roles), department: [], status: resolveStatuses(selectedStatuses) });
+      onFilter?.({ selectedRoles: resolveRoles(roles) });
     }
     if (key === "status") {
-      setStatusSelection(null);
-      onFilter({ search, manager, selectedRoles: resolveRoles(selectedRoles), department: [], status: resolveStatuses(statuses) });
+      onFilter?.({ status: resolveStatuses(statuses) });
     }
   };
 
   const clearAll = () => {
-    setSearch("");
-    setManager("");
-    setRoleSelection(null);
-    setStatusSelection(null);
-    onFilter({ search: "", manager: "", selectedRoles: resolveRoles(roles), department: [], status: resolveStatuses(statuses) });
+    onFilter?.({
+      search: "",
+      manager: "",
+      selectedRoles: resolveRoles(roles),
+      status: resolveStatuses(statuses),
+    });
   };
 
   return (
@@ -229,8 +176,7 @@ export default function CompanyFilter({
         {search && (
           <button
             onClick={() => {
-              setSearch("");
-              onFilter({ search: "", manager, selectedRoles: resolveRoles(selectedRoles), department: [], status: resolveStatuses(selectedStatuses) });
+              onFilter?.({ search: "" });
             }}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
           >
