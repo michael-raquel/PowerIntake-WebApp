@@ -87,10 +87,10 @@ export default function MyTeamTable({
 								>
 									<td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden truncate">{row.v_username}</td>
 									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden truncate">{row.v_jobtitle || "N/A"}</td>
-									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_totalticket}</td>
+									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_totalticket ?? 0}</td>
+									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_newticket ?? 0}</td>
+									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_openticket ?? 0}</td>
 									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_completed ?? 0}</td>
-									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_openticket}</td>
-									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{row.v_cancelled ?? 0}</td>
 									<td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">{formatPercent(row.v_completion)}</td>
 									<td className="px-4 py-3 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden">
 										<span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -110,9 +110,9 @@ export default function MyTeamTable({
 							<td colSpan={2} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider border-r border-gray-200 dark:border-gray-800">
 							</td>
 							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{totals?.totalTickets ?? 0}</td>
-							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{totals?.completedTickets ?? 0}</td>
+							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{totals?.newTickets ?? 0}</td>
 							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{totals?.openTickets ?? 0}</td>
-							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{totals?.cancelledTickets ?? 0}</td>
+							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white border-r border-gray-200 dark:border-gray-800">{totals?.completedTickets ?? 0}</td>
 							<td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">{formatPercent(totals?.completionRate)}</td>
 							<td className="px-4 py-3" />
 						</tr>
