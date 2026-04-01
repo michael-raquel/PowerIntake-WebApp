@@ -507,13 +507,13 @@ export default function MyCompanyTab() {
               {syncResult.message}
             </span>
           )}
-          {/* <button
+           <button
             onClick={handleSync}
             disabled={loading || syncing}
             className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-          </button> */}
+          </button>
         </div>
       </div>
 
