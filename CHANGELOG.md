@@ -1,3 +1,10 @@
+# [1.4.0-dev.32](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.31...v1.4.0-dev.32) (2026-04-01)
+
+
+### Bug Fixes
+
+* Add MS consent callback page and update checking ([aead69b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/aead69b9ebb3b20ae29b5172a826f177f39ea804))
+
 # [1.4.0-dev.31](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.30...v1.4.0-dev.31) (2026-04-01)
 
 
