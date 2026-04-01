@@ -1,3 +1,10 @@
+# [1.4.0-dev.28](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.27...v1.4.0-dev.28) (2026-04-01)
+
+
+### Bug Fixes
+
+* ST-ticket double toast on timeline ([355950e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/355950ef1ea3091620d2bc19ed0259d269898fa8))
+
 # [1.4.0-dev.27](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.26...v1.4.0-dev.27) (2026-04-01)
 
 
