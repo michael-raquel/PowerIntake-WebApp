@@ -3,12 +3,12 @@ import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { useAuth } from '@/context/AuthContext';
 import ComUpdateForm from '../ComUpdateForm';
 import ComCard from './ComCard';
+import ComTableDesign from './ComTableDesign';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
-import { toast } from "sonner";
 import socket from "@/lib/socket";
 
-const cardFields = [
+const CARD_FIELDS = [
   { key: 'v_department',     label: 'Dept'     },
   { key: 'v_username',       label: 'User'     },
   { key: 'v_title',          label: 'Title'    },
@@ -23,6 +23,85 @@ const FIELD_LABELS = {
   Priority:   { key: 'v_priority',       label: 'Priority'   },
   Category:   { key: 'v_ticketcategory', label: 'Category'   },
   Status:     { key: 'v_status',         label: 'Status'     },
+};
+
+const getPriorityClass = (p) => {
+  switch (p?.toLowerCase()) {
+    case 'high':   return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
+    case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
+    case 'low':    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+    default:       return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
+  }
+};
+
+const COLUMNS = [
+  {
+    key: 'ticketId', label: 'Ticket ID', defaultWidth: 140, minWidth: 100,
+    sortValue: (t) => t.v_ticketnumber ?? '',
+    render: (t) => t.v_ticketnumber,
+  },
+  {
+    key: 'source', label: 'Source', defaultWidth: 120, minWidth: 80,
+    sortValue: (t) => t.v_source ?? '',
+    render: (t) => t.v_source || '—',
+  },
+  {
+    key: 'department', label: 'Department', defaultWidth: 150, minWidth: 100,
+    sortValue: (t) => t.v_department ?? '',
+    render: (t) => t.v_department || '—',
+  },
+  {
+    key: 'user', label: 'User Name', defaultWidth: 140, minWidth: 100,
+    sortValue: (t) => t.v_username ?? '',
+    render: (t) => t.v_username || '—',
+  },
+  {
+    key: 'title', label: 'Title', defaultWidth: 180, minWidth: 100, cellClass: 'max-w-[180px]',
+    sortValue: (t) => t.v_title ?? '',
+    render: (t) => t.v_title || '—',
+  },
+  {
+    key: 'category', label: 'Category', defaultWidth: 140, minWidth: 80, cellClass: 'max-w-[140px]',
+    sortValue: (t) => t.v_ticketcategory ?? '',
+    render: (t) => t.v_ticketcategory || '—',
+  },
+  {
+    key: 'priority', label: 'Priority', defaultWidth: 110, minWidth: 80,
+    sortValue: (t) => t.v_priority ?? '',
+    render: (t) => (
+      <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>
+        {t.v_priority || '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'createdAt', label: 'Created At', defaultWidth: 160, minWidth: 120,
+    sortValue: (t) => t.v_createdat ?? '',
+    render: (t) => t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—',
+  },
+  {
+    key: 'target', label: 'Target', defaultWidth: 160, minWidth: 120,
+    sortValue: (t) => t.v_target ?? '',
+    render: (t) => t.v_target ? new Date(t.v_target).toLocaleString() : '—',
+  },
+  {
+    key: 'status', label: 'Status', defaultWidth: 130, minWidth: 90,
+    sortValue: (t) => t.v_status ?? '',
+    render: (t) => t.v_status || '—',
+  },
+  {
+    key: 'technician', label: 'Technician', defaultWidth: 140, minWidth: 100,
+    sortValue: (t) => t.v_technicianname ?? '',
+    render: (t) => t.v_technicianname || '—',
+  },
+];
+
+const matchesFilter = (val, ticketVal, fieldLabel) => {
+  if (!val) return true;
+  const sentinel = `(No ${fieldLabel})`;
+  const normalized = ticketVal == null || String(ticketVal) === '' ? sentinel : String(ticketVal).trim();
+  if (Array.isArray(val)) return val.length === 0 || val.includes(normalized);
+  return normalized.toLowerCase().includes(String(val).toLowerCase().trim());
 };
 
 export default function ComTableCompany({
@@ -47,95 +126,70 @@ export default function ComTableCompany({
     entratenantid: tokenInfo?.account?.tenantId,
     refreshKey,
   });
-
+  const { runSync, loading: syncing } = useAutoSyncDynamics();
   const prevTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
 
-  const { runSync, loading: syncing } = useAutoSyncDynamics();
-
   useEffect(() => {
-    const handleTicketSynced = ({ ticketuuid, ticket }) => {
+    const onSyncedWS = ({ ticketuuid, ticket }) => {
       if (!ticket) return;
-      setTickets(prev => {
-        const exists = prev.some(t => t.v_ticketuuid === ticketuuid);
-        if (exists) {
-          return prev.map(t => t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t);
-        } else {
-          return [ticket, ...prev];
-        }
-      });
+      setTickets((prev) =>
+        prev.some((t) => t.v_ticketuuid === ticketuuid)
+          ? prev.map((t) => (t.v_ticketuuid === ticketuuid ? { ...t, ...ticket } : t))
+          : [ticket, ...prev]
+      );
       onSynced?.();
     };
-
-    const handleTicketSyncFailed = ({ ticketuuid }) => {
-      console.warn("[WS] Dynamics sync failed for ticket:", ticketuuid);
+    const onFailedWS = ({ ticketuuid }) => {
+      console.warn('[WS] Dynamics sync failed for ticket:', ticketuuid);
       onSyncFailed?.();
     };
-
-    const handleTicketDeleted = ({ ticketuuid }) => {
-      setTickets(prev => prev.filter(t => t.v_ticketuuid !== ticketuuid));
-      if (selectedTicket && String(selectedTicket.v_ticketuuid) === String(ticketuuid)) {
+    const onDeletedWS = ({ ticketuuid }) => {
+      setTickets((prev) => prev.filter((t) => t.v_ticketuuid !== ticketuuid));
+      if (selectedTicket && String(selectedTicket.v_ticketuuid) === String(ticketuuid))
         setSelectedTicket(null);
-      }
       onDeleted?.();
     };
-
-    const handleTicketUpdated = ({ ticketuuid, ticket }) => {
+    const onUpdatedWS = ({ ticketuuid, ticket }) => {
       if (!ticket) return;
-      setTickets(prev =>
-        prev.map(t => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
+      setTickets((prev) =>
+        prev.map((t) => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
       );
       onUpdated?.();
     };
 
-    socket.on("ticket:synced",      handleTicketSynced);
-    socket.on("ticket:sync_failed", handleTicketSyncFailed);
-    socket.on("ticket:deleted",     handleTicketDeleted);
-    socket.on("ticket:updated",     handleTicketUpdated);
-
+    socket.on('ticket:synced',      onSyncedWS);
+    socket.on('ticket:sync_failed', onFailedWS);
+    socket.on('ticket:deleted',     onDeletedWS);
+    socket.on('ticket:updated',     onUpdatedWS);
     return () => {
-      socket.off("ticket:synced",      handleTicketSynced);
-      socket.off("ticket:sync_failed", handleTicketSyncFailed);
-      socket.off("ticket:deleted",     handleTicketDeleted);
-      socket.off("ticket:updated",     handleTicketUpdated);
+      socket.off('ticket:synced',      onSyncedWS);
+      socket.off('ticket:sync_failed', onFailedWS);
+      socket.off('ticket:deleted',     onDeletedWS);
+      socket.off('ticket:updated',     onUpdatedWS);
     };
   }, [setTickets, onSynced, onSyncFailed, onDeleted, onUpdated, selectedTicket]);
 
   const filteredTickets = useMemo(
-    () => tickets.filter(t => {
-      const search = searchValue.toLowerCase().trim();
-      const matchesSearch =
-        !search ||
-        t.v_ticketnumber?.toLowerCase().includes(search) ||
-        t.v_department?.toLowerCase().includes(search) ||
-        t.v_username?.toLowerCase().includes(search) ||
-        t.v_title?.toLowerCase().includes(search) ||
-        t.v_ticketcategory?.toLowerCase().includes(search);
-
-      const matchesFilter = (filterValue, ticketValue, fieldLabel) => {
-        if (!filterValue) return true;
-        const sentinel = `(No ${fieldLabel})`;
-const normalized =
-  ticketValue == null || String(ticketValue) === ''
-    ? sentinel
-    : String(ticketValue).trim();
-        if (Array.isArray(filterValue)) {
-          return filterValue.length === 0 || filterValue.includes(normalized);
-        }
-        return normalized.toLowerCase().includes(String(filterValue).toLowerCase().trim());
-      };
-
-      const matchesDepartment = matchesFilter(filters.Department, t.v_department, 'Department');
-      const matchesSource     = matchesFilter(filters.Source,     t.v_source,     'Source');
-      const matchesPriority   = matchesFilter(filters.Priority,   t.v_priority,   'Priority');
-      const matchesCategory   = matchesFilter(filters.Category,   t.v_ticketcategory, 'Category');
-      const matchesStatus     = matchesFilter(filters.Status,     t.v_status,     'Status');
-      const matchesCompleted  = !hideCompleted ||
-        (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved');
-
-      return matchesSearch && matchesDepartment && matchesSource && matchesPriority &&
-             matchesCategory && matchesStatus && matchesCompleted;
-    }),
+    () =>
+      tickets.filter((t) => {
+        const s = searchValue.toLowerCase().trim();
+        return (
+          (!s ||
+            t.v_ticketnumber?.toLowerCase().includes(s) ||
+            t.v_department?.toLowerCase().includes(s) ||
+            t.v_username?.toLowerCase().includes(s) ||
+            t.v_title?.toLowerCase().includes(s) ||
+            t.v_ticketcategory?.toLowerCase().includes(s)) &&
+          matchesFilter(filters.Department, t.v_department,     'Department') &&
+          matchesFilter(filters.Source,     t.v_source,         'Source') &&
+          matchesFilter(filters.Priority,   t.v_priority,       'Priority') &&
+          matchesFilter(filters.Category,   t.v_ticketcategory, 'Category') &&
+          matchesFilter(filters.Status,     t.v_status,         'Status') &&
+          (!hideCompleted ||
+            (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved'))
+        );
+      }),
     [tickets, searchValue, filters, hideCompleted]
   );
 
@@ -145,18 +199,18 @@ const normalized =
   );
 
   useEffect(() => {
-    const ticketsChanged = JSON.stringify(prevTicketsRef.current) !== JSON.stringify(tickets);
-    if (ticketsChanged) {
-      prevTicketsRef.current = tickets;
-      const options = {};
-      for (const [filterName, { key, label }] of Object.entries(FIELD_LABELS)) {
-        const values = tickets.map(t => t[key]);
-        const hasNull = values.some(v => v == null || String(v).trim() === '');
-        const unique = [...new Set(values.filter(v => v != null && String(v).trim() !== '').map(v => String(v).trim()))];
-        options[filterName] = hasNull ? [...unique, `(No ${label})`] : unique;
-      }
-      onFilterOptionsChange?.(options);
+    if (JSON.stringify(prevTicketsRef.current) === JSON.stringify(tickets)) return;
+    prevTicketsRef.current = tickets;
+    const options = {};
+    for (const [name, { key, label }] of Object.entries(FIELD_LABELS)) {
+      const values = tickets.map((t) => t[key]);
+      const hasNull = values.some((v) => v == null || String(v).trim() === '');
+      const unique = [
+        ...new Set(values.filter((v) => v != null && String(v).trim() !== '').map((v) => String(v).trim())),
+      ];
+      options[name] = hasNull ? [...unique, `(No ${label})`] : unique;
     }
+    onFilterOptionsChange?.(options);
   }, [tickets, onFilterOptionsChange]);
 
   useEffect(() => {
@@ -166,45 +220,35 @@ const normalized =
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
 
-  const handleSync = async () => {
-    await runSync();
-    onTicketUpdated?.();
-  };
-
-  const getPriorityClass = (priority) => {
-    switch (priority?.toLowerCase()) {
-      case 'high':   return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-      case 'low':    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-      default:       return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400';
-    }
-  };
-
   if (loading) return <div className="text-center py-6 text-gray-500 dark:text-gray-400">Loading...</div>;
   if (error)   return <div className="text-center py-6 text-red-500 dark:text-red-400">{error}</div>;
 
+  const syncButton = (
+    <button
+      onClick={async () => { await runSync(); onTicketUpdated?.(); }}
+      disabled={loading || syncing}
+      className="p-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
+    >
+      <RefreshCw className={`w-5 h-5 ${loading || syncing ? 'animate-spin' : ''}`} />
+    </button>
+  );
+
   return (
     <>
-      {/* Mobile View */}
-      <div className="sm:hidden">
-        <div className="flex justify-between items-center px-3 py-2 border-b border-gray-200 dark:border-gray-800">
+      {/* ── Mobile cards ─────────────────────────────────────────────────────── */}
+      <div className="md:hidden">
+        <div className="flex justify-between items-center px-0 py-2 border-b border-gray-200 dark:border-gray-800">
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {filteredTickets.length} Total Records
           </span>
-          <button
-            onClick={handleSync}
-            disabled={loading || syncing}
-            className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-          </button>
+          {syncButton}
         </div>
         <div className="space-y-3 p-3">
-          {paginated.map(ticket => (
+          {paginated.map((ticket) => (
             <ComCard
               key={ticket.v_ticketuuid}
               ticket={ticket}
-              fields={cardFields}
+              fields={CARD_FIELDS}
               onClick={() => setSelectedTicket(ticket)}
               priorityClass={getPriorityClass(ticket.v_priority)}
               isSyncing={pendingSyncUuid === ticket.v_ticketuuid}
@@ -216,72 +260,17 @@ const normalized =
         </div>
       </div>
 
-      {/* Desktop Table */}
-      <div className="hidden sm:block overflow-x-auto">
-        <div className="flex justify-between items-center mb-2 border-b py-2">
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {filteredTickets.length} Total Records
-          </span>
-          <button
-            onClick={handleSync}
-            disabled={loading || syncing}
-            className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
-              {['TICKET ID', 'SOURCE', 'DEPARTMENT', 'USER', 'TITLE', 'CATEGORY', 'PRIORITY', 'CREATED AT', 'TARGET', 'STATUS', 'TECHNICIAN'].map(header => (
-                <th key={header} className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800 text-center">
-            {paginated.length === 0 ? (
-              <tr>
-                <td colSpan={11} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">No tickets found.</td>
-              </tr>
-            ) : (
-              paginated.map(t => {
-                const isSyncing = pendingSyncUuid === t.v_ticketuuid;
-                return (
-                  <tr
-                    key={t.v_ticketuuid}
-                    onClick={() => !isSyncing && setSelectedTicket(t)}
-                    className={`transition-colors text-center ${isSyncing ? 'bg-violet-50 dark:bg-violet-950/20 cursor-wait' : 'hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'}`}
-                  >
-                    <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">
-                      {isSyncing ? (
-                        <span className="inline-flex items-center gap-1.5 text-violet-500 dark:text-violet-400 text-xs font-medium">
-                          <RefreshCw className="w-3 h-3 animate-spin" /> Finalizing...
-                        </span>
-                      ) : (
-                        <span className="text-gray-600 dark:text-gray-300">{t.v_ticketnumber}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_source || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_department || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_username || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[100px] truncate">{t.v_title || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 max-w-[80px] truncate">{t.v_ticketcategory || '—'}</td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className={`px-1.5 py-0.5 text-xs rounded-full ${getPriorityClass(t.v_priority)}`}>{t.v_priority || '—'}</span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_createdat ? new Date(t.v_createdat).toLocaleString() : '—'}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_target ? new Date(t.v_target).toLocaleString() : '—'}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_status || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{t.v_technicianname || '—'}</td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+      {/* ── Desktop: ComTableDesign handles all table chrome ─────────────────── */}
+      <ComTableDesign
+        columns={COLUMNS}
+        data={paginated}
+        loading={loading}
+        emptyText="No tickets found."
+        totalRecords={filteredTickets.length}
+        onRowClick={setSelectedTicket}
+        isSyncing={(row) => pendingSyncUuid === row.v_ticketuuid}
+        actions={syncButton}
+      />
 
       {selectedTicket && (
         <ComUpdateForm
