@@ -184,7 +184,7 @@ export default function MyTeamTab({ selectedFilters = {}, searchValue = "", onFi
     }
   };
 
-  const statuses = filterOptions?.statuses ?? [];
+  const statuses = useMemo(() => filterOptions?.statuses ?? [], [filterOptions?.statuses]);
 
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
@@ -194,6 +194,10 @@ export default function MyTeamTab({ selectedFilters = {}, searchValue = "", onFi
       : selectedFilters.status
         ? [selectedFilters.status]
         : [];
+    const hasStatusFilter = selectedFilters?.status !== undefined && selectedFilters?.status !== null;
+    const hasAllStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
+    const effectiveStatuses = hasStatusFilter && !hasAllStatusesSelected ? selectedStatuses : [];
+    const statusFiltersNone = hasStatusFilter && selectedStatuses.length === 0 && statuses.length > 0;
 
     return data.filter((row) => {
       // Text search
@@ -208,15 +212,18 @@ export default function MyTeamTab({ selectedFilters = {}, searchValue = "", onFi
       }
 
       // Status filter
-      if (selectedStatuses.length > 0) {
-        if (!selectedStatuses.includes(String(row.v_status))) {
+      if (statusFiltersNone) {
+        return false;
+      }
+      if (effectiveStatuses.length > 0) {
+        if (!effectiveStatuses.includes(String(row.v_status))) {
           return false;
         }
       }
 
       return true;
     });
-  }, [data, searchValue, selectedFilters.status]);
+  }, [data, searchValue, selectedFilters.status, statuses]);
 
   const displayTotal = filteredData.length;
   const displayTotalPages = effectiveLimit > 0 ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit)) : 1;

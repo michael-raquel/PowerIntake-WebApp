@@ -24,6 +24,8 @@ export default function CompanyFilter({
 }) {
   const search = filters?.search ?? "";
   const manager = filters?.manager ?? "";
+  const hasRoleFilter = filters?.selectedRoles !== undefined && filters?.selectedRoles !== null;
+  const hasStatusFilter = filters?.status !== undefined && filters?.status !== null;
   const rawSelectedRoles = Array.isArray(filters?.selectedRoles)
     ? filters.selectedRoles
     : filters?.selectedRoles
@@ -35,26 +37,26 @@ export default function CompanyFilter({
       ? [filters.status]
       : [];
 
-  const selectedRoles = rawSelectedRoles.length > 0
+  const selectedRoles = hasRoleFilter
     ? rawSelectedRoles.filter((role) => roles.includes(role))
     : roles;
-  const selectedStatuses = rawSelectedStatuses.length > 0
+  const selectedStatuses = hasStatusFilter
     ? rawSelectedStatuses.filter((status) => statuses.includes(status))
     : statuses;
 
   const allRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
-  const roleFilterActive = rawSelectedRoles.length > 0 && !allRolesSelected;
+  const roleFilterActive = hasRoleFilter && !allRolesSelected;
   const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
-  const statusFilterActive = rawSelectedStatuses.length > 0 && !allStatusesSelected;
+  const statusFilterActive = hasStatusFilter && !allStatusesSelected;
 
   const resolveRoles = (nextRoles) => {
     if (roles.length === 0) return nextRoles;
-    return nextRoles.length === roles.length ? [] : nextRoles;
+    return nextRoles.length === roles.length ? null : nextRoles;
   };
 
   const resolveStatuses = (nextStatuses) => {
     if (statuses.length === 0) return nextStatuses;
-    return nextStatuses.length === statuses.length ? [] : nextStatuses;
+    return nextStatuses.length === statuses.length ? null : nextStatuses;
   };
 
   const rowsValue = String(rowsPerPage ?? 10);

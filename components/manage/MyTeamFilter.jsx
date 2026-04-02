@@ -26,13 +26,14 @@ export default function MyTeamFilter({
     : selectedFilters.status
       ? [selectedFilters.status]
       : [];
+  const hasStatusFilter = selectedFilters?.status !== undefined && selectedFilters?.status !== null;
 
-  const selectedStatuses = rawSelectedStatuses.length > 0
+  const selectedStatuses = hasStatusFilter
     ? rawSelectedStatuses.filter((status) => statuses.includes(status))
     : statuses;
 
   const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
-  const statusFilterActive = rawSelectedStatuses.length > 0 && !allStatusesSelected;
+  const statusFilterActive = hasStatusFilter && !allStatusesSelected;
   const activeFilterCount = statusFilterActive ? 1 : 0;
   const someStatusesSelected = selectedStatuses.length > 0 && !allStatusesSelected;
 
@@ -49,7 +50,7 @@ export default function MyTeamFilter({
 
   const resolveStatuses = (nextStatuses) => {
     if (statuses.length === 0) return nextStatuses;
-    return nextStatuses.length === statuses.length ? [] : nextStatuses;
+    return nextStatuses.length === statuses.length ? null : nextStatuses;
   };
 
   const toggleStatus = (value) => {
@@ -60,7 +61,7 @@ export default function MyTeamFilter({
   };
 
   const clearStatus = () => {
-    onFiltersChange({ status: resolveStatuses([]) });
+    onFiltersChange({ status: resolveStatuses(statuses) });
   };
 
   const handleSelectAllStatuses = () => {
@@ -129,7 +130,7 @@ export default function MyTeamFilter({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onFiltersChange({ status: resolveStatuses([]) })}
+                  onClick={() => onFiltersChange({ status: resolveStatuses(statuses) })}
                   className="h-7 text-xs dark:text-gray-300 dark:hover:bg-gray-800"
                 >
                   Clear all
