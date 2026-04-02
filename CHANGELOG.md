@@ -1,3 +1,10 @@
+# [1.4.0-dev.40](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.39...v1.4.0-dev.40) (2026-04-02)
+
+
+### Bug Fixes
+
+* ST-notes and attachment web socket implementation ([f2ec4a3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f2ec4a3a2f379dc0322517fc8674db742cd494f1))
+
 # [1.4.0-dev.39](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.38...v1.4.0-dev.39) (2026-04-02)
 
 
