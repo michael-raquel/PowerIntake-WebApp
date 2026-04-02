@@ -1,3 +1,10 @@
+# [1.4.0-dev.51](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.50...v1.4.0-dev.51) (2026-04-02)
+
+
+### Bug Fixes
+
+* ST-2180 Manage Page select all filter ([f1399a8](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f1399a8ecb65beed1cdcd08d0e8d6876b06f6006))
+
 # [1.4.0-dev.50](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.49...v1.4.0-dev.50) (2026-04-02)
 
 
