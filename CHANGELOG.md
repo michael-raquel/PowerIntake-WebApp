@@ -1,3 +1,10 @@
+# [1.4.0-dev.52](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.51...v1.4.0-dev.52) (2026-04-02)
+
+
+### Bug Fixes
+
+* sticky table + search filter in navbar ([e353b51](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e353b51abf26737e0d9c8edc0e69a3faafef2e14))
+
 # [1.4.0-dev.51](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.50...v1.4.0-dev.51) (2026-04-02)
 
 
