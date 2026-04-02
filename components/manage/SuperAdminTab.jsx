@@ -24,8 +24,8 @@ import SuperAdminTable from "./table/SuperAdminTable";
 import { formatPercent } from "@/lib/utils";
 
 const DEFAULT_ROWS = 10;
-const SPARTA_TENANT_NAME = "Sparta Services LLC";
-const SPARTA_TENANT_NAME_NORMALIZED = SPARTA_TENANT_NAME.toLowerCase();
+const SPARTA_ENTRA_TENANT_ID = "1159156a-3971-429d-bb02-bd37b1223d24";
+const SPARTA_ENTRA_TENANT_ID_NORMALIZED = SPARTA_ENTRA_TENANT_ID.toLowerCase();
 
 const compareSortValues = (aValue, bValue) => {
   const aEmpty = aValue === null || aValue === undefined || aValue === "";
@@ -288,7 +288,7 @@ export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {}
   }, [normalizeRole]);
 
   const isSpartaTenant = useCallback(
-    (row) => String(row?.v_tenantname || "").trim().toLowerCase() === SPARTA_TENANT_NAME_NORMALIZED,
+    (row) => String(row?.v_entratenantid || "").trim().toLowerCase() === SPARTA_ENTRA_TENANT_ID_NORMALIZED,
     [],
   );
 

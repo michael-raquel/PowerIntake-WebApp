@@ -1,3 +1,10 @@
+# [1.4.0-dev.44](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.43...v1.4.0-dev.44) (2026-04-02)
+
+
+### Bug Fixes
+
+* Revert "fix: Revert "fix: fix session storage"" ([ef65cf7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ef65cf7b1bc3d7e2e5f1fa53992266be029ca2c9))
+
 # [1.4.0-dev.43](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.42...v1.4.0-dev.43) (2026-04-02)
 
 
