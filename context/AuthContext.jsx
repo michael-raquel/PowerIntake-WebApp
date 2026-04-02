@@ -4,6 +4,7 @@ import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
 import socket from "@/lib/socket";
 import { toast } from "sonner";
+import { useRouter } from "next/router";
 
 const AuthContext = createContext(null);
 
@@ -20,6 +21,9 @@ function decodeJwt(token) {
 export function AuthProvider({ children }) {
   const { instance, accounts } = useMsal();
   const account = accounts[0] ?? null;
+
+  const router = useRouter();
+  const goHome = useCallback(() => router.push("/"), [router]);
 
   const [accessToken, setAccessToken]     = useState(null);
   const [tokenInfo, setTokenInfo]         = useState(null);
@@ -256,11 +260,13 @@ export function AuthProvider({ children }) {
 useEffect(() => {
   if (!account) {
     socket.disconnect();
-
     // Clear consent gate so the next login re-runs /checking verification
     sessionStorage.removeItem("consent_verified");
+
+    // If user is logged out, send them to the home page
+    goHome();
   }
-}, [account]);
+}, [account, goHome]);
 
   return (
     <AuthContext.Provider value={{
