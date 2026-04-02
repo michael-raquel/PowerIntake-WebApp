@@ -16,8 +16,8 @@ export default function Manage() {
     search: "",
     clientname: "",
     manager: "",
-    selectedRoles: [],
-    status: [],
+    selectedRoles: null,
+    status: null,
   });
   const [isMobile, setIsMobile] = useState(false);
 

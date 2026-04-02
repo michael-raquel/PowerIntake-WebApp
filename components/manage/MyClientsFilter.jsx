@@ -13,6 +13,7 @@ export default function ClientsFilter({
   const [search,     setSearch]     = useState("");
   const [selectedTenantnames, setSelectedTenantnames] = useState([]);
   const [statusSelection, setStatusSelection] = useState(null);
+  const hasStatusFilter = statusSelection !== null;
 
   const selectedStatuses = useMemo(() => {
     if (statusSelection === null) return statuses;
@@ -20,7 +21,7 @@ export default function ClientsFilter({
   }, [statusSelection, statuses]);
 
   const allStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
-  const statusFilterActive = selectedStatuses.length > 0 && !allStatusesSelected;
+  const statusFilterActive = hasStatusFilter && !allStatusesSelected;
 
   const statusNames = selectedStatuses.map((s) => (s === "true" ? "Active" : "Inactive"));
   const statusLabel = statuses.length === 0
@@ -35,7 +36,7 @@ export default function ClientsFilter({
 
   const resolveStatuses = (nextStatuses) => {
     if (statuses.length === 0) return nextStatuses;
-    return nextStatuses.length === statuses.length ? [] : nextStatuses;
+    return nextStatuses.length === statuses.length ? null : nextStatuses;
   };
 
   const emit = (overrides = {}) => {

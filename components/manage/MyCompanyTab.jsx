@@ -394,6 +394,8 @@ export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} 
   const filteredData = useMemo(() => {
     const searchValue = String(filters?.search ?? "").trim().toLowerCase();
     const managerValue = String(filters?.manager ?? "").trim().toLowerCase();
+    const hasRoleFilter = filters?.selectedRoles !== undefined && filters?.selectedRoles !== null;
+    const hasStatusFilter = filters?.status !== undefined && filters?.status !== null;
     const selectedRoles = Array.isArray(filters?.selectedRoles)
       ? filters.selectedRoles
       : filters?.selectedRoles
@@ -412,8 +414,10 @@ export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} 
     const normalizedRoles = selectedRoles.map((role) => normalizeRole(role));
     const hasAllRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
     const hasAllStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
-    const effectiveRoles = hasAllRolesSelected ? [] : normalizedRoles;
-    const effectiveStatuses = hasAllStatusesSelected ? [] : selectedStatuses;
+    const effectiveRoles = hasRoleFilter && !hasAllRolesSelected ? normalizedRoles : [];
+    const effectiveStatuses = hasStatusFilter && !hasAllStatusesSelected ? selectedStatuses : [];
+    const roleFiltersNone = hasRoleFilter && selectedRoles.length === 0 && roles.length > 0;
+    const statusFiltersNone = hasStatusFilter && selectedStatuses.length === 0 && statuses.length > 0;
 
     return data.filter((row) => {
       if (searchValue) {
@@ -424,6 +428,10 @@ export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} 
       if (managerValue) {
         const managerName = String(row.v_managername || "").toLowerCase();
         if (!managerName.includes(managerValue)) return false;
+      }
+
+      if (roleFiltersNone || statusFiltersNone) {
+        return false;
       }
 
       if (effectiveRoles.length > 0) {
