@@ -1,3 +1,10 @@
+# [1.4.0-dev.47](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.46...v1.4.0-dev.47) (2026-04-02)
+
+
+### Bug Fixes
+
+* Replaced toast to dialog ([33e15f6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/33e15f6cdfc3d9f8705b029dd0202c159c938bb8))
+
 # [1.4.0-dev.46](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.45...v1.4.0-dev.46) (2026-04-02)
 
 
