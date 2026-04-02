@@ -1,3 +1,10 @@
+# [1.4.0-dev.48](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.47...v1.4.0-dev.48) (2026-04-02)
+
+
+### Reverts
+
+* Revert "fix: Replaced toast to dialog" ([ed8c021](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ed8c0219bec181f9aa67142481245bf4139ec54b))
+
 # [1.4.0-dev.47](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.46...v1.4.0-dev.47) (2026-04-02)
 
 
