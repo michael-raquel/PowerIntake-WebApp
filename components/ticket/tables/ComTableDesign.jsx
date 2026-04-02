@@ -126,145 +126,147 @@ export default function ComTableDesign({
   const displayed = totalRecords ?? sortedData.length;
 
   return (
-    <div className={`hidden md:flex flex-col min-h-0 ${className}`}>
-      <div className="flex items-center justify-between px-0 py-3 border-b border-gray-200 dark:border-gray-800">
+    <div className={`hidden md:flex flex-col min-h-0 h-full ${className}`}>
+      <div className="flex items-center justify-between px-0 py-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
         <span className="text-xs text-gray-500 dark:text-gray-400">{displayed} Total Records</span>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
 
-      <div className="overflow-x-auto flex-1">
-        <table className="w-full text-sm" style={{ tableLayout: "fixed", borderCollapse: "collapse" }}>
-          <colgroup>
-            {columns.map((col) => (
-              <col
-                key={col.key}
-                style={colWidths[col.key] ? { width: `${colWidths[col.key]}px` } : undefined}
-              />
-            ))}
-          </colgroup>
+      <div className="flex-1 overflow-hidden">
+        <div className="h-full overflow-x-auto overflow-y-auto">
+          <table className="w-full text-sm" style={{ tableLayout: "fixed", borderCollapse: "collapse" }}>
+            <colgroup>
+              {columns.map((col) => (
+                <col
+                  key={col.key}
+                  style={colWidths[col.key] ? { width: `${colWidths[col.key]}px` } : undefined}
+                />
+              ))}
+            </colgroup>
 
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
-              {columns.map((col) => {
-                const isSorted = sortConfig.key === col.key;
-                const alignClass = col.align === "left" ? "text-left" : "text-center";
-                const paddingClass = col.align === "left" ? "pl-8 pr-6" : "px-4";
-                const ariaSort = isSorted
-                  ? (sortConfig.direction === "asc" ? "ascending" : "descending")
-                  : "none";
+            <thead className="sticky top-0 bg-white dark:bg-gray-900 z-10">
+              <tr className="border-b border-gray-200 dark:border-gray-800">
+                {columns.map((col) => {
+                  const isSorted = sortConfig.key === col.key;
+                  const alignClass = col.align === "left" ? "text-left" : "text-center";
+                  const paddingClass = col.align === "left" ? "pl-8 pr-6" : "px-4";
+                  const ariaSort = isSorted
+                    ? (sortConfig.direction === "asc" ? "ascending" : "descending")
+                    : "none";
 
-                return (
-                  <th
-                    key={col.key}
-                    aria-sort={ariaSort}
-                    className={`relative py-3 font-bold text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap select-none ${alignClass} ${paddingClass} border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden`}
-                    style={colWidths[col.key] ? { width: `${colWidths[col.key]}px` } : undefined}
-                  >
-                    {col.sortValue ? (
-                      <button
-                        type="button"
-                        onClick={() => handleSort(col)}
-                        className={`flex items-center gap-1 w-full min-w-0 ${
+                  return (
+                    <th
+                      key={col.key}
+                      aria-sort={ariaSort}
+                      className={`relative py-3 font-bold text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap select-none ${alignClass} ${paddingClass} border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden bg-white dark:bg-gray-900`}
+                      style={colWidths[col.key] ? { width: `${colWidths[col.key]}px` } : undefined}
+                    >
+                      {col.sortValue ? (
+                        <button
+                          type="button"
+                          onClick={() => handleSort(col)}
+                          className={`flex items-center gap-1 w-full min-w-0 ${
+                            col.align === "left" ? "justify-start" : "justify-center"
+                          } hover:text-gray-700 dark:hover:text-gray-200`}
+                          title={`Sort by ${col.label}`}
+                        >
+                          <span className="truncate">{col.headerRender ? col.headerRender() : col.label}</span>
+                          <SortIcon colKey={col.key} />
+                        </button>
+                      ) : (
+                        <div className={`flex items-center gap-1 w-full min-w-0 ${
                           col.align === "left" ? "justify-start" : "justify-center"
-                        } hover:text-gray-700 dark:hover:text-gray-200`}
-                        title={`Sort by ${col.label}`}
-                      >
-                        <span className="truncate">{col.headerRender ? col.headerRender() : col.label}</span>
-                        <SortIcon colKey={col.key} />
-                      </button>
-                    ) : (
-                      <div className={`flex items-center gap-1 w-full min-w-0 ${
-                        col.align === "left" ? "justify-start" : "justify-center"
-                      }`}>
-                        <span className="truncate">{col.headerRender ? col.headerRender() : col.label}</span>
-                      </div>
-                    )}
+                        }`}>
+                          <span className="truncate">{col.headerRender ? col.headerRender() : col.label}</span>
+                        </div>
+                      )}
 
-                    {/* Resize handle */}
-                    <div
-                      role="separator"
-                      aria-orientation="vertical"
-                      className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-violet-200/60 dark:hover:bg-violet-900/40"
-                      onMouseDown={(e) => startResize(e, col)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
-
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {loading ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
-                >
-                  Loading...
-                </td>
+                      {/* Resize handle */}
+                      <div
+                        role="separator"
+                        aria-orientation="vertical"
+                        className="absolute right-0 top-0 h-full w-2 cursor-col-resize hover:bg-violet-200/60 dark:hover:bg-violet-900/40"
+                        onMouseDown={(e) => startResize(e, col)}
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </th>
+                  );
+                })}
               </tr>
-            ) : sortedData.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
-                >
-                  {emptyText}
-                </td>
-              </tr>
-            ) : (
-              sortedData.map((row, i) => {
-                const syncing = isSyncing?.(row) ?? false;
-                return (
-                  <tr
-                    key={row.v_ticketuuid ?? row.v_entrauserid ?? i}
-                    onClick={() => !syncing && onRowClick?.(row)}
-                    className={`transition-colors ${
-                      syncing
-                        ? "bg-violet-50 dark:bg-violet-950/20 cursor-wait"
-                        : onRowClick
-                        ? "hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-                        : ""
-                    }`}
-                  >
-                    {columns.map((col, ci) => (
-                      <td
-                        key={col.key}
-                        className={`px-4 py-3 overflow-hidden text-ellipsis whitespace-nowrap text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-800 last:border-r-0 ${
-                          col.align === "left" ? "text-left" : "text-center"
-                        } ${col.cellClass ?? ""}`}
-                        style={
-                          colWidths[col.key] ? { maxWidth: `${colWidths[col.key]}px` } : undefined
-                        }
-                        onClick={col.stopPropagation ? (e) => e.stopPropagation() : undefined}
-                      >
-                        {ci === 0 && syncing
-                          ? (syncNode ?? defaultSyncNode)
-                          : col.render
-                          ? col.render(row)
-                          : null}
-                      </td>
-                    ))}
-                  </tr>
-                );
-              })
-            )}
+            </thead>
 
-            {footerRow && !loading && sortedData.length > 0 && (
-              <tr className="bg-gray-50/70 dark:bg-gray-800/60 font-semibold border-t border-gray-200 dark:border-gray-800">
-                {columns.map((col) => (
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+              {loading ? (
+                <tr>
                   <td
-                    key={col.key}
-                    className="px-4 py-3 text-sm text-center text-gray-700 dark:text-gray-200 border-r border-gray-200 dark:border-gray-800 last:border-r-0"
+                    colSpan={columns.length}
+                    className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                   >
-                    {footerRow[col.key] ?? ""}
+                    Loading...
                   </td>
-                ))}
-              </tr>
-            )}
-          </tbody>
-        </table>
+                </tr>
+              ) : sortedData.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+                  >
+                    {emptyText}
+                  </td>
+                </tr>
+              ) : (
+                sortedData.map((row, i) => {
+                  const syncing = isSyncing?.(row) ?? false;
+                  return (
+                    <tr
+                      key={row.v_ticketuuid ?? row.v_entrauserid ?? i}
+                      onClick={() => !syncing && onRowClick?.(row)}
+                      className={`transition-colors ${
+                        syncing
+                          ? "bg-violet-50 dark:bg-violet-950/20 cursor-wait"
+                          : onRowClick
+                          ? "hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+                          : ""
+                      }`}
+                    >
+                      {columns.map((col, ci) => (
+                        <td
+                          key={col.key}
+                          className={`px-4 py-3 overflow-hidden text-ellipsis whitespace-nowrap text-gray-600 dark:text-gray-300 border-r border-gray-200 dark:border-gray-800 last:border-r-0 ${
+                            col.align === "left" ? "text-left" : "text-center"
+                          } ${col.cellClass ?? ""}`}
+                          style={
+                            colWidths[col.key] ? { maxWidth: `${colWidths[col.key]}px` } : undefined
+                          }
+                          onClick={col.stopPropagation ? (e) => e.stopPropagation() : undefined}
+                        >
+                          {ci === 0 && syncing
+                            ? (syncNode ?? defaultSyncNode)
+                            : col.render
+                            ? col.render(row)
+                            : null}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })
+              )}
+
+              {footerRow && !loading && sortedData.length > 0 && (
+                <tr className="bg-gray-50/70 dark:bg-gray-800/60 font-semibold border-t border-gray-200 dark:border-gray-800">
+                  {columns.map((col) => (
+                    <td
+                      key={col.key}
+                      className="px-4 py-3 text-sm text-center text-gray-700 dark:text-gray-200 border-r border-gray-200 dark:border-gray-800 last:border-r-0"
+                    >
+                      {footerRow[col.key] ?? ""}
+                    </td>
+                  ))}
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
