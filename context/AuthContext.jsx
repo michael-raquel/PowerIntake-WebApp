@@ -251,15 +251,12 @@ export function AuthProvider({ children }) {
     };
   }, [tokenInfo?.account?.localAccountId, startLogoutCountdown]);
 
-// ── Logout ───────────────────────────────────────────────
-useEffect(() => {
-  if (!account) {
-    socket.disconnect();
-
-    // Clear consent gate so the next login re-runs /checking verification
-    sessionStorage.removeItem("consent_verified");
-  }
-}, [account]);
+  // ── Logout ───────────────────────────────────────────────
+  useEffect(() => {
+    if (!account) {
+      socket.disconnect();
+    }
+  }, [account]);
 
   return (
     <AuthContext.Provider value={{
