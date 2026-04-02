@@ -1,3 +1,10 @@
+# [1.4.0-dev.50](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.49...v1.4.0-dev.50) (2026-04-02)
+
+
+### Reverts
+
+* Revert "fix: added a router push to force logout" ([14d5b7a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/14d5b7ac6b1ee3459d42df885759b1c65e1e8507))
+
 # [1.4.0-dev.49](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.48...v1.4.0-dev.49) (2026-04-02)
 
 
