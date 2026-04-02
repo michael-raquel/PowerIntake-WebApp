@@ -1,10 +1,9 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback  } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
 import socket from "@/lib/socket";
-import { useRouter } from "next/router";
-import ForceLogoutDialog from "@/components/ForceLogoutDialog";
+import { toast } from "sonner";
 
 const AuthContext = createContext(null);
 
@@ -21,30 +20,48 @@ function decodeJwt(token) {
 export function AuthProvider({ children }) {
   const { instance, accounts } = useMsal();
   const account = accounts[0] ?? null;
-  const router = useRouter();
 
   const [accessToken, setAccessToken]     = useState(null);
   const [tokenInfo, setTokenInfo]         = useState(null);
   const [userInfo, setUserInfo]           = useState(null);
   const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
-  const [forceLogoutVisible, setForceLogoutVisible] = useState(false);
-  const [forceLogoutSeconds, setForceLogoutSeconds] = useState(10);
-  const [forceLogoutKey, setForceLogoutKey] = useState(0);
 
-  const goHome = useCallback(() => router.push("/"), [router]);
+  const logoutIntervalRef = useRef(null);
+  const logoutToastIdRef = useRef(null);
+  
+   const startLogoutCountdown = useCallback((seconds = 10) => {
+    if (logoutIntervalRef.current) {
+      clearInterval(logoutIntervalRef.current);
+      logoutIntervalRef.current = null;
+    }
+    if (logoutToastIdRef.current) {
+      toast.dismiss(logoutToastIdRef.current);
+      logoutToastIdRef.current = null;
+    }
 
-  const startLogoutCountdown = useCallback((seconds = 10) => {
-    const normalized = Math.max(1, Number(seconds) || 10);
-    setForceLogoutSeconds(normalized);
-    setForceLogoutKey((prev) => prev + 1);
-    setForceLogoutVisible(true);
-  }, []);
+    let remaining = Math.max(1, Number(seconds) || 10);
+    const message = (value) =>
+      `Your account was updated. You will be logged out in ${value}s.`;
 
-  const handleForceLogout = useCallback(() => {
-    setForceLogoutVisible(false);
-    goHome();
-    instance.logoutRedirect({ postLogoutRedirectUri: "/" });
-  }, [goHome, instance]);
+    logoutToastIdRef.current = toast.warning(message(remaining), { duration: Infinity });
+
+    logoutIntervalRef.current = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(logoutIntervalRef.current);
+        logoutIntervalRef.current = null;
+        toast.dismiss(logoutToastIdRef.current);
+        logoutToastIdRef.current = null;
+        instance.logoutRedirect({ postLogoutRedirectUri: "/" });
+        return;
+      }
+
+      toast.warning(message(remaining), {
+        id: logoutToastIdRef.current,
+        duration: Infinity,
+      });
+    }, 1000);
+  }, [instance]);
   
   // ── Your API token ──────────────────────────────────────
   useEffect(() => {
@@ -211,7 +228,7 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
-  //Change role from another session or admin portal triggers a logout in all sessions with a countdown dialog. (Will change if it fails -Jasper)
+  //Change role from another session or admin portal triggers a logout in all sessions with a countdown and toast notification. (Will change if it fails -Jasper)
   useEffect(() => {
     if (!tokenInfo?.account?.localAccountId) return;
 
@@ -224,6 +241,14 @@ export function AuthProvider({ children }) {
     socket.on("user:role_changed", onRoleChanged);
     return () => {
       socket.off("user:role_changed", onRoleChanged);
+      if (logoutIntervalRef.current) {
+        clearInterval(logoutIntervalRef.current);
+        logoutIntervalRef.current = null;
+      }
+      if (logoutToastIdRef.current) {
+        toast.dismiss(logoutToastIdRef.current);
+        logoutToastIdRef.current = null;
+      }
     };
   }, [tokenInfo?.account?.localAccountId, startLogoutCountdown]);
 
@@ -234,9 +259,8 @@ useEffect(() => {
 
     // Clear consent gate so the next login re-runs /checking verification
     sessionStorage.removeItem("consent_verified");
-    goHome();
   }
-}, [account, goHome]);
+}, [account]);
 
   return (
     <AuthContext.Provider value={{
@@ -247,13 +271,6 @@ useEffect(() => {
       isGlobalAdmin,
     }}>
       {children}
-      {forceLogoutVisible && (
-        <ForceLogoutDialog
-          key={forceLogoutKey}
-          seconds={forceLogoutSeconds}
-          onLogout={handleForceLogout}
-        />
-      )}
     </AuthContext.Provider>
   );
 }
