@@ -18,7 +18,8 @@ export default function ComAttachment({
   onChange,
   canEdit = false,
   createdby,
-  modifiedby
+  modifiedby,
+  refreshKey
 }) {
   const fileInputRef = useRef(null);
   const [dragActive, setDragActive] = useState(false);
@@ -98,6 +99,11 @@ export default function ComAttachment({
         toast.error('Upload failed', { description: 'Please try again.' });
     }
 };
+
+
+useEffect(() => {
+    if (refreshKey > 0 && ticketuuid) fetchAttachments();
+}, [refreshKey, ticketuuid, fetchAttachments]);
 
   const handleFileSelect = async (e) => {
     const files = Array.from(e.target.files || []);

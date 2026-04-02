@@ -96,6 +96,9 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const { updateTicket, loading: updateLoading } = useUpdateTicket({ account });
   const { reactivateTicket, loading: reactivateLoading } = useReactivateTicket();
 
+  const [noteRefreshKey, setNoteRefreshKey]           = useState(0);
+  const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
+
   const [liveTicket, setLiveTicket] = useState(ticket);
   useEffect(() => { setLiveTicket(ticket); }, [ticket]);
 
@@ -277,6 +280,28 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
       });
     }
   };
+
+  useEffect(() => {
+    const handleNoteSynced = ({ ticketuuid }) => {
+        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+        setNoteRefreshKey(k => k + 1);
+    };
+
+    const handleAttachmentSynced = ({ ticketuuid }) => {
+        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+        setAttachmentRefreshKey(k => k + 1);
+    };
+
+    socket.on("note:synced",       handleNoteSynced);
+    socket.on("attachment:synced", handleAttachmentSynced);
+
+    return () => {
+        socket.off("note:synced",       handleNoteSynced);
+        socket.off("attachment:synced", handleAttachmentSynced);
+    };
+}, [ticket?.v_ticketuuid]);
+
+
 
   const formatTime = (t) => {
     if (!t) return '—';
@@ -482,12 +507,12 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                 </Button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 lg:p-5">
-                {activeTab === 'notes'       && <ComNotes ticket={liveTicket} ticketUuid={ticket.v_ticketuuid} canEdit={isEditableStatus} />}
+                {activeTab === 'notes'       && <ComNotes ticket={liveTicket} ticketUuid={ticket.v_ticketuuid} canEdit={isEditableStatus}  refreshKey={noteRefreshKey} />}
                 {activeTab === 'user'        && <ComUserInformation ticket={liveTicket} />}
                 {activeTab === 'closure'     && <ComClosureDate ticket={liveTicket} />}
                 {activeTab === 'attachments' && (
                   <ComAttachment ticketuuid={ticket.v_ticketuuid} ticket={liveTicket} attachments={attachments}
-                    onChange={setAttachments} canEdit={canEditAttachments} createdby={ticket.v_entrauserid} modifiedby={account?.localAccountId} />
+                    onChange={setAttachments} canEdit={canEditAttachments} createdby={ticket.v_entrauserid} modifiedby={account?.localAccountId} refreshKey={attachmentRefreshKey} />
                 )}
                 {activeTab === 'timeline' && <ComTimelineView ticket={liveTicket} />}
               </div>
