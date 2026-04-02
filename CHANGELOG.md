@@ -1,3 +1,10 @@
+# [1.4.0-dev.45](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.44...v1.4.0-dev.45) (2026-04-02)
+
+
+### Bug Fixes
+
+* ST-timeline issue on assigning a technichian to the new one will be reflected on the previous timelines ([ed38e26](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ed38e2618cd4aa9884cd03a52d2b7b08e4c52863))
+
 # [1.4.0-dev.44](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.43...v1.4.0-dev.44) (2026-04-02)
 
 
