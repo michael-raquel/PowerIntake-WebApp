@@ -1,3 +1,10 @@
+# [1.4.0-dev.41](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.40...v1.4.0-dev.41) (2026-04-02)
+
+
+### Bug Fixes
+
+* nice Deactivate ([3f96cde](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3f96cdedb444d9be0435a19c7113f6f22c7f7504))
+
 # [1.4.0-dev.40](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.39...v1.4.0-dev.40) (2026-04-02)
 
 
