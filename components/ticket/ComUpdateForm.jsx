@@ -54,7 +54,7 @@ const PRIORITY_COLORS = {
 
 const CALL_DURATION_MS = 2 * 60 * 60 * 1000;
 const CLOSED_STATUSES = ['Work Completed', 'Problem Solved', 'Technician Rejected', 'Cancelled', 'Merged'];
-const REACTIVATABLE_STATUSES = ['Work Completed', 'Problem Solved', 'Cancelled', 'Merged'];
+const REACTIVATABLE_STATUSES = ['Work Completed', 'Problem Solved', 'Cancelled', 'Merged', 'Complete'];
 
 const toHHMM = (date) => `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 

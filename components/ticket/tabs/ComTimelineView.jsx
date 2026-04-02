@@ -1,100 +1,26 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Clock, Loader2, XCircle, User, UserCog } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { CheckCircle2, Clock, XCircle, User, UserCog } from 'lucide-react';
+import { useEffect } from 'react';
+import { useFetchTimeline } from '@/hooks/UseFetchTicketTechnician';
 import socket from "@/lib/socket";
 
 const STATUS_STYLES = {
-  'New': {
-    icon: CheckCircle2,
-    color: 'text-emerald-600 dark:text-emerald-400',
-    bg: 'bg-emerald-50 dark:bg-emerald-950/30',
-    border: 'border-emerald-200 dark:border-emerald-800/50',
-  },
-  'Assigned': { 
-    icon: Clock, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-50 dark:bg-blue-950/30', 
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  'Information Provided': { 
-    icon: Clock, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-50 dark:bg-blue-950/30', 
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  'Escalate to Onsite': { 
-    icon: Clock, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-50 dark:bg-blue-950/30', 
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  'Client Responded': { 
-    icon: Clock, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-50 dark:bg-blue-950/30', 
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  'Rescheduled': { 
-    icon: Clock, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-50 dark:bg-blue-950/30', 
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  'Scheduling Required': { 
-    icon: Clock, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-50 dark:bg-blue-950/30', 
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  'Working Issue Now': { 
-    icon: Clock, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-50 dark:bg-blue-950/30', 
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  'Waiting': { 
-    icon: Clock, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-50 dark:bg-blue-950/30', 
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  'Waiting for Approval': { 
-    icon: Clock, 
-    color: 'text-blue-600 dark:text-blue-400', 
-    bg: 'bg-blue-50 dark:bg-blue-950/30', 
-    border: 'border-blue-200 dark:border-blue-800/50',
-  },
-  'Work Completed': { 
-    icon: CheckCircle2, 
-    color: 'text-purple-600 dark:text-purple-400', 
-    bg: 'bg-purple-50 dark:bg-purple-950/30', 
-    border: 'border-purple-200 dark:border-purple-800/50',
-  },
-  'Problem Solved': { 
-    icon: CheckCircle2, 
-    color: 'text-purple-600 dark:text-purple-400', 
-    bg: 'bg-purple-50 dark:bg-purple-950/30', 
-    border: 'border-purple-200 dark:border-purple-800/50',
-  },
-  'Cancelled': { 
-    icon: XCircle, 
-    color: 'text-rose-600 dark:text-rose-400', 
-    bg: 'bg-rose-50 dark:bg-rose-950/30', 
-    border: 'border-rose-200 dark:border-rose-800/50',
-  },
-  'Technician Rejected': { 
-    icon: XCircle, 
-    color: 'text-rose-600 dark:text-rose-400', 
-    bg: 'bg-rose-50 dark:bg-rose-950/30', 
-    border: 'border-rose-200 dark:border-rose-800/50',
-  },
-  'Merged': { 
-    icon: XCircle, 
-    color: 'text-rose-600 dark:text-rose-400', 
-    bg: 'bg-rose-50 dark:bg-rose-950/30', 
-    border: 'border-rose-200 dark:border-rose-800/50',
-  },
+  'New':                  { icon: CheckCircle2, color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/30',  border: 'border-emerald-200 dark:border-emerald-800/50' },
+  'Assigned':             { icon: Clock,        color: 'text-blue-600 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/30',         border: 'border-blue-200 dark:border-blue-800/50' },
+  'Information Provided': { icon: Clock,        color: 'text-blue-600 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/30',         border: 'border-blue-200 dark:border-blue-800/50' },
+  'Escalate to Onsite':   { icon: Clock,        color: 'text-blue-600 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/30',         border: 'border-blue-200 dark:border-blue-800/50' },
+  'Client Responded':     { icon: Clock,        color: 'text-blue-600 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/30',         border: 'border-blue-200 dark:border-blue-800/50' },
+  'Rescheduled':          { icon: Clock,        color: 'text-blue-600 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/30',         border: 'border-blue-200 dark:border-blue-800/50' },
+  'Scheduling Required':  { icon: Clock,        color: 'text-blue-600 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/30',         border: 'border-blue-200 dark:border-blue-800/50' },
+  'Working Issue Now':    { icon: Clock,        color: 'text-blue-600 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/30',         border: 'border-blue-200 dark:border-blue-800/50' },
+  'Waiting':              { icon: Clock,        color: 'text-blue-600 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/30',         border: 'border-blue-200 dark:border-blue-800/50' },
+  'Waiting for Approval': { icon: Clock,        color: 'text-blue-600 dark:text-blue-400',       bg: 'bg-blue-50 dark:bg-blue-950/30',         border: 'border-blue-200 dark:border-blue-800/50' },
+  'Work Completed':       { icon: CheckCircle2, color: 'text-purple-600 dark:text-purple-400',   bg: 'bg-purple-50 dark:bg-purple-950/30',     border: 'border-purple-200 dark:border-purple-800/50' },
+  'Problem Solved':       { icon: CheckCircle2, color: 'text-purple-600 dark:text-purple-400',   bg: 'bg-purple-50 dark:bg-purple-950/30',     border: 'border-purple-200 dark:border-purple-800/50' },
+  'Cancelled':            { icon: XCircle,      color: 'text-rose-600 dark:text-rose-400',       bg: 'bg-rose-50 dark:bg-rose-950/30',         border: 'border-rose-200 dark:border-rose-800/50' },
+  'Technician Rejected':  { icon: XCircle,      color: 'text-rose-600 dark:text-rose-400',       bg: 'bg-rose-50 dark:bg-rose-950/30',         border: 'border-rose-200 dark:border-rose-800/50' },
+  'Merged':               { icon: XCircle,      color: 'text-rose-600 dark:text-rose-400',       bg: 'bg-rose-50 dark:bg-rose-950/30',         border: 'border-rose-200 dark:border-rose-800/50' },
 };
 
 const defaultStyle = {
@@ -105,31 +31,38 @@ const defaultStyle = {
 };
 
 export default function ComTimelineView({ ticket }) {
-  const [statuses, setStatuses] = useState(ticket?.v_ticketstatuses || []);
+  const ticketuuid = ticket?.v_ticketuuid;
+  const { timeline, loading, error, fetchTimeline } = useFetchTimeline(ticketuuid);
 
   useEffect(() => {
-    setStatuses(ticket?.v_ticketstatuses || []);
-  }, [ticket?.v_ticketstatuses]);
+    if (!ticketuuid) return;
 
-// useEffect(() => {
-//   const handleTicketUpdated = ({ ticketuuid, ticket: updated }) => {
-//     if (!updated) return;
+    const handleTicketUpdated = ({ ticketuuid: updated }) => {
+      if (String(updated) !== String(ticketuuid)) return;
+      fetchTimeline();
+    };
 
-//     if (String(updated.v_ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+    socket.on("ticket:updated", handleTicketUpdated);
+    return () => socket.off("ticket:updated", handleTicketUpdated);
+  }, [ticketuuid, fetchTimeline]);
 
-//     if (updated.v_ticketstatuses) {
-//       setStatuses(updated.v_ticketstatuses);
-//     }
-//   };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" />
+      </div>
+    );
+  }
 
-//   socket.on("ticket:updated", handleTicketUpdated);
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <p className="text-sm text-red-500 dark:text-red-400">Failed to load timeline</p>
+      </div>
+    );
+  }
 
-//   return () => {
-//     socket.off("ticket:updated", handleTicketUpdated);
-//   };
-// }, [ticket?.v_ticketuuid]);
-
-  if (!statuses.length) {
+  if (!timeline.length) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
         <div className="w-12 h-12 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-3">
@@ -142,18 +75,12 @@ export default function ComTimelineView({ ticket }) {
 
   return (
     <div className="relative pl-2">
-      {statuses.map((s, idx) => {
-        const style = STATUS_STYLES[s.v_status] || defaultStyle;
-        const Icon = style.icon;
-        const isLast = idx === statuses.length - 1;
-        const isNew = s.v_status === 'New';
-        
-        let person = null;
-        if (isNew) {
-          person = ticket?.v_username;
-        } else {
-          person = s.v_technicianname || ticket?.v_technicianname;
-        }
+      {timeline.map((s, idx) => {
+        const style   = STATUS_STYLES[s.v_status] || defaultStyle;
+        const Icon    = style.icon;
+        const isLast  = idx === timeline.length - 1;
+        const isNew   = s.v_status === 'New';
+        const person  = isNew ? ticket?.v_username : (s.v_technicianname ?? null);
 
         return (
           <div key={s.v_ticketstatusid} className="relative flex gap-4 pb-8 last:pb-0">
@@ -163,15 +90,10 @@ export default function ComTimelineView({ ticket }) {
 
             <div className="relative z-10">
               <div className={cn(
-                'w-10 h-10 rounded-full flex items-center justify-center shadow-sm transition-all duration-200 group-hover:scale-105 border-2',
-                style.bg,
-                style.border
+                'w-10 h-10 rounded-full flex items-center justify-center shadow-sm border-2',
+                style.bg, style.border
               )}>
-                <Icon className={cn(
-                  'w-4 h-4', 
-                  style.color,
-                  style.icon
-                )} />
+                <Icon className={cn('w-4 h-4', style.color)} />
               </div>
             </div>
 
