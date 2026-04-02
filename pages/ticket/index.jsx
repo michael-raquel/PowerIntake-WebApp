@@ -200,7 +200,7 @@ export default function TicketPage() {
   }, []);
 
   const handleOnUpdated = useCallback(() => {
-    toast.info('A ticket has been updated');
+    // toast.info('A ticket has been updated');
   }, []);
 
   useEffect(() => {
