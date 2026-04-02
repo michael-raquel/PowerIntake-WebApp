@@ -36,6 +36,12 @@ export default function Checking() {
 
         console.log("[CHECKING]", data);
 
+        if (data.tenantExists && data.consented && !data.isactive) {
+          setStatus("Your organization has been deactivated...");
+          router.replace("/no-consent?reason=deactivated");
+          return;
+        }
+        
         if (data.tenantExists && data.consented) {
           setStatus("Access granted. Redirecting...");
           sessionStorage.setItem("consent_verified", "1");
@@ -58,7 +64,7 @@ export default function Checking() {
               `?client_id=${process.env.NEXT_PUBLIC_AZURE_CLIENT_ID}`,
               `&redirect_uri=${process.env.NEXT_PUBLIC_APP_URL}/ms-consent-callback`,
             ].join("");
-            
+
             window.location.href = consentUrl;
           } else {
             setStatus("Waiting for administrator approval...");
