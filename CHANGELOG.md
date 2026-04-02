@@ -1,3 +1,10 @@
+# [1.4.0-dev.53](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.52...v1.4.0-dev.53) (2026-04-02)
+
+
+### Bug Fixes
+
+* Manage Page Table Header should stick when scroll down ([073d211](https://github.com/michael-raquel/PowerIntake-WebApp/commit/073d2114911ae167f8842e5b2650d5a0d7b37380))
+
 # [1.4.0-dev.52](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.51...v1.4.0-dev.52) (2026-04-02)
 
 
