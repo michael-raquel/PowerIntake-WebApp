@@ -1,3 +1,10 @@
+# [1.4.0-dev.49](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.48...v1.4.0-dev.49) (2026-04-02)
+
+
+### Bug Fixes
+
+* added a router push to force logout ([65b8902](https://github.com/michael-raquel/PowerIntake-WebApp/commit/65b89027ec051f1d58afb8a094267278898f3224))
+
 # [1.4.0-dev.48](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.47...v1.4.0-dev.48) (2026-04-02)
 
 
