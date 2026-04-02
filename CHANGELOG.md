@@ -1,3 +1,10 @@
+# [1.4.0-dev.46](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.45...v1.4.0-dev.46) (2026-04-02)
+
+
+### Bug Fixes
+
+* updated authcontext ([d5353de](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d5353de591a3002af64a5fbfe493fd40e094e665))
+
 # [1.4.0-dev.45](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.44...v1.4.0-dev.45) (2026-04-02)
 
 
