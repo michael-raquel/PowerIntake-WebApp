@@ -1,3 +1,10 @@
+# [1.4.0-dev.39](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.38...v1.4.0-dev.39) (2026-04-02)
+
+
+### Bug Fixes
+
+* ST-ticket annoying toast ([553ed19](https://github.com/michael-raquel/PowerIntake-WebApp/commit/553ed19c26860f623cf9c7381ab75e36dc14652d))
+
 # [1.4.0-dev.38](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.37...v1.4.0-dev.38) (2026-04-01)
 
 
