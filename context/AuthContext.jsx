@@ -3,6 +3,7 @@ import { useMsal } from "@azure/msal-react";
 import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
 import socket from "@/lib/socket";
+import { toast } from "sonner";
 
 const AuthContext = createContext(null);
 
