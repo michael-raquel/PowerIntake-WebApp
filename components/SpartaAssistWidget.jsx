@@ -1,152 +1,205 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
-const WIDGET_SRC =
-  "https://sparta-voice-frontend-dev-002.azurewebsites.net/widget?v=21";
-const PHOTO_SRC =
-  "https://sparta-voice-frontend-dev-002.azurewebsites.net/sparta-photo.jpg";
-const FALLBACK_ICON_SRC =
-  "https://sparta-voice-frontend-dev-002.azurewebsites.net/sparta-icon.svg";
+const OMNICHANNEL_WIDGET_ID = "Microsoft_Omnichannel_LCWidget";
+const OMNICHANNEL_WIDGET_SRC =
+  "https://oc-cdn-ocprod.azureedge.net/livechatwidget/scripts/LiveChatBootstrapper.js";
+const OMNICHANNEL_WIDGET_STYLE_ID = "sparta-omnichannel-widget-offset-style";
+const OMNICHANNEL_WIDGET_BOTTOM_VAR = "--sparta-omnichannel-widget-bottom";
+const OMNICHANNEL_WIDGET_MANAGED_ATTR = "data-sparta-omnichannel-managed";
+const OMNICHANNEL_WIDGET_MOBILE_SIZED_ATTR =
+  "data-sparta-omnichannel-mobile-sized";
+const MOBILE_BREAKPOINT = 768;
+const MOBILE_NAV_HEIGHT = 64;
+const MOBILE_EDGE_GAP = 12;
+const DEFAULT_EDGE_GAP = 16;
+const MOBILE_LAUNCHER_SIZE = 42;
+
+const WIDGET_SELECTOR = [
+  'iframe[src*="omnichannelengagementhub"]',
+  'iframe[src*="livechatwidget"]',
+  '[id*="omnichannel"]',
+  '[class*="omnichannel"]',
+  '[id*="lcw"]',
+  '[class*="lcw"]',
+  '[data-id*="lcw"]',
+  '[data-testid*="lcw"]',
+].join(",");
+
+function getWidgetBottomOffset(hasMobileBottomNav) {
+  const shouldLiftForMobileNav =
+    hasMobileBottomNav && window.innerWidth <= MOBILE_BREAKPOINT;
+  return shouldLiftForMobileNav
+    ? MOBILE_NAV_HEIGHT + MOBILE_EDGE_GAP
+    : DEFAULT_EDGE_GAP;
+}
+
+function ensureWidgetOffsetStyle() {
+  if (document.getElementById(OMNICHANNEL_WIDGET_STYLE_ID)) {
+    return;
+  }
+
+  const style = document.createElement("style");
+  style.id = OMNICHANNEL_WIDGET_STYLE_ID;
+  style.textContent = `${WIDGET_SELECTOR} { bottom: var(${OMNICHANNEL_WIDGET_BOTTOM_VAR}, ${DEFAULT_EDGE_GAP}px) !important; }`;
+  document.head.appendChild(style);
+}
+
+function setWidgetBottomVariable(hasMobileBottomNav) {
+  const offset = getWidgetBottomOffset(hasMobileBottomNav);
+  document.documentElement.style.setProperty(
+    OMNICHANNEL_WIDGET_BOTTOM_VAR,
+    `${offset}px`,
+  );
+}
+
+function applyMobileLauncherSizing(node) {
+  if (!(node instanceof HTMLElement)) return;
+
+  const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
+  const rect = node.getBoundingClientRect();
+  const isLauncherCandidate =
+    rect.width >= 34 &&
+    rect.width <= 100 &&
+    rect.height >= 34 &&
+    rect.height <= 100 &&
+    Math.abs(rect.width - rect.height) <= 18;
+
+  if (isMobile && isLauncherCandidate) {
+    const size = `${MOBILE_LAUNCHER_SIZE}px`;
+    node.style.setProperty("width", size, "important");
+    node.style.setProperty("height", size, "important");
+    node.style.setProperty("min-width", size, "important");
+    node.style.setProperty("min-height", size, "important");
+    node.style.setProperty("max-width", size, "important");
+    node.style.setProperty("max-height", size, "important");
+    node.style.setProperty("border-radius", "9999px", "important");
+    node.setAttribute(OMNICHANNEL_WIDGET_MOBILE_SIZED_ATTR, "1");
+    return;
+  }
+
+  if (node.getAttribute(OMNICHANNEL_WIDGET_MOBILE_SIZED_ATTR) === "1") {
+    node.style.removeProperty("width");
+    node.style.removeProperty("height");
+    node.style.removeProperty("min-width");
+    node.style.removeProperty("min-height");
+    node.style.removeProperty("max-width");
+    node.style.removeProperty("max-height");
+    node.style.removeProperty("border-radius");
+    node.removeAttribute(OMNICHANNEL_WIDGET_MOBILE_SIZED_ATTR);
+  }
+}
+
+function applyWidgetBottomOffset(hasMobileBottomNav) {
+  const offset = getWidgetBottomOffset(hasMobileBottomNav);
+
+  const nodes = document.querySelectorAll(WIDGET_SELECTOR);
+  const visited = new Set();
+
+  nodes.forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+
+    let current = node;
+    let depth = 0;
+
+    while (current && current !== document.body && depth < 5) {
+      if (visited.has(current)) break;
+
+      const computed = window.getComputedStyle(current);
+      if (computed.position === "fixed") {
+        current.style.bottom = `${offset}px`;
+        current.setAttribute(OMNICHANNEL_WIDGET_MANAGED_ATTR, "1");
+        applyMobileLauncherSizing(current);
+        visited.add(current);
+      }
+
+      current = current.parentElement;
+      depth += 1;
+    }
+  });
+}
+
+function teardownWidget() {
+  const script = document.getElementById(OMNICHANNEL_WIDGET_ID);
+  script?.remove();
+
+  const managedNodes = document.querySelectorAll(
+    `[${OMNICHANNEL_WIDGET_MANAGED_ATTR}="1"]`,
+  );
+  managedNodes.forEach((node) => {
+    if (node instanceof HTMLElement) {
+      node.remove();
+    }
+  });
+
+  const widgetIframes = document.querySelectorAll(
+    'iframe[src*="omnichannelengagementhub"], iframe[src*="livechatwidget"]',
+  );
+  widgetIframes.forEach((node) => {
+    if (node instanceof HTMLElement) {
+      node.remove();
+    }
+  });
+
+  document.documentElement.style.removeProperty(OMNICHANNEL_WIDGET_BOTTOM_VAR);
+}
 
 export default function SpartaAssistWidget({ hasMobileBottomNav = false }) {
-  const [mounted, setMounted] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [iconSrc, setIconSrc] = useState(PHOTO_SRC);
-  const [viewport, setViewport] = useState({ w: 0, h: 0 });
-
   useEffect(() => {
-    setMounted(true);
+    ensureWidgetOffsetStyle();
 
-    const updateViewport = () => {
-      setViewport({
-        w: window.innerWidth,
-        h: window.innerHeight,
-      });
+    const syncPosition = () => {
+      setWidgetBottomVariable(hasMobileBottomNav);
+      applyWidgetBottomOffset(hasMobileBottomNav);
     };
 
-    updateViewport();
-    window.addEventListener("resize", updateViewport);
-    window.addEventListener("orientationchange", updateViewport);
+    syncPosition();
+
+    const observer = new MutationObserver(syncPosition);
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    window.addEventListener("resize", syncPosition);
+    window.addEventListener("orientationchange", syncPosition);
+
+    const script = document.getElementById(OMNICHANNEL_WIDGET_ID);
+    script?.addEventListener("load", syncPosition);
 
     return () => {
-      window.removeEventListener("resize", updateViewport);
-      window.removeEventListener("orientationchange", updateViewport);
+      observer.disconnect();
+      window.removeEventListener("resize", syncPosition);
+      window.removeEventListener("orientationchange", syncPosition);
+      script?.removeEventListener("load", syncPosition);
+    };
+  }, [hasMobileBottomNav]);
+
+  useEffect(() => {
+    if (!document.getElementById(OMNICHANNEL_WIDGET_ID)) {
+      const script = document.createElement("script");
+      script.id = OMNICHANNEL_WIDGET_ID;
+      script.src = OMNICHANNEL_WIDGET_SRC;
+      script.async = true;
+      script.setAttribute(
+        "data-app-id",
+        "866addcc-5961-436b-8970-4e9e7720027c",
+      );
+      script.setAttribute("data-lcw-version", "prod");
+      script.setAttribute(
+        "data-org-id",
+        "45e594ab-bb72-ee11-8bc5-6045bd003e36",
+      );
+      script.setAttribute(
+        "data-org-url",
+        "https://m-45e594ab-bb72-ee11-8bc5-6045bd003e36.us.omnichannelengagementhub.com",
+      );
+
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      teardownWidget();
     };
   }, []);
 
-  useEffect(() => {
-    function onMessage(event) {
-      if (event?.data?.type === "sparta-assist-close") {
-        setOpen(false);
-      }
-    }
-
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
-
-  if (!mounted) return null;
-
-  const isThinPhone = viewport.w > 0 && viewport.w <= 360;
-  const isMobile = viewport.w > 0 && viewport.w <= 768;
-  const isLarge = viewport.w >= 1440;
-
-  const launcherSize = isThinPhone ? 54 : isMobile ? 58 : 64;
-  const edgeGap = isMobile ? 12 : 16;
-  const mobileBottomNavHeight = hasMobileBottomNav && isMobile ? 64 : 0;
-  const launcherBottom = edgeGap + mobileBottomNavHeight;
-
-  const frameWidth = isThinPhone
-    ? Math.max(280, viewport.w - edgeGap * 2)
-    : isMobile
-      ? Math.min(420, viewport.w - edgeGap * 2)
-      : isLarge
-        ? 420
-        : 390;
-
-  const frameHeightBase = isThinPhone
-    ? 390
-    : isMobile
-      ? 460
-      : isLarge
-        ? 500
-        : 415;
-  const frameHeight =
-    viewport.h > 0
-      ? Math.min(frameHeightBase, viewport.h - (launcherSize + 56))
-      : frameHeightBase;
-
-  return (
-    <>
-      <button
-        id="sparta-launcher"
-        aria-label="Open Sparta Assist"
-        aria-expanded={open ? "true" : "false"}
-        onClick={() => setOpen((v) => !v)}
-        style={{
-          position: "fixed",
-          right: edgeGap,
-          bottom: launcherBottom,
-          width: launcherSize,
-          height: launcherSize,
-          borderRadius: "50%",
-          border: "2px solid #f8cb6d",
-          background: "#0b1f74",
-          padding: 0,
-          display: open ? "none" : "grid",
-          placeItems: "center",
-          cursor: "pointer",
-          zIndex: 100001,
-          boxShadow: "0 12px 30px rgba(8,13,40,.45)",
-        }}
-      >
-        <img
-          src={iconSrc}
-          alt="Sparta Assist"
-          onError={() => setIconSrc(FALLBACK_ICON_SRC)}
-          style={{
-            width: isThinPhone ? 30 : 34,
-            height: isThinPhone ? 30 : 34,
-            borderRadius: "50%",
-            objectFit: "cover",
-          }}
-        />
-      </button>
-
-      <div
-        id="sparta-frame-wrap"
-        style={{
-          position: "fixed",
-          right: edgeGap,
-          bottom: launcherBottom + launcherSize + 10,
-          width: frameWidth,
-          height: frameHeight,
-          maxWidth: `calc(100vw - ${edgeGap * 2}px)`,
-          maxHeight: `calc(100vh - ${launcherSize + launcherBottom + 24}px)`,
-          display: open ? "block" : "none",
-          zIndex: 100000,
-          background: "transparent",
-          border: 0,
-          padding: 0,
-          overflow: "hidden",
-          borderRadius: isMobile ? 14 : 18,
-        }}
-      >
-        <iframe
-          id="sparta-frame"
-          src={open ? WIDGET_SRC : "about:blank"}
-          title="Sparta Assist"
-          allow="microphone; autoplay"
-          style={{
-            width: "100%",
-            height: "100%",
-            border: 0,
-            background: "transparent",
-            display: "block",
-          }}
-        />
-      </div>
-    </>
-  );
+  return null;
 }
