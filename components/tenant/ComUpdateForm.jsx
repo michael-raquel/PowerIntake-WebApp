@@ -42,7 +42,6 @@ const toText = (value) =>
   value === null || value === undefined ? "" : String(value);
 
 const buildFormData = (tenant) => ({
-  tenantuuid: toText(readField(tenant, ["tenantuuid", "v_tenantuuid"])),
   entratenantid: toText(
     readField(tenant, ["entratenantid", "v_entratenantid"]),
   ),
@@ -71,6 +70,10 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
   const [submitting, setSubmitting] = useState(false);
 
   const { updateTenant, loading } = useUpdateTenant();
+  const tenantUuid = useMemo(
+    () => trimOrEmpty(readField(tenant, ["tenantuuid", "v_tenantuuid"], "")),
+    [tenant],
+  );
 
   const initialForm = useMemo(() => buildFormData(tenant), [tenant]);
 
@@ -83,7 +86,6 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
 
   const hasChanges = useMemo(() => {
     const fields = [
-      "tenantuuid",
       "entratenantid",
       "tenantname",
       "tenantemail",
@@ -106,10 +108,6 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
 
   const validationErrors = useMemo(() => {
     const next = {};
-
-    if (!trimOrEmpty(formData.tenantuuid)) {
-      next.tenantuuid = "Tenant UUID is required.";
-    }
 
     if (!trimOrEmpty(formData.tenantname)) {
       next.tenantname = "Tenant name is required.";
@@ -153,6 +151,11 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
     event.preventDefault();
     setErrors(validationErrors);
 
+    if (!tenantUuid) {
+      toast.error("Missing tenant UUID.");
+      return;
+    }
+
     if (Object.keys(validationErrors).length > 0) {
       toast.error("Please correct the highlighted fields.");
       return;
@@ -166,7 +169,7 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
     setSubmitting(true);
     try {
       const result = await updateTenant({
-        tenantuuid: formData.tenantuuid,
+        tenantuuid: tenantUuid,
         entratenantid: formData.entratenantid,
         tenantname: formData.tenantname,
         tenantemail: formData.tenantemail,
@@ -178,7 +181,7 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
       });
 
       toast.success("Tenant updated successfully.");
-      onUpdated?.(result?.tenantuuid || formData.tenantuuid);
+      onUpdated?.(result?.tenantuuid || tenantUuid);
       onClose?.();
     } catch (err) {
       toast.error(err?.message || "Failed to update tenant.");
@@ -222,36 +225,12 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
           <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/40 flex gap-2">
             <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-800 dark:text-amber-300">
-              Required fields: Tenant UUID, Entra Tenant ID, and Tenant Name.
+              Required fields: Entra Tenant ID and Tenant Name.
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="tenantuuid" className="text-xs mb-1 block">
-                  Tenant UUID <span className="text-red-500">*</span>
-                </Label>
-                <Input
-                  id="tenantuuid"
-                  name="tenantuuid"
-                  value={formData.tenantuuid}
-                  onChange={handleChange}
-                  placeholder="550e8400-e29b-41d4-a716-446655440000"
-                  disabled={isBusy}
-                  className={
-                    errors.tenantuuid
-                      ? "border-red-500 focus-visible:ring-red-500"
-                      : ""
-                  }
-                />
-                {errors.tenantuuid && (
-                  <p className="text-xs text-red-500 dark:text-red-400">
-                    {errors.tenantuuid}
-                  </p>
-                )}
-              </div>
-
               <div className="space-y-2">
                 <Label htmlFor="entratenantid" className="text-xs mb-1 block">
                   Entra Tenant ID <span className="text-red-500">*</span>

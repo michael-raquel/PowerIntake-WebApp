@@ -47,11 +47,18 @@ export function useUpdateTenant({ onSuccess } = {}) {
       isactive,
       isconsented,
     } = {}) => {
+      const normalizedTenantUuid = normalizeText(tenantuuid);
+      if (!normalizedTenantUuid) {
+        const missingUuidError = "Tenant UUID is required";
+        setError(missingUuidError);
+        throw new Error(missingUuidError);
+      }
+
       setLoading(true);
       setError(null);
 
       const body = {
-        tenantuuid: normalizeText(tenantuuid),
+        tenantuuid: normalizedTenantUuid,
         entratenantid: normalizeText(entratenantid),
         tenantname: normalizeText(tenantname),
         tenantemail: normalizeText(tenantemail),
