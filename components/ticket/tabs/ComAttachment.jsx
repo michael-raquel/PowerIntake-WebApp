@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import useUploadImage from '@/hooks/UseUploadImage';
 import useDeleteImage from '@/hooks/UseDeleteImage';
 import useDownloadImage from '@/hooks/UseDownloadImage';
-import useGetAttachments from '@/hooks/UseGetAttachment';
+import useGetAttachments from '@/hooks/UseFetchAttachment';
 import useCreateAttachments from '@/hooks/UseCreateAttachment';
 import useUpdateAttachments from '@/hooks/UseUpdateAttachment';
 
