@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import ComFilters from "@/components/tenant/ComFilters";
 import ComTenantTable from "@/components/tenant/ComTenantTable";
 import ComCreateTenant from "@/components/tenant/ComCreateTenant";
+import ComUpdateForm from "@/components/tenant/ComUpdateForm";
 import ComCard from "@/components/tenant/ComCard";
 import {
   ExternalLink,
@@ -46,6 +47,7 @@ export default function TenantPage() {
   const [filterOptions, setFilterOptions] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
   const [recordsPerPage, setRecordsPerPage] = useState(DEFAULT_ROWS);
+  const [selectedTenant, setSelectedTenant] = useState(null);
 
   const tabs = useMemo(() => [{ id: "all-tenant", label: "All Tenants" }], []);
 
@@ -83,12 +85,18 @@ export default function TenantPage() {
     setRefreshKey((key) => key + 1);
   }, []);
 
-  useEffect(() => {
-    const param = searchParams.get("search");
-    if (param && param !== searchValue) {
-      setSearchValue(param);
-    }
-  }, [searchParams, searchValue]);
+  const handleTenantSelect = useCallback((tenant) => {
+    setSelectedTenant(tenant);
+  }, []);
+
+  const handleDialogClose = useCallback(() => {
+    setSelectedTenant(null);
+  }, []);
+
+  const handleTenantUpdated = useCallback(() => {
+    setRefreshKey((key) => key + 1);
+    setSelectedTenant(null);
+  }, []);
 
   useEffect(() => {
     const hasParams =
@@ -353,6 +361,7 @@ export default function TenantPage() {
     searchValue,
     filters: selectedFilters,
     refreshKey,
+    onTenantSelect: handleTenantSelect,
   };
 
   if (isMobile) {
@@ -386,6 +395,13 @@ export default function TenantPage() {
           </div>
         </div>
         {footer}
+        {selectedTenant && (
+          <ComUpdateForm
+            tenant={selectedTenant}
+            onClose={handleDialogClose}
+            onUpdated={handleTenantUpdated}
+          />
+        )}
       </div>
     );
   }
@@ -415,6 +431,13 @@ export default function TenantPage() {
         </div>
       </div>
       {footer}
+      {selectedTenant && (
+        <ComUpdateForm
+          tenant={selectedTenant}
+          onClose={handleDialogClose}
+          onUpdated={handleTenantUpdated}
+        />
+      )}
     </div>
   );
 }

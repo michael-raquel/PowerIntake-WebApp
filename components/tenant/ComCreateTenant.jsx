@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { X, Building2, Loader2, Save, AlertCircle } from "lucide-react";
+import { X, Building2, RefreshCw, AlertCircle } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useCreateTenant } from "@/hooks/UseCreateTenant";
 import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
@@ -336,19 +336,14 @@ export default function ComCreateTenant({ onClose, onTenantCreated }) {
                     Clear
                   </Button>
 
-                  <Button
-                    type="submit"
-                    disabled={isBusy}
-                    className="bg-purple-600 hover:bg-purple-700 text-white"
-                  >
+                  <Button type="submit" disabled={isBusy}>
                     {isBusy ? (
                       <span className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" /> Creating...
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Submitting...
                       </span>
                     ) : (
-                      <span className="flex items-center gap-2">
-                        <Save className="w-4 h-4" /> Create Tenant
-                      </span>
+                      "Create Tenant"
                     )}
                   </Button>
                 </div>
