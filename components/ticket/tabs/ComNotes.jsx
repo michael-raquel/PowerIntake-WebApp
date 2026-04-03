@@ -6,8 +6,9 @@ import { useCreateNote } from '@/hooks/UseCreateNotes';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import socket from "@/lib/socket";
 
-export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
+export default function ComNotes({ ticket, ticketUuid, canEdit = true, refreshKey  }) {
   const id = ticketUuid || ticket?.v_ticketuuid;
 
   const { tokenInfo, userInfo } = useAuth();
@@ -73,6 +74,10 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true }) {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+      if (refreshKey > 0 && id) fetchNotes();
+  }, [refreshKey, id, fetchNotes]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey && !isComposing && !isSubmitting) {

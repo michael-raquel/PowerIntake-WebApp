@@ -21,8 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import socket from "@/lib/socket";
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
 const MOBILE_PER_PAGE = 10;
 const ROW_HEIGHT = 50;
@@ -51,6 +50,7 @@ export default function TicketPage() {
 
   const initialUuid = searchParams.get('uuid') || null;
   const initialTab = searchParams.get('tab') || null;
+  const initialSearch = searchParams.get('search') || '';
 
   const [isMobile, setIsMobile] = useState(false);
   const [activeTab, setActiveTab] = useState(
@@ -59,7 +59,7 @@ export default function TicketPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRecords, setTotalRecords] = useState(0);
   const [showCreateTicket, setShowCreateTicket] = useState(() => searchParams.get('create') === 'true');
-  const [searchValue, setSearchValue] = useState('');
+  const [searchValue, setSearchValue] = useState(initialSearch);
   const [selectedFilters, setSelectedFilters] = useState({});
   const [filterOptions, setFilterOptions] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
@@ -99,31 +99,6 @@ export default function TicketPage() {
     return false;
   }, [userSettings]);
 
-
-useEffect(() => {
-  const handleTicketSynced = ({ ticketuuid, ticket }) => {
-    console.log("[WS] ticket:synced received:", { ticketuuid, ticket });
-    // Always clear the sync state regardless of ticket data
-    setRefreshKey(k => k + 1);
-    setPendingSyncUuid(null);
-    toast.success('Ticket synced to Dynamics successfully');
-  };
-
-  const handleSyncFailed = ({ ticketuuid }) => {
-    console.log("[WS] ticket:sync_failed received:", { ticketuuid });
-    setPendingSyncUuid(null);
-    toast.warning('Ticket created but Dynamics sync failed');
-  };
-
-  socket.on("ticket:synced", handleTicketSynced);
-  socket.on("ticket:sync_failed", handleSyncFailed);
-
-  return () => {
-    socket.off("ticket:synced", handleTicketSynced);
-    socket.off("ticket:sync_failed", handleSyncFailed);
-  };
-}, []);
-
   const tabs = useMemo(() => {
     const t = [];
     if (isSuperAdmin) {
@@ -150,45 +125,6 @@ useEffect(() => {
   }, [userId, safeTab, tokenInfo?.account?.tenantId]);
 
   const { tickets = [], isLoading } = useFetchTicket({ ...ticketQuery, refreshKey });
-
-  useEffect(() => {
-    setHideCompleted(initialHideCompleted);
-  }, [initialHideCompleted]);
-
-  useEffect(() => {
-    if (!pendingUuid.current || isLoading || !tickets.length) return;
-    const match = tickets.find(t => t.v_ticketuuid === pendingUuid.current);
-    if (match) {
-      setSelectedTicket(match);
-      pendingUuid.current = null;
-    }
-  }, [tickets, isLoading]);
-
-  useEffect(() => {
-    const hasParams = searchParams.get('create') || searchParams.get('uuid') || searchParams.get('tab');
-    if (hasParams) router.replace('/ticket', undefined, { shallow: true });
-  }, [router, searchParams]);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
-
-  useEffect(() => {
-    if (isMobile) return;
-    const update = () => {
-      if (!tableContainerRef.current) return;
-      const h = tableContainerRef.current.clientHeight;
-      if (!h) return;
-      const next = Math.max(MIN_ROWS, Math.floor(h / ROW_HEIGHT));
-      setRecordsPerPage(prev => prev !== next ? next : prev);
-    };
-    const raf = requestAnimationFrame(update);
-    window.addEventListener('resize', update);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', update); };
-  }, [isMobile, safeTab]);
 
   const handleTabChange = useCallback((id) => {
     setActiveTab(id);
@@ -231,7 +167,7 @@ useEffect(() => {
     }
   }, [userSettings, updateHideTickets, tokenInfo]);
 
-  const handleRecordsPerPageChange = async (value) => {
+  const handleRecordsPerPageChange = useCallback(async (value) => {
     const newValue = Number(value);
     setCurrentPage(1);
     setUserRowsPerPage(newValue);
@@ -248,20 +184,82 @@ useEffect(() => {
         console.error('Failed to update record count:', err);
       }
     }
-  };
+  }, [userSettings, updateRecordCount, tokenInfo]);
+
+  const handleOnSynced = useCallback(() => { 
+    setPendingSyncUuid(null); 
+    toast.success('Ticket synced to Dynamics successfully'); 
+  }, []);
+
+  const handleOnSyncFailed = useCallback(() => {
+    toast.warning('Ticket created but Dynamics sync failed');
+  }, []);
+
+  const handleOnDeleted = useCallback(() => {
+    toast.info('A ticket has been removed');
+  }, []);
+
+  const handleOnUpdated = useCallback(() => {
+    // toast.info('A ticket has been updated');
+  }, []);
+
+  useEffect(() => {
+    setHideCompleted(initialHideCompleted);
+  }, [initialHideCompleted]);
+
+  useEffect(() => {
+    if (!pendingUuid.current || isLoading || !tickets.length) return;
+    const match = tickets.find(t => t.v_ticketuuid === pendingUuid.current);
+    if (match) {
+      setSelectedTicket(match);
+      pendingUuid.current = null;
+    }
+  }, [tickets, isLoading]);
+
+  useEffect(() => {
+    const param = searchParams.get('search');
+    if (param && param !== searchValue) {
+      setSearchValue(param);
+    }
+  }, [searchParams, searchValue]);
+
+  useEffect(() => {
+    const hasParams = searchParams.get('create') || searchParams.get('uuid') || searchParams.get('tab') || searchParams.get('search');
+    if (hasParams) router.replace('/ticket', undefined, { shallow: true });
+  }, [router, searchParams]);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
+  useEffect(() => {
+    if (isMobile) return;
+    const update = () => {
+      if (!tableContainerRef.current) return;
+      const h = tableContainerRef.current.clientHeight;
+      if (!h) return;
+      const next = Math.max(MIN_ROWS, Math.floor(h / ROW_HEIGHT));
+      setRecordsPerPage(prev => prev !== next ? next : prev);
+    };
+    const raf = requestAnimationFrame(update);
+    window.addEventListener('resize', update);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', update); };
+  }, [isMobile, safeTab]);
 
   if (showCreateTicket) {
-  return (
-    <ComCreateTicket
-      onClose={() => setShowCreateTicket(false)}
-      onTicketCreated={(ticketuuid) => {
-        setPendingSyncUuid(ticketuuid);
-        // setRefreshKey(k => k + 1);
-        setShowCreateTicket(false);
-      }}
-    />
-  );
-}
+    return (
+      <ComCreateTicket
+        onClose={() => setShowCreateTicket(false)}
+        onTicketCreated={(ticketuuid) => {
+          setPendingSyncUuid(ticketuuid);
+          setShowCreateTicket(false);
+        }}
+      />
+    );
+  }
 
   const header = (
     <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
@@ -373,12 +371,10 @@ useEffect(() => {
   const footer = (
     <footer className="mt-4 border-t border-gray-200 dark:border-gray-800 ">
       <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
-
         <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
           <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
           <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">Sparta Services, LLC</p>
         </div>
-
         <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3 sm:pr-14">
           <div className="hidden sm:flex items-center gap-1">
             {[
@@ -396,7 +392,6 @@ useEffect(() => {
               </span>
             ))}
           </div>
-
           <div className="grid sm:hidden grid-cols-2 gap-x-0 gap-y-0">
             {[
               { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
@@ -412,17 +407,14 @@ useEffect(() => {
             ))}
           </div>
         </div>
-
         <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">
           &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
         </p>
-
       </div>
     </footer>
   );
 
-  
- const tableProps = {
+  const tableProps = {
     activeTab: safeTab,
     currentPage: safePage,
     onTotalRecordsChange: setTotalRecords,
@@ -433,13 +425,12 @@ useEffect(() => {
     onTicketSelect: handleTicketSelect,
     onTicketUpdated: () => setRefreshKey(k => k + 1),
     pendingSyncUuid,
-    // onSynced: () => {
-    //     setRefreshKey(k => k + 1); 
-    // },
-    // onSyncComplete: () => {
-    //     setPendingSyncUuid(null);
-    // },
-};
+    onSynced: handleOnSynced,
+    onSyncFailed: handleOnSyncFailed,
+    onDeleted: handleOnDeleted,
+    onUpdated: handleOnUpdated,
+    hideCompleted,
+  };
 
   // ── Mobile 
   if (isMobile) {
@@ -470,7 +461,6 @@ useEffect(() => {
           </div>
         </div>
         {footer}
-
         {selectedTicket && (
           <ComUpdateForm
             ticket={selectedTicket}
@@ -510,7 +500,6 @@ useEffect(() => {
         </div>
       </div>
       {footer}
-
       {selectedTicket && (
         <ComUpdateForm
           ticket={selectedTicket}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/router";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import useFetchMyTeam from "@/hooks/UseFetchMyTeamUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
@@ -15,24 +16,104 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import MyTeamFilter from "@/components/manage/MyTeamFilter";
+import MyTeamTable from "./table/MyTeamTable";
+import { formatPercent } from "@/lib/utils";
 
-const TABLE_HEADERS = [
-  "User Name",
-  "Job Title",
-  "Tickets",
-  "Completed Ticket",
-  "In Progress",
-  "Canceled Ticket",
-  "Completion Rate",
-  "Status",
+const TABLE_COLUMNS = [
+  {
+    key: "userName",
+    label: "User Name",
+    align: "center",
+    minWidth: 180,
+    defaultWidth: 220,
+    sortValue: (row) => row?.v_username ?? "",
+  },
+  {
+    key: "jobTitle",
+    label: "Job Title",
+    align: "center",
+    minWidth: 200,
+    defaultWidth: 240,
+    sortValue: (row) => row?.v_jobtitle ?? "",
+  },
+  {
+    key: "tickets",
+    label: "Tickets",
+    align: "center",
+    minWidth: 110,
+    defaultWidth: 120,
+    sortValue: (row) => Number(row?.v_totalticket ?? 0),
+  },
+  {
+    key: "new",
+    label: "New",
+    align: "center",
+    minWidth: 130,
+    defaultWidth: 140,
+    sortValue: (row) => Number(row?.v_newticket ?? 0),
+  },
+  {
+    key: "inProgress",
+    label: "In Progress",
+    align: "center",
+    minWidth: 130,
+    defaultWidth: 140,
+    sortValue: (row) => Number(row?.v_openticket ?? 0),
+  },
+  {
+    key: "completed",
+    label: "Completed",
+    align: "center",
+    minWidth: 150,
+    defaultWidth: 160,
+    sortValue: (row) => Number(row?.v_completed ?? 0),
+  },
+  {
+    key: "completionRate",
+    label: "Completion Rate",
+    align: "center",
+    minWidth: 160,
+    defaultWidth: 170,
+    sortValue: (row) => Number(row?.v_completion ?? 0),
+  },
+  {
+    key: "status",
+    label: "Status",
+    align: "center",
+    minWidth: 130,
+    defaultWidth: 140,
+    sortValue: (row) => (row?.v_status === "true" ? "Active" : "Inactive"),
+  },
 ];
 
 const DEFAULT_ROWS = 10;
 
-export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
+const compareSortValues = (aValue, bValue) => {
+  const aEmpty = aValue === null || aValue === undefined || aValue === "";
+  const bEmpty = bValue === null || bValue === undefined || bValue === "";
+
+  if (aEmpty && bEmpty) return 0;
+  if (aEmpty) return 1;
+  if (bEmpty) return -1;
+
+  const aNumber = typeof aValue === "number" ? aValue : Number(aValue);
+  const bNumber = typeof bValue === "number" ? bValue : Number(bValue);
+  const aIsNumber = !Number.isNaN(aNumber) && String(aValue).trim() !== "";
+  const bIsNumber = !Number.isNaN(bNumber) && String(bValue).trim() !== "";
+
+  if (aIsNumber && bIsNumber) return aNumber - bNumber;
+
+  return String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: "base" });
+};
+
+export default function MyTeamTab({ selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
   const { accounts } = useMsal();
+  const router = useRouter();
   const [localPage, setLocalPage] = useState(1);
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [columnWidths, setColumnWidths] = useState({});
+  const resizeStateRef = useRef(null);
 
   const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
@@ -54,12 +135,6 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
   const {
     data,
     loading,
-    error,
-    page,
-    total,
-    totalPages,
-    hasNext,
-    hasPrev,
     fetchData,
     totals,
     filterOptions,
@@ -70,6 +145,18 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
       fetchData(1, {});
     }
   }, [selectedRowsPerPage, fetchData]);
+
+  useEffect(() => {
+    setColumnWidths((prev) => {
+      const next = { ...prev };
+      TABLE_COLUMNS.forEach((column) => {
+        if (next[column.key] == null && column.defaultWidth) {
+          next[column.key] = column.defaultWidth;
+        }
+      });
+      return next;
+    });
+  }, []);
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
 
@@ -97,10 +184,20 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
     }
   };
 
-  const statuses = filterOptions?.statuses ?? [];
+  const statuses = useMemo(() => filterOptions?.statuses ?? [], [filterOptions?.statuses]);
 
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
+
+    const selectedStatuses = Array.isArray(selectedFilters.status)
+      ? selectedFilters.status
+      : selectedFilters.status
+        ? [selectedFilters.status]
+        : [];
+    const hasStatusFilter = selectedFilters?.status !== undefined && selectedFilters?.status !== null;
+    const hasAllStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
+    const effectiveStatuses = hasStatusFilter && !hasAllStatusesSelected ? selectedStatuses : [];
+    const statusFiltersNone = hasStatusFilter && selectedStatuses.length === 0 && statuses.length > 0;
 
     return data.filter((row) => {
       // Text search
@@ -115,25 +212,37 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
       }
 
       // Status filter
-      if (selectedFilters.status && selectedFilters.status.trim()) {
-        if (row.v_status !== selectedFilters.status) {
+      if (statusFiltersNone) {
+        return false;
+      }
+      if (effectiveStatuses.length > 0) {
+        if (!effectiveStatuses.includes(String(row.v_status))) {
           return false;
         }
       }
 
       return true;
     });
-  }, [data, searchValue, selectedFilters]);
+  }, [data, searchValue, selectedFilters.status, statuses]);
 
   const displayTotal = filteredData.length;
   const displayTotalPages = effectiveLimit > 0 ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit)) : 1;
   const displayHasPrev = localPage > 1;
   const displayHasNext = localPage < displayTotalPages;
 
+  const sortedData = useMemo(() => {
+    if (!sortConfig.key) return filteredData;
+    const column = TABLE_COLUMNS.find((entry) => entry.key === sortConfig.key);
+    if (!column) return filteredData;
+    const next = [...filteredData];
+    next.sort((a, b) => compareSortValues(column.sortValue(a), column.sortValue(b)));
+    return sortConfig.direction === "asc" ? next : next.reverse();
+  }, [filteredData, sortConfig]);
+
   const pagedData = useMemo(() => {
     const start = (localPage - 1) * effectiveLimit;
-    return filteredData.slice(start, start + effectiveLimit);
-  }, [filteredData, effectiveLimit, localPage]);
+    return sortedData.slice(start, start + effectiveLimit);
+  }, [sortedData, effectiveLimit, localPage]);
 
   const handleFiltersChange = useCallback((nextFilters) => {
     setLocalPage(1);
@@ -145,6 +254,64 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
     onSearchChange?.(value);
   }, [onSearchChange]);
 
+  const handleRowClick = useCallback((row) => {
+    const searchText = String(row?.v_username || "").trim();
+    if (!searchText) return;
+    const params = new URLSearchParams({ tab: "my-team", search: searchText });
+    router.push(`/ticket?${params.toString()}`);
+  }, [router]);
+
+  const handleSort = useCallback((key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+    setLocalPage(1);
+  }, []);
+
+  const handleResize = useCallback((event) => {
+    if (!resizeStateRef.current) return;
+    const { key, startX, startWidth, minWidth } = resizeStateRef.current;
+    const delta = event.clientX - startX;
+    const nextWidth = Math.max(minWidth, startWidth + delta);
+    setColumnWidths((prev) => ({
+      ...prev,
+      [key]: nextWidth,
+    }));
+  }, []);
+
+  const stopResize = useCallback(function stopResizeHandler() {
+    resizeStateRef.current = null;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    window.removeEventListener("mousemove", handleResize);
+    window.removeEventListener("mouseup", stopResizeHandler);
+  }, [handleResize]);
+
+  const handleResizeStart = useCallback((event, key, minWidth) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const th = event.currentTarget.closest("th");
+    if (!th) return;
+    resizeStateRef.current = {
+      key,
+      startX: event.clientX,
+      startWidth: th.getBoundingClientRect().width,
+      minWidth,
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", handleResize);
+    window.addEventListener("mouseup", stopResize);
+  }, [handleResize, stopResize]);
+
+  useEffect(() => () => {
+    window.removeEventListener("mousemove", handleResize);
+    window.removeEventListener("mouseup", stopResize);
+  }, [handleResize, stopResize]);
+
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
 
@@ -154,6 +321,9 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
         onSearch={handleSearchChange}
         statuses={statuses}
         selectedFilters={selectedFilters}
+        rowsPerPage={selectedRowsPerPage ?? DEFAULT_ROWS}
+        onRowsPerPageChange={handleRecordsPerPageChange}
+        rowsPerPageDisabled={updating}
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -172,13 +342,13 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
               {syncResult.message}
             </span>
           )}
-          <button
+          {/* <button
             onClick={handleSync}
             disabled={loading || syncing}
             className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-          </button>
+          </button> */}
         </div>
       </div>
 {/* 
@@ -203,7 +373,11 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
             {pagedData.map((row, i) => (
-              <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+              <div
+                key={i}
+                onClick={() => handleRowClick(row)}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3 cursor-pointer hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+              >
                 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -232,16 +406,20 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
-                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completed ?? 0}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">New</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_newticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                     <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Canceled</p>
-                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completed ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 col-span-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{formatPercent(row.v_completion)}</p>
                   </div>
                 </div>
 
@@ -260,9 +438,9 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">New</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.completedTickets ?? 0}
+                    {totals?.newTickets ?? 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
@@ -272,16 +450,14 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Canceled</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.cancelledTickets ?? 0}
+                    {totals?.completedTickets ?? 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                   <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
-                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.completionRate ?? 0}%
-                  </p>
+                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{formatPercent(totals?.completionRate)}</p>
                 </div>
               </div>
             </div>
@@ -289,82 +465,18 @@ export default function MyTeamTab({ recordsPerPage: parentRecordsPerPage, tableC
         )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
-        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 text-center dark:border-gray-800">
-              {TABLE_HEADERS.map((header) => (
-                <th
-                  key={header}
-                  className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {loading ? (
-              <tr>
-                <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  Loading...
-                </td>
-              </tr>
-            ) : data.length === 0 ? (
-              <tr>
-                <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  No records found.
-                </td>
-              </tr>
-            ) : (
-              pagedData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_jobtitle || "N/A"}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completed ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_cancelled ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completion ?? 0}%</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      row.v_status === "true"
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                    }`}>
-                      {row.v_status === "true" ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-          <tfoot className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/60">
-            <tr className="text-center">
-              <td colSpan={2} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.totalTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.completedTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.openTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.cancelledTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.completionRate ?? 0}%
-              </td>
-              <td className="px-4 py-3" />
-            </tr>
-          </tfoot>
-        </table>
-        </div>
-      </div>
+      <MyTeamTable
+        columns={TABLE_COLUMNS}
+        columnWidths={columnWidths}
+        handleResizeStart={handleResizeStart}
+        sortConfig={sortConfig}
+        handleSort={handleSort}
+        pagedData={pagedData}
+        loading={loading}
+        totals={totals}
+        handleRowClick={handleRowClick}
+        data={data}
+      />
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 pr-20">
         <div className="text-xs text-gray-500 dark:text-gray-400">

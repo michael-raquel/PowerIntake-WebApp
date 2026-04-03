@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/router";
 import { RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMsal } from "@azure/msal-react";
 import useFetchSuperAdminUsers from "@/hooks/UseFetchSystemAdminUsers";
@@ -19,42 +20,47 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import SuperAdminFilter from "@/components/manage/SuperAdminFilter";
-
-const TABLE_HEADERS = [
-  "Client Name",
-  "User Name",
-  "Role",
-  "Department",
-  "Tickets",
-  "Completed Tickets",
-  "In Progress",
-  "Cancelled Tickets",
-  "Completion Rate",
-  "Status",
-  "Super Admin",
-];
+import SuperAdminTable from "./table/SuperAdminTable";
+import { formatPercent } from "@/lib/utils";
 
 const DEFAULT_ROWS = 10;
+const SPARTA_ENTRA_TENANT_ID = "1159156a-3971-429d-bb02-bd37b1223d24";
+const SPARTA_ENTRA_TENANT_ID_NORMALIZED = SPARTA_ENTRA_TENANT_ID.toLowerCase();
 
-export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef }) {
+const compareSortValues = (aValue, bValue) => {
+  const aEmpty = aValue === null || aValue === undefined || aValue === "";
+  const bEmpty = bValue === null || bValue === undefined || bValue === "";
+
+  if (aEmpty && bEmpty) return 0;
+  if (aEmpty) return 1;
+  if (bEmpty) return -1;
+
+  const aNumber = typeof aValue === "number" ? aValue : Number(aValue);
+  const bNumber = typeof bValue === "number" ? bValue : Number(bValue);
+  const aIsNumber = !Number.isNaN(aNumber) && String(aValue).trim() !== "";
+  const bIsNumber = !Number.isNaN(bNumber) && String(bValue).trim() !== "";
+
+  if (aIsNumber && bIsNumber) return aNumber - bNumber;
+
+  return String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: "base" });
+};
+
+export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {} }) {
   const { accounts } = useMsal();
+  const router = useRouter();
   const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
   const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
+  const [localPage, setLocalPage] = useState(1);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [columnWidths, setColumnWidths] = useState({});
+  const resizeStateRef = useRef(null);
 
   const {
     data,
     loading,
-    error,
-    page,
-    total,
-    totalPages,
-    hasNext,
-    hasPrev,
     fetchData,
-    totals,
     filterOptions,
-    allRoleData,
-  } = useFetchSuperAdminUsers(1, effectiveLimit);
+  } = useFetchSuperAdminUsers(1, effectiveLimit, { fetchAll: true });
 
   const { syncUsers, loading: syncing, error: syncError, result: syncResult } = useSyncUsers();
   const {
@@ -77,8 +83,6 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
   const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilters, setActiveFilters] = useState({});
   const [roleOverrides, setRoleOverrides] = useState({});
 
   useEffect(() => {
@@ -93,9 +97,10 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
 
   useEffect(() => {
     if (selectedRowsPerPage !== null) {
-      fetchData(1, activeFilters);
+      fetchData(1, {});
+      setLocalPage(1);
     }
-  }, [selectedRowsPerPage, fetchData, activeFilters]);
+  }, [selectedRowsPerPage, fetchData]);
 
   const buildRoleString = useCallback((currentRole, roleName, checked) => {
     const rawRoles = String(currentRole || "")
@@ -166,7 +171,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
       });
     } catch (err) {
     } finally {
-      await fetchData(page, activeFilters);
+      await fetchData(1, {});
       if (userKey) {
         setRoleOverrides((prev) => {
           const next = { ...prev };
@@ -179,7 +184,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
 
   const handleSync = async () => {
     await syncUsers();
-    fetchData(page, activeFilters);
+    fetchData(1, {});
   };
 
   const handleRecordsPerPageChange = async (value) => {
@@ -201,13 +206,70 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
   };
 
   const handleFilter = (newFilters) => {
-    setSearchQuery(newFilters.clientname ?? "");
-    setActiveFilters(newFilters);
-    fetchData(1, newFilters);
+    setLocalPage(1);
+    onFiltersChange?.(newFilters);
   };
 
-  const roles    = filterOptions?.roles ?? [];
-  const statuses = filterOptions?.statuses ?? [];
+  const handleRowClick = useCallback((row) => {
+    const searchText = String(row?.v_username || "").trim();
+    if (!searchText) return;
+    const params = new URLSearchParams({ tab: "my-client", search: searchText });
+    router.push(`/ticket?${params.toString()}`);
+  }, [router]);
+
+  const handleSort = useCallback((key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+    setLocalPage(1);
+  }, []);
+
+  const handleResize = useCallback((event) => {
+    if (!resizeStateRef.current) return;
+    const { key, startX, startWidth, minWidth } = resizeStateRef.current;
+    const delta = event.clientX - startX;
+    const nextWidth = Math.max(minWidth, startWidth + delta);
+    setColumnWidths((prev) => ({
+      ...prev,
+      [key]: nextWidth,
+    }));
+  }, []);
+
+  const stopResize = useCallback(function stopResizeHandler() {
+    resizeStateRef.current = null;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    window.removeEventListener("mousemove", handleResize);
+    window.removeEventListener("mouseup", stopResizeHandler);
+  }, [handleResize]);
+
+  const handleResizeStart = useCallback((event, key, minWidth) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const th = event.currentTarget.closest("th");
+    if (!th) return;
+    resizeStateRef.current = {
+      key,
+      startX: event.clientX,
+      startWidth: th.getBoundingClientRect().width,
+      minWidth,
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", handleResize);
+    window.addEventListener("mouseup", stopResize);
+  }, [handleResize, stopResize]);
+
+  useEffect(() => () => {
+    window.removeEventListener("mousemove", handleResize);
+    window.removeEventListener("mouseup", stopResize);
+  }, [handleResize, stopResize]);
+
+  const roles = useMemo(() => filterOptions?.roles ?? [], [filterOptions?.roles]);
+  const statuses = useMemo(() => filterOptions?.statuses ?? [], [filterOptions?.statuses]);
 
   const normalizeRole = useCallback((role) =>
     String(role || "")
@@ -217,53 +279,223 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
 
   const getRoleValue = useCallback((row) => roleOverrides[row?.v_entrauserid] ?? row?.v_role, [roleOverrides]);
 
-  const hasRole = (roleValue, roleName) => {
+  const hasRole = useCallback((roleValue, roleName) => {
     const target = normalizeRole(roleName);
     return String(roleValue || "")
       .split(",")
       .map((role) => normalizeRole(role))
       .includes(target);
-  };
+  }, [normalizeRole]);
 
-  const roleIsActive = Boolean(activeFilters?.selectedRoles && activeFilters.selectedRoles.length > 0);
+  const isSpartaTenant = useCallback(
+    (row) => String(row?.v_entratenantid || "").trim().toLowerCase() === SPARTA_ENTRA_TENANT_ID_NORMALIZED,
+    [],
+  );
 
-  const exactRoleData = useMemo(() => {
-    if (!roleIsActive) return [];
-    const selectedRoles = activeFilters.selectedRoles || [];
-    return allRoleData.filter((row) => 
-      selectedRoles.some((selectedRole) => 
-        normalizeRole(getRoleValue(row)) === normalizeRole(selectedRole)
-      )
-    );
-  }, [activeFilters?.selectedRoles, allRoleData, getRoleValue, normalizeRole, roleIsActive]);
-
-  const pagedData = useMemo(() => {
-    if (!roleIsActive) return data;
-    const start = (page - 1) * effectiveLimit;
-    return exactRoleData.slice(start, start + effectiveLimit);
-  }, [data, exactRoleData, effectiveLimit, page, roleIsActive]);
-
-  const displayTotal = roleIsActive ? exactRoleData.length : (total ?? 0);
-  const displayTotalPages = roleIsActive
-    ? (effectiveLimit > 0 ? Math.max(1, Math.ceil(exactRoleData.length / effectiveLimit)) : 1)
-    : totalPages;
-  const displayHasPrev = roleIsActive ? page > 1 : hasPrev;
-  const displayHasNext = roleIsActive ? page < displayTotalPages : hasNext;
+  const columns = useMemo(() => [
+    {
+      key: "clientName",
+      label: "Client Name",
+      align: "center",
+      minWidth: 180,
+      defaultWidth: 220,
+      sortValue: (row) => row?.v_tenantname ?? "",
+    },
+    {
+      key: "userName",
+      label: "User Name",
+      align: "center",
+      minWidth: 180,
+      defaultWidth: 220,
+      sortValue: (row) => row?.v_username ?? "",
+    },
+    {
+      key: "role",
+      label: "Role",
+      align: "center",
+      minWidth: 150,
+      defaultWidth: 170,
+      sortValue: (row) => getRoleValue(row) ?? "",
+    },
+    {
+      key: "department",
+      label: "Department",
+      align: "center",
+      minWidth: 160,
+      defaultWidth: 180,
+      sortValue: (row) => row?.v_department ?? "",
+    },
+    {
+      key: "tickets",
+      label: "Tickets",
+      align: "center",
+      minWidth: 110,
+      defaultWidth: 120,
+      sortValue: (row) => Number(row?.v_totalticket ?? 0),
+    },
+    {
+      key: "new",
+      label: "New",
+      align: "center",
+      minWidth: 130,
+      defaultWidth: 140,
+      sortValue: (row) => Number(row?.v_newticket ?? 0),
+    },
+    {
+      key: "inProgress",
+      label: "In Progress",
+      align: "center",
+      minWidth: 130,
+      defaultWidth: 140,
+      sortValue: (row) => Number(row?.v_openticket ?? 0),
+    },
+    {
+      key: "completed",
+      label: "Completed",
+      align: "center",
+      minWidth: 160,
+      defaultWidth: 170,
+      sortValue: (row) => Number(row?.v_completed ?? 0),
+    },
+    {
+      key: "completionRate",
+      label: "Completion Rate",
+      align: "center",
+      minWidth: 170,
+      defaultWidth: 180,
+      sortValue: (row) => Number(row?.v_completion ?? 0),
+    },
+    {
+      key: "status",
+      label: "Status",
+      align: "center",
+      minWidth: 120,
+      defaultWidth: 130,
+      sortValue: (row) => (row?.v_status === "true" ? "Active" : "Inactive"),
+    },
+    {
+      key: "superAdmin",
+      label: "Super Admin",
+      align: "center",
+      minWidth: 140,
+      defaultWidth: 150,
+      sortValue: (row) => (hasRole(getRoleValue(row), "SuperAdmin") ? 1 : 0),
+    },
+  ], [getRoleValue, hasRole]);
 
   useEffect(() => {
-    if (roleIsActive && page > displayTotalPages) {
-      fetchData(1, activeFilters);
+    setColumnWidths((prev) => {
+      const next = { ...prev };
+      columns.forEach((column) => {
+        if (next[column.key] == null && column.defaultWidth) {
+          next[column.key] = column.defaultWidth;
+        }
+      });
+      return next;
+    });
+  }, [columns]);
+
+  const filteredData = useMemo(() => {
+    const searchValue = String(filters?.search ?? "").trim().toLowerCase();
+    const clientValue = String(filters?.clientname ?? "").trim().toLowerCase();
+    const hasRoleFilter = filters?.selectedRoles !== undefined && filters?.selectedRoles !== null;
+    const hasStatusFilter = filters?.status !== undefined && filters?.status !== null;
+    const selectedRoles = Array.isArray(filters?.selectedRoles)
+      ? filters.selectedRoles
+      : filters?.selectedRoles
+        ? [filters.selectedRoles]
+        : [];
+    const selectedStatuses = Array.isArray(filters?.status)
+      ? filters.status
+      : filters?.status
+        ? [filters.status]
+        : [];
+    const normalizedRoles = selectedRoles.map((role) => normalizeRole(role));
+    const hasAllRolesSelected = roles.length > 0 && selectedRoles.length === roles.length;
+    const hasAllStatusesSelected = statuses.length > 0 && selectedStatuses.length === statuses.length;
+    const effectiveRoles = hasRoleFilter && !hasAllRolesSelected ? normalizedRoles : [];
+    const effectiveStatuses = hasStatusFilter && !hasAllStatusesSelected ? selectedStatuses : [];
+    const roleFiltersNone = hasRoleFilter && selectedRoles.length === 0 && roles.length > 0;
+    const statusFiltersNone = hasStatusFilter && selectedStatuses.length === 0 && statuses.length > 0;
+
+    return data.filter((row) => {
+      if (searchValue) {
+        const username = String(row.v_username || "").toLowerCase();
+        if (!username.includes(searchValue)) return false;
+      }
+
+      if (clientValue) {
+        const clientName = String(row.v_tenantname || "").toLowerCase();
+        if (!clientName.includes(clientValue)) return false;
+      }
+
+      if (roleFiltersNone || statusFiltersNone) {
+        return false;
+      }
+
+      if (effectiveRoles.length > 0) {
+        const roleValue = normalizeRole(getRoleValue(row));
+        if (!effectiveRoles.includes(roleValue)) return false;
+      }
+
+      if (effectiveStatuses.length > 0) {
+        if (!effectiveStatuses.includes(String(row.v_status))) return false;
+      }
+
+      return true;
+    });
+  }, [filters, data, getRoleValue, normalizeRole, roles, statuses]);
+
+  const displayTotal = filteredData.length;
+  const displayTotalPages = effectiveLimit > 0
+    ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit))
+    : 1;
+  const displayHasPrev = localPage > 1;
+  const displayHasNext = localPage < displayTotalPages;
+
+  const sortedData = useMemo(() => {
+    if (!sortConfig.key) return filteredData;
+    const column = columns.find((entry) => entry.key === sortConfig.key);
+    if (!column) return filteredData;
+    const next = [...filteredData];
+    next.sort((a, b) => compareSortValues(column.sortValue(a), column.sortValue(b)));
+    return sortConfig.direction === "asc" ? next : next.reverse();
+  }, [filteredData, sortConfig, columns]);
+
+  const pagedData = useMemo(() => {
+    const start = (localPage - 1) * effectiveLimit;
+    return sortedData.slice(start, start + effectiveLimit);
+  }, [sortedData, effectiveLimit, localPage]);
+
+  const filteredTotals = useMemo(() => {
+    const totalTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_totalticket ?? 0), 0);
+    const openTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_openticket ?? 0), 0);
+    const completedTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_completed ?? 0), 0);
+    const newTickets = filteredData.reduce((sum, row) => sum + Number(row?.v_newticket ?? 0), 0);
+    const completionRate = totalTickets > 0
+      ? Number(((completedTickets / totalTickets) * 100).toFixed(1))
+      : 0;
+
+    return { totalTickets, newTickets, openTickets, completedTickets, completionRate };
+  }, [filteredData]);
+
+  useEffect(() => {
+    if (localPage > displayTotalPages) {
+      setLocalPage(1);
     }
-  }, [activeFilters, displayTotalPages, fetchData, page, roleIsActive]);
+  }, [localPage, displayTotalPages]);
 
   return (
     <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
 
       <SuperAdminFilter
         onFilter={handleFilter}
-        clientName={searchQuery}
+        filters={filters}
         roles={roles}
         statuses={statuses}
+        rowsPerPage={selectedRowsPerPage ?? DEFAULT_ROWS}
+        onRowsPerPageChange={handleRecordsPerPageChange}
+        rowsPerPageDisabled={updating}
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -315,7 +547,11 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           ) : (
            <div className="grid grid-cols-1 gap-3 p-4">
               {pagedData.map((row, i) => (
-                  <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+                  <div
+                    key={i}
+                    onClick={() => handleRowClick(row)}
+                    className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm overflow-hidden cursor-pointer hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+                  >
 
                     <div className="flex items-center gap-2 px-3 py-2.5 bg-violet-50 dark:bg-violet-900/20 border-b border-violet-100 dark:border-violet-800/40">
                       <div className="w-6 h-6 rounded-md bg-violet-600 dark:bg-violet-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
@@ -358,29 +594,32 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                             <span className="font-semibold text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</span>
                           </div>
                           <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Completed</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">{row.v_completed ?? 0}</span>
+                            <span>New</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{row.v_newticket ?? 0}</span>
                           </div>
                            <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>In Progress</span>
                             <span className="font-semibold text-gray-900 dark:text-white">{row.v_openticket ?? 0}</span>
                           </div>
                            <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>Cancelled</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</span>
+                            <span>Completed</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{row.v_completed ?? 0}</span>
                           </div>
                             <div className="mt-1 flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
                             <span>Completion</span>
-                            <span className="font-semibold text-gray-900 dark:text-white">{row.v_completion ?? 0}%</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">{formatPercent(row.v_completion)}</span>
                           </div>
                         </div>
-                        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between">
+                        <div
+                          className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 flex items-center justify-between"
+                          onClick={(event) => event.stopPropagation()}
+                        >
                           <span className="text-xs text-gray-500 dark:text-gray-400">Super Admin</span>
                           <Switch
                             className="data-[state=checked]:bg-blue-500 cursor-pointer"
                             checked={hasRole(getRoleValue(row), "SuperAdmin")}
                             onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
-                            disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || row.v_status !== "true"}
+                            disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || row.v_status !== "true" || !isSpartaTenant(row)}
                           />
                         </div>
                       </div>
@@ -393,36 +632,34 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                     <span className="text-sm font-semibold text-gray-900 dark:text-white">Totals</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">All records</span>
                   </div>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
+                  <div className="mt-3 grid grid-cols-3 gap-2">
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                       <p className="text-xs text-gray-500 dark:text-gray-400">Tickets</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.totalTickets ?? 0}
+                        {filteredTotals.totalTickets}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Completed Tickets</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">New</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.completedTickets ?? 0}
+                        {filteredTotals.newTickets}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                       <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.openTickets ?? 0}
+                        {filteredTotals.openTickets}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled Tickets</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
                       <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.cancelledTickets ?? 0}
+                        {filteredTotals.completedTickets}
                       </p>
                     </div>
                     <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                       <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
-                      <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                        {totals?.completionRate ?? 0}%
-                      </p>
+                      <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{formatPercent(filteredTotals.completionRate)}</p>
                     </div>
                   </div>
                 </div>
@@ -430,97 +667,25 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
-        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
-              {TABLE_HEADERS.map((header) => (
-                <th
-                  key={header}
-                  className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap"
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {loading ? (
-              <tr>
-                <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  Loading...
-                </td>
-              </tr>
-            ) : pagedData.length === 0 ? (
-              <tr>
-                <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  No records found.
-                </td>
-              </tr>
-            ) : (
-              pagedData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_username}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {getRoleValue(row) === "SuperAdmin" ? "Super Admin" : getRoleValue(row) || "User"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                    {row.v_department || "N/A"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completed ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_cancelled ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completion ?? 0}%</td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                      row.v_status === "true"
-                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                        : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                    }`}>
-                      {row.v_status === "true" ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <Switch
-                      className="data-[state=checked]:bg-blue-500 cursor-pointer"
-                      checked={hasRole(getRoleValue(row), "SuperAdmin")}
-                      onCheckedChange={(checked) => handleSuperAdminToggle(row, checked)}
-                      disabled={promoting || demoting || fetchingGroupId || demoteGroupLoading || row.v_status !== "true"}
-                    />
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-          <tfoot className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/60">
-            <tr className="text-center">
-              <td colSpan={4} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.totalTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.completedTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.openTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.cancelledTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.completionRate ?? 0}%
-              </td>
-              <td className="px-4 py-3" />
-              <td className="px-4 py-3" />
-            </tr>
-          </tfoot>
-        </table>
-        </div>
-      </div>
+      <SuperAdminTable
+        columns={columns}
+        columnWidths={columnWidths}
+        handleResizeStart={handleResizeStart}
+        sortConfig={sortConfig}
+        handleSort={handleSort}
+        pagedData={pagedData}
+        loading={loading}
+        filteredTotals={filteredTotals}
+        handleRowClick={handleRowClick}
+        getRoleValue={getRoleValue}
+        hasRole={hasRole}
+        handleSuperAdminToggle={handleSuperAdminToggle}
+        promoting={promoting}
+        demoting={demoting}
+        fetchingGroupId={fetchingGroupId}
+        demoteGroupLoading={demoteGroupLoading}
+        isSpartaTenant={isSpartaTenant}
+      />
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 pr-20">
         <div className="text-xs text-gray-500 dark:text-gray-400">{displayTotal} Total Records</div>
@@ -543,7 +708,7 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
           </div>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => fetchData(page - 1, activeFilters)}
+              onClick={() => setLocalPage((current) => Math.max(1, current - 1))}
               disabled={!displayHasPrev || loading}
               className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
@@ -552,14 +717,14 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
 
             {[...Array(displayTotalPages)].map((_, i) => {
               const pageNum = i + 1;
-              if (pageNum === 1 || pageNum === displayTotalPages || Math.abs(pageNum - page) <= 1) {
+              if (pageNum === 1 || pageNum === displayTotalPages || Math.abs(pageNum - localPage) <= 1) {
                 return (
                   <button
                     key={pageNum}
-                    onClick={() => fetchData(pageNum, activeFilters)}
+                    onClick={() => setLocalPage(pageNum)}
                     disabled={loading}
                     className={`w-8 h-8 text-xs rounded-lg transition-colors ${
-                      pageNum === page
+                      pageNum === localPage
                         ? "bg-gray-900 text-white dark:bg-white dark:text-gray-900"
                         : "text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                     }`}
@@ -568,14 +733,14 @@ export default function SuperAdminTab({ recordsPerPage: parentRecordsPerPage, ta
                   </button>
                 );
               }
-              if (Math.abs(pageNum - page) === 2) {
+              if (Math.abs(pageNum - localPage) === 2) {
                 return <span key={pageNum} className="text-xs text-gray-400 px-1">...</span>;
               }
               return null;
             })}
 
             <button
-              onClick={() => fetchData(page + 1, activeFilters)}
+              onClick={() => setLocalPage((current) => Math.min(displayTotalPages, current + 1))}
               disabled={!displayHasNext || loading}
               className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >

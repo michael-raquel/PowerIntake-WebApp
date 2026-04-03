@@ -2,6 +2,14 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 
+const appendListParam = (params, key, value) => {
+  if (Array.isArray(value)) {
+    if (value.length > 0) params.append(key, value.join(","));
+    return;
+  }
+  if (value) params.append(key, value);
+};
+
 export default function useFetchMyClients(initialPage = 1, initialLimit = null) {
   const { instance, accounts } = useMsal();
   const [data,       setData]       = useState([]);
@@ -11,7 +19,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
   const [limit, setLimit]           = useState(initialLimit);
   const [total,      setTotal]      = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0 });
+  const [totals,     setTotals]     = useState({ totalTickets: 0, openTickets: 0, completionRate: 0, newTickets: 0, completedTickets: 0 });
   const filterOptions = {
     tenantnames: [],
     statuses: ["true", "false"],
@@ -32,7 +40,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
 
   const fetchTotals = useCallback(async (filters, totalCount) => {
     if (!totalCount) {
-      setTotals({ totalTickets: 0, openTickets: 0 });
+      setTotals({ totalTickets: 0, openTickets: 0, completion: 0 });
       return;
     }
 
@@ -40,7 +48,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
 
     const params = new URLSearchParams({ page: 1, limit: totalCount });
 
-    if (filters.tenantname) params.append("tenantname", filters.tenantname);
+    appendListParam(params, "tenantname", filters.tenantname);
 
     const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myclients?${params}`;
 
@@ -67,8 +75,17 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
       (sum, row) => sum + Number(row?.v_openticket ?? 0),
       0
     );
+    const completionRate = totalTickets > 0 ? Math.round((openTickets / totalTickets) * 100) : 0;
+    const newTickets = rows.reduce(
+      (sum, row) => sum + Number(row?.v_newticket ?? 0),
+      0
+    );
+    const completedTickets = rows.reduce(   
+    (sum, row) => sum + Number(row?.v_completed ?? 0),
+      0
+    );
 
-    setTotals({ totalTickets, openTickets });
+    setTotals({ totalTickets, openTickets, completionRate, newTickets, completedTickets });
   }, [getAccessToken]);
 
   const fetchData = useCallback(async (currentPage = 1, filters = {}) => {
@@ -81,7 +98,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
 
       if (limitRef.current != null) params.append("limit", limitRef.current);
 
-      if (filters.tenantname) params.append("tenantname", filters.tenantname);
+      appendListParam(params, "tenantname", filters.tenantname);
 
       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/manageusers/myclients?${params}`;
 
@@ -113,7 +130,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
       }
     } catch (err) {
       setError(err.message);
-      setTotals({ totalTickets: 0, openTickets: 0 });
+      setTotals({ totalTickets: 0, openTickets: 0, completionRate: 0, newTickets: 0, completedTickets: 0 });
     } finally {
       setLoading(false);
     }

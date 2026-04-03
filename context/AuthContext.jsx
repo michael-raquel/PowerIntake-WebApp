@@ -1,10 +1,13 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback  } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
 import socket from "@/lib/socket";
+import { toast } from "sonner";
 
 const AuthContext = createContext(null);
+
+const GLOBAL_ADMIN_WID = "62e90394-69f5-4237-9190-012177145e10";
 
 function decodeJwt(token) {
   try {
@@ -18,10 +21,49 @@ export function AuthProvider({ children }) {
   const { instance, accounts } = useMsal();
   const account = accounts[0] ?? null;
 
-  const [accessToken, setAccessToken] = useState(null);
-  const [tokenInfo, setTokenInfo]     = useState(null);
-  const [userInfo, setUserInfo]       = useState(null);
+  const [accessToken, setAccessToken]     = useState(null);
+  const [tokenInfo, setTokenInfo]         = useState(null);
+  const [userInfo, setUserInfo]           = useState(null);
+  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
 
+  const logoutIntervalRef = useRef(null);
+  const logoutToastIdRef = useRef(null);
+  
+   const startLogoutCountdown = useCallback((seconds = 10) => {
+    if (logoutIntervalRef.current) {
+      clearInterval(logoutIntervalRef.current);
+      logoutIntervalRef.current = null;
+    }
+    if (logoutToastIdRef.current) {
+      toast.dismiss(logoutToastIdRef.current);
+      logoutToastIdRef.current = null;
+    }
+
+    let remaining = Math.max(1, Number(seconds) || 10);
+    const message = (value) =>
+      `Your account was updated. You will be logged out in ${value}s.`;
+
+    logoutToastIdRef.current = toast.warning(message(remaining), { duration: Infinity });
+
+    logoutIntervalRef.current = setInterval(() => {
+      remaining -= 1;
+      if (remaining <= 0) {
+        clearInterval(logoutIntervalRef.current);
+        logoutIntervalRef.current = null;
+        toast.dismiss(logoutToastIdRef.current);
+        logoutToastIdRef.current = null;
+        instance.logoutRedirect({ postLogoutRedirectUri: "/" });
+        return;
+      }
+
+      toast.warning(message(remaining), {
+        id: logoutToastIdRef.current,
+        duration: Infinity,
+      });
+    }, 1000);
+  }, [instance]);
+  
+  // ── Your API token ──────────────────────────────────────
   useEffect(() => {
     if (!account) return;
 
@@ -51,7 +93,6 @@ export function AuthProvider({ children }) {
             roles:          claims?.roles ?? [],
           },
         });
-
       } catch (err) {
         if (err instanceof InteractionRequiredAuthError) {
           try {
@@ -73,10 +114,10 @@ export function AuthProvider({ children }) {
               },
             });
           } catch (popupErr) {
-            console.error("Token popup failed:", popupErr);
+            console.error("[TOKEN] Popup failed:", popupErr);
           }
         } else {
-          console.error("Token acquisition failed:", err);
+          console.error("[TOKEN] Acquisition failed:", err);
         }
       }
     };
@@ -84,100 +125,154 @@ export function AuthProvider({ children }) {
     acquire();
   }, [account, instance]);
 
-useEffect(() => {
-  if (!accessToken) return;
-  const syncUser = async () => {
-    try {
-      console.log("[AUTH] syncUser running, accessToken present");
-      
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login-sync`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+  // ── Graph token — only for wids / Global Admin check ────
+  useEffect(() => {
+    if (!account) return;
 
-      console.log("[AUTH] login-sync response status:", res.status);
+    const checkGlobalAdmin = async () => {
+      try {
+        const graphRes = await instance.acquireTokenSilent({
+          scopes: ["https://graph.microsoft.com/User.Read"],
+          account,
+        });
 
-      if (!res.ok) {
-        console.warn("[AUTH] login-sync failed:", res.status);
-        return;
+        const claims = decodeJwt(graphRes.accessToken);
+        const wids   = claims?.wids ?? [];
+
+        setIsGlobalAdmin(wids.includes(GLOBAL_ADMIN_WID));
+      } catch (err) {
+        console.warn("[AUTH] Could not get Graph token:", err.errorCode ?? err.message);
+        setIsGlobalAdmin(false);
       }
-      
-      const data = await res.json();
-      console.log("[AUTH] login-sync data:", data);
-      
-      const user = data.user ?? null;
-      console.log("[AUTH] user:", user);
-      setUserInfo(user);
+    };
 
-      if (user?.v_entrauserid) {
-        console.log("[WS] socket.connected:", socket.connected);
-        
-        if (!socket.connected) {
-          socket.connect();
+    checkGlobalAdmin();
+  }, [account, instance]);
+
+  // ── Login sync ───────────────────────────────────────────
+  useEffect(() => {
+    if (!accessToken || !tokenInfo) return;
+
+    const syncUser = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login-sync`,
+          { method: "POST", headers: { Authorization: `Bearer ${accessToken}` } },
+        );
+
+        // 403 = tenant not registered — AuthGuard handles redirect
+        if (res.status === 403) {
+          console.warn("[LOGIN SYNC] Tenant not registered — AuthGuard will redirect.");
+          return;
         }
+
+        // Any other non-2xx — log and bail, don't cascade into res.json()
+        if (!res.ok) {
+          console.warn("[LOGIN SYNC] Skipping sync — server returned:", res.status);
+          return;
+        }
+
+        const data = await res.json();
+        setUserInfo(data.user ?? null);
+
+        // Socket join only runs on successful sync
+        const entrauserid   = tokenInfo.account.localAccountId;
+        const entratenantid = tokenInfo.account.tenantId;
 
         const joinRooms = () => {
-          socket.emit("join", user.v_entrauserid);
-          console.log("[WS] Joined room:", user.v_entrauserid);
-          if (user?.v_entratenantid) {
-            socket.emit("join", user.v_entratenantid);
-            console.log("[WS] Joined tenant room:", user.v_entratenantid);
-          }
+          socket.emit("join", entrauserid);
+          if (entratenantid) socket.emit("join", entratenantid);
         };
 
-        if (socket.connected) {
-          joinRooms();
-        } else {
+        if (!socket.connected) {
+          socket.connect();
           socket.once("connect", joinRooms);
+        } else {
+          joinRooms();
         }
-      } else {
-        console.warn("[WS] No v_entrauserid on user — skipping socket join");
+
+      } catch (err) {
+        console.error("[AUTH] syncUser error:", err);
       }
-    } catch (err) {
-      console.error("[AUTH] syncUser error:", err);
-    }
-  };
-  syncUser();
-}, [accessToken]);
+    };
 
-useEffect(() => {
-  socket.on("connect", () => console.log("[WS] socket connected:", socket.id));
-  socket.on("disconnect", (reason) => console.log("[WS] socket disconnected:", reason));
-  socket.on("connect_error", (err) => console.error("[WS] connect_error:", err.message));
+    syncUser();
+  }, [accessToken, tokenInfo]);
 
-  return () => {
-    socket.off("connect");
-    socket.off("disconnect");
-    socket.off("connect_error");
-  };
-}, []);
+  // ── Reconnect handler ────────────────────────────────────
+  useEffect(() => {
+    if (!tokenInfo?.account?.localAccountId) return;
 
-useEffect(() => {
-  if (!userInfo?.v_entrauserid) return;
+    const handleReconnect = () => {
+      socket.emit("join", tokenInfo.account.localAccountId);
+      if (tokenInfo?.account?.tenantId) {
+        socket.emit("join", tokenInfo.account.tenantId);
+      }
+    };
 
-  const handleReconnect = () => {
-    console.log("[WS] Reconnected — re-joining rooms");
-    socket.emit("join", userInfo.v_entrauserid);
-    if (userInfo?.v_entratenantid) {
-      socket.emit("join", userInfo.v_entratenantid);
-    }
-  };
+    socket.on("connect", handleReconnect);
+    return () => socket.off("connect", handleReconnect);
+  }, [tokenInfo?.account?.localAccountId, tokenInfo?.account?.tenantId]);
 
-  socket.on("connect", handleReconnect);
-  return () => socket.off("connect", handleReconnect);
-}, [userInfo?.v_entrauserid, userInfo?.v_entratenantid]);
+  // ── Socket error logging ─────────────────────────────────
+  useEffect(() => {
+    const onDisconnect   = (reason) => console.log("[WS] socket disconnected:", reason);
+    const onConnectError = (err)    => console.error("[WS] connect_error:", err.message);
 
+    socket.on("disconnect",    onDisconnect);
+    socket.on("connect_error", onConnectError);
+
+    return () => {
+      socket.off("disconnect",    onDisconnect);
+      socket.off("connect_error", onConnectError);
+    };
+  }, []);
+
+  //Change role from another session or admin portal triggers a logout in all sessions with a countdown and toast notification. (Will change if it fails -Jasper)
+  useEffect(() => {
+    if (!tokenInfo?.account?.localAccountId) return;
+
+    const onRoleChanged = (payload) => {
+      const targetId = payload?.entrauserid;
+      if (targetId && targetId !== tokenInfo.account.localAccountId) return;
+      startLogoutCountdown(payload?.countdownSeconds ?? 10);
+    };
+
+    socket.on("user:role_changed", onRoleChanged);
+    return () => {
+      socket.off("user:role_changed", onRoleChanged);
+      if (logoutIntervalRef.current) {
+        clearInterval(logoutIntervalRef.current);
+        logoutIntervalRef.current = null;
+      }
+      if (logoutToastIdRef.current) {
+        toast.dismiss(logoutToastIdRef.current);
+        logoutToastIdRef.current = null;
+      }
+    };
+  }, [tokenInfo?.account?.localAccountId, startLogoutCountdown]);
+
+// ── Logout ───────────────────────────────────────────────
 useEffect(() => {
   if (!account) {
     socket.disconnect();
+
+    // Clear consent gate so the next login re-runs /checking verification
+    sessionStorage.removeItem("consent_verified");
   }
 }, [account]);
 
   return (
-    <AuthContext.Provider value={{ account, accessToken, tokenInfo, userInfo }}>
+    <AuthContext.Provider value={{
+      account,
+      accessToken,
+      tokenInfo,
+      userInfo,
+      isGlobalAdmin,
+    }}>
       {children}
-    </AuthContext.Provider> 
-  ); 
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

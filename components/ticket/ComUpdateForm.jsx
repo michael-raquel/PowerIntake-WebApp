@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from 'react';
-import { X, StickyNote, ChevronLeft, User, CalendarCheck, Paperclip, GitBranch, Plus, Calendar as CalendarIcon } from 'lucide-react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
+import { X, StickyNote, ChevronLeft, User, CalendarCheck, Paperclip, GitBranch, Plus, Calendar as CalendarIcon, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,12 +11,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { format } from "date-fns";
 import { useAuth } from '@/context/AuthContext';
 import { useUpdateTicket } from '@/hooks/UseUpdateTicket';
+import { useReactivateTicket } from '@/hooks/UseReactivateTicket';
 import { toast } from "sonner";
 import ComNotes from './tabs/ComNotes';
 import ComUserInformation from './tabs/ComUserInformtaion';
 import ComClosureDate from './tabs/ComClosureDate';
 import ComAttachment from './tabs/ComAttachment';
 import ComTimelineView from './tabs/ComTimelineView';
+import socket from "@/lib/socket";
 
 const TABS = [
   { id: 'notes', icon: StickyNote, label: 'Notes' },
@@ -51,6 +53,8 @@ const PRIORITY_COLORS = {
 };
 
 const CALL_DURATION_MS = 2 * 60 * 60 * 1000;
+const CLOSED_STATUSES = ['Work Completed', 'Problem Solved', 'Technician Rejected', 'Cancelled', 'Merged'];
+const REACTIVATABLE_STATUSES = ['Resolved', 'Cancelled'];
 
 const toHHMM = (date) => `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
@@ -89,7 +93,15 @@ const calcEndTime = (date, startTime) => {
 
 export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const { account } = useAuth();
-  const { updateTicket, loading } = useUpdateTicket({ account });
+  const { updateTicket, loading: updateLoading } = useUpdateTicket({ account });
+  const { reactivateTicket, loading: reactivateLoading } = useReactivateTicket();
+
+  const [noteRefreshKey, setNoteRefreshKey]           = useState(0);
+  const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
+
+  const [liveTicket, setLiveTicket] = useState(ticket);
+  useEffect(() => { setLiveTicket(ticket); }, [ticket]);
+
   const [activeTab, setActiveTab] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
   const [openPopovers, setOpenPopovers] = useState({});
@@ -133,17 +145,37 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     return false;
   }, [title, description, supportCalls, original]);
 
-  const closedStatuses = ['Work Completed', 'Problem Solved', 'Technician Rejected', 'Cancelled', 'Merged'];
-  const isEditableStatus = ticket ? !closedStatuses.includes(ticket.v_status) : false;
-  const canEdit = ticket ? (ticket.v_entrauserid === account?.localAccountId && ticket.v_status === 'New') : false;
+  const isEditableStatus = liveTicket ? !CLOSED_STATUSES.includes(liveTicket.v_status) : false;
+  const canEdit = ticket ? (ticket.v_entrauserid === account?.localAccountId && liveTicket.v_status === 'New') : false;
   const canEditAttachments = isEditableStatus;
+ const canReactivate = liveTicket 
+  ? REACTIVATABLE_STATUSES.includes(liveTicket.v_ticketstatus)
+  : false;
 
   const selectedDates = useMemo(() => supportCalls.map(c => c.date?.toDateString()).filter(Boolean), [supportCalls]);
+
+  const handleTicketUpdated = useCallback(({ ticketuuid, ticket: updated }) => {
+    if (!updated || String(updated.v_ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+
+    setLiveTicket(updated);
+    setTitle(prev => prev === (ticket?.v_title || '') ? (updated.v_title || '') : prev);
+    setDescription(prev => prev === (ticket?.v_description || '') ? (updated.v_description || '') : prev);
+
+    if (liveTicket?.v_status !== updated.v_status) {
+      toast.info("Ticket Updated", { description: `Status changed to ${updated.v_status}` });
+    }
+  }, [ticket?.v_ticketuuid, ticket?.v_title, ticket?.v_description, liveTicket?.v_status]);
+
+  useEffect(() => {
+    socket.on("ticket:updated", handleTicketUpdated);
+    return () => socket.off("ticket:updated", handleTicketUpdated);
+  }, [handleTicketUpdated]);
 
   if (!ticket) return null;
 
   const isToday = (date) => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     return new Date(date).toDateString() === today.toDateString();
   };
 
@@ -211,6 +243,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const handleUpdate = async () => {
     if (!ticket.v_ticketuuid || !canEdit || !hasChanges) return;
+
     const currentTime = toHHMM(new Date());
     for (const call of supportCalls) {
       if (isToday(call.date) && call.fromTime < currentTime) {
@@ -222,14 +255,68 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
         return;
       }
     }
+
     await updateTicket({
       ticketuuid: ticket.v_ticketuuid,
       formData: { title, description, timezone: ticket.v_usertimezone, location: ticket.v_officelocation },
       supportCalls: supportCalls.map(c => ({ date: c.date, fromTime: c.fromTime, toTime: c.toTime })),
     });
+
     onUpdated?.(ticket.v_ticketuuid);
     onClose?.();
   };
+
+  const handleReactivate = async () => {
+    if (!ticket.v_ticketuuid || !canReactivate) return;
+
+    try {
+      await reactivateTicket({ ticketuuid: ticket.v_ticketuuid });
+      toast.success("Ticket Reactivated", {
+        description: `Ticket #${liveTicket.v_ticketnumber} has been reactivated successfully`
+      });
+      onUpdated?.(ticket.v_ticketuuid);
+      onClose?.();
+    } catch (error) {
+      toast.error("Reactivation Failed", {
+        description: error.message || "Unable to reactivate ticket. Please try again."
+      });
+    }
+  };
+
+  useEffect(() => {
+    const handleReactivated = ({ ticketuuid, ticket: updated }) => {
+        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+        if (updated) setLiveTicket(updated);
+        toast.success("Ticket Reactivated", {
+            description: `Ticket #${updated?.v_ticketnumber ?? liveTicket.v_ticketnumber} is now active`
+        });
+    };
+
+    socket.on("ticket:reactivated", handleReactivated);
+    return () => socket.off("ticket:reactivated", handleReactivated);
+}, [ticket?.v_ticketuuid, liveTicket.v_ticketnumber]);
+
+  useEffect(() => {
+    const handleNoteSynced = ({ ticketuuid }) => {
+        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+        setNoteRefreshKey(k => k + 1);
+    };
+
+    const handleAttachmentSynced = ({ ticketuuid }) => {
+        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+        setAttachmentRefreshKey(k => k + 1);
+    };
+
+    socket.on("note:synced",       handleNoteSynced);
+    socket.on("attachment:synced", handleAttachmentSynced);
+
+    return () => {
+        socket.off("note:synced",       handleNoteSynced);
+        socket.off("attachment:synced", handleAttachmentSynced);
+    };
+}, [ticket?.v_ticketuuid]);
+
+
 
   const formatTime = (t) => {
     if (!t) return '—';
@@ -250,24 +337,39 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400">Ticket</span>
-            <span className="text-xs lg:text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-md">#{ticket.v_ticketnumber}</span>
-            <span className={cn('text-xs lg:text-sm font-medium px-2.5 py-1 rounded-md border', STATUS_COLORS[ticket.v_status])}>{ticket.v_status}</span>
+            <span className="text-xs lg:text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-md">#{liveTicket.v_ticketnumber}</span>
+            <span className={cn('text-xs lg:text-sm font-medium px-2.5 py-1 rounded-md border', STATUS_COLORS[liveTicket.v_status])}>{liveTicket.v_status}</span>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
-            <X className="w-4 h-4 lg:w-5 lg:h-5" />
-          </Button>
+          <div className="flex items-center gap-2">
+            {canReactivate && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReactivate}
+                disabled={reactivateLoading}
+                className="gap-2 border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-950/30"
+              >
+                <RefreshCw className={cn("w-3.5 h-3.5", reactivateLoading && "animate-spin")} />
+                {reactivateLoading ? 'Reactivating...' : 'Reactivate'}
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+              <X className="w-4 h-4 lg:w-5 lg:h-5" />
+            </Button>
+          </div>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 lg:space-y-8">
+
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 lg:p-5 border border-gray-200 dark:border-gray-700 flex items-center gap-4 lg:gap-6">
               <div className="w-10 h-10 lg:w-12 lg:h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm lg:text-base">
-                {ticket.v_username?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
+                {liveTicket.v_username?.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() || '?'}
               </div>
               <div>
                 <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">Requester</p>
-                <p className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">{ticket.v_username}</p>
-                <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">{ticket.v_useremail}</p>
+                <p className="text-sm lg:text-base font-semibold text-gray-900 dark:text-white">{liveTicket.v_username}</p>
+                <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">{liveTicket.v_useremail}</p>
               </div>
             </div>
 
@@ -275,10 +377,11 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
               <h3 className="text-xs lg:text-sm font-semibold text-gray-500 dark:text-gray-400">Ticket Details</h3>
               <div className="grid grid-cols-2 gap-2 lg:gap-3 md:flex md:flex-wrap md:gap-3 lg:gap-4 sm:space-y-0">
                 {[
-                  { label: 'Source', value: ticket.v_source },
-                  { label: 'Category', value: ticket.v_ticketcategory },
-                  { label: 'Lifecycle', value: ticket.v_ticketlifecycle },
-                  { label: 'Technician', value: ticket.v_technicianname },
+                  { label: 'Source',     value: liveTicket.v_source },
+                  { label: 'Category',   value: liveTicket.v_ticketcategory },
+                  { label: 'Lifecycle',  value: liveTicket.v_ticketlifecycle },
+                  { label: 'Technician', value: liveTicket.v_technicianname },
+                  { label: 'Ticket Status', value: liveTicket.v_ticketstatus },
                 ].map(({ label, value }) => (
                   <div key={label} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 lg:px-4 lg:py-3 border border-gray-200 dark:border-gray-700 md:flex-1">
                     <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">{label}</p>
@@ -287,8 +390,8 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                 ))}
                 <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 lg:px-4 lg:py-3 border border-gray-200 dark:border-gray-700 md:flex-1">
                   <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">Priority</p>
-                  <span className={cn('text-xs lg:text-sm font-medium px-2 py-0.5 rounded inline-block mt-0.5', PRIORITY_COLORS[ticket.v_priority])}>
-                    {ticket.v_priority || '—'}
+                  <span className={cn('text-xs lg:text-sm font-medium px-2 py-0.5 rounded inline-block mt-0.5', PRIORITY_COLORS[liveTicket.v_priority])}>
+                    {liveTicket.v_priority || '—'}
                   </span>
                 </div>
               </div>
@@ -321,12 +424,8 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
               <div className="flex items-center justify-between">
                 <h3 className="text-xs lg:text-sm font-semibold text-gray-500 dark:text-gray-400">Support Calls</h3>
                 {canEdit && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddCall}
-                    className="gap-1 h-8 lg:h-9 border-gray-300 bg-white text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-800"
-                  >
+                  <Button variant="outline" size="sm" onClick={handleAddCall}
+                    className="gap-1 h-8 lg:h-9 border-gray-300 bg-white text-gray-900 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:hover:bg-gray-800">
                     <Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4" /> Add
                   </Button>
                 )}
@@ -344,32 +443,19 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                       <div className="w-full">
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">Date</p>
                         {canEdit ? (
-                          <Popover
-                            open={openPopovers[call.id] || false}
-                            onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}
-                          >
+                          <Popover open={openPopovers[call.id] || false} onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}>
                             <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className="w-full justify-start text-left font-normal h-9 text-sm dark:border-gray-600 dark:hover:bg-gray-800 px-2">
+                              <Button variant="outline" size="sm"
+                                className="w-full justify-start text-left font-normal h-9 text-sm px-2 bg-white text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800 hover:bg-gray-100 appearance-none">
                                 <CalendarIcon className="mr-2 h-3.5 w-3.5 shrink-0" />
                                 <span className="truncate flex-1">{call.date ? format(call.date, "MMM d, yyyy") : "Select date"}</span>
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                              <Calendar
-                                mode="single"
-                                selected={call.date}
-                                onSelect={(date) => {
-                                  if (date) {
-                                    handleCallChange(call.id, 'date', date);
-                                    setOpenPopovers(prev => ({ ...prev, [call.id]: false }));
-                                  }
-                                }}
-                                disabled={date => {
-                                  const today = new Date(); today.setHours(0, 0, 0, 0);
-                                  return date < today || selectedDates.includes(date.toDateString());
-                                }}
-                                initialFocus
-                              />
+                              <Calendar mode="single" selected={call.date}
+                                onSelect={(date) => { if (date) { handleCallChange(call.id, 'date', date); setOpenPopovers(prev => ({ ...prev, [call.id]: false })); } }}
+                                disabled={date => { const today = new Date(); today.setHours(0, 0, 0, 0); return date < today || selectedDates.includes(date.toDateString()); }}
+                                initialFocus />
                             </PopoverContent>
                           </Popover>
                         ) : (
@@ -379,12 +465,8 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                       <div className="w-full">
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">Start</p>
                         {canEdit ? (
-                          <Input
-                            type="time"
-                            value={call.fromTime}
-                            onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
-                            className="h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none"
-                          />
+                          <Input type="time" value={call.fromTime} onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
+                            className="h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border border-gray-300 dark:bg-gray-800 dark:text-white dark:border-gray-600 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 px-3 py-2 lg:px-4 lg:py-3 appearance-none" />
                         ) : (
                           <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.fromTime)}</span>
                         )}
@@ -392,18 +474,13 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                       <div className="w-full">
                         <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400 mb-1">End</p>
                         {canEdit ? (
-                          <Input
-                            type="time"
-                            value={call.toTime}
-                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
-                            className="h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none"
-                          />
+                          <Input type="time" value={call.toTime} onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
+                            className="h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border border-gray-300 dark:bg-gray-800 dark:text-white dark:border-gray-600 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:border-purple-500 px-3 py-2 lg:px-4 lg:py-3 appearance-none" />
                         ) : (
                           <span className="truncate block w-full text-sm lg:text-base text-gray-900 dark:text-white">{formatTime(call.toTime)}</span>
                         )}
                       </div>
                     </div>
-
                   </div>
                 ))}
                 {!supportCalls.length && <p className="text-sm lg:text-base text-gray-500 dark:text-gray-400 italic text-center py-4">No support calls scheduled.</p>}
@@ -412,8 +489,9 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
             {canEdit && (
               <div className="flex justify-end pt-2">
-                <Button onClick={handleUpdate} disabled={loading || !hasChanges} className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-2 lg:py-2.5 text-sm lg:text-base">
-                  {loading ? 'Updating...' : 'Update'}
+                <Button onClick={handleUpdate} disabled={updateLoading || !hasChanges}
+                  className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-2 lg:py-2.5 text-sm lg:text-base">
+                  {updateLoading ? 'Updating...' : 'Update'}
                 </Button>
               </div>
             )}
@@ -422,25 +500,18 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
           <div className="w-12 sm:w-14 lg:w-16 border-l border-gray-200 dark:border-gray-800 flex flex-col items-center py-4 gap-2 shrink-0 bg-gray-50/50 dark:bg-gray-800/50">
             {TABS.map(({ id, icon: Icon, label }) => (
               <button key={id}
-                onClick={() => {
-                  if (activeTab === id) { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); }
-                  else { setActiveTab(id); setPanelOpen(true); }
-                }}
+                onClick={() => { if (activeTab === id) { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); } else { setActiveTab(id); setPanelOpen(true); } }}
                 title={label}
-                className={cn(
-                  'w-8 h-8 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center transition-all',
-                  activeTab === id ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200'
-                )}>
+                className={cn('w-8 h-8 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center transition-all',
+                  activeTab === id ? 'bg-purple-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200')}>
                 <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
               </button>
             ))}
           </div>
         </div>
 
-        <div className={cn(
-          'absolute top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl transition-all duration-300 overflow-hidden z-30',
-          panelOpen ? 'w-[83vw] sm:w-80 md:w-96 lg:w-1/2' : 'w-0'
-        )}>
+        <div className={cn('absolute top-0 left-0 h-full bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-xl transition-all duration-300 overflow-hidden z-30',
+          panelOpen ? 'w-[83vw] sm:w-80 md:w-96 lg:w-1/2' : 'w-0')}>
           {panelOpen && (
             <div className="w-full h-full flex flex-col">
               <div className="flex items-center justify-between px-4 py-4 lg:px-5 lg:py-5 border-b border-gray-200 dark:border-gray-800">
@@ -452,14 +523,14 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                 </Button>
               </div>
               <div className="flex-1 overflow-y-auto p-4 lg:p-5">
-                {activeTab === 'notes' && <ComNotes ticket={ticket} ticketUuid={ticket.v_ticketuuid} canEdit={isEditableStatus} />}
-                {activeTab === 'user' && <ComUserInformation ticket={ticket} />}
-                {activeTab === 'closure' && <ComClosureDate ticket={ticket} />}
+                {activeTab === 'notes'       && <ComNotes ticket={liveTicket} ticketUuid={ticket.v_ticketuuid} canEdit={isEditableStatus}  refreshKey={noteRefreshKey} />}
+                {activeTab === 'user'        && <ComUserInformation ticket={liveTicket} />}
+                {activeTab === 'closure'     && <ComClosureDate ticket={liveTicket} />}
                 {activeTab === 'attachments' && (
-                  <ComAttachment ticketuuid={ticket.v_ticketuuid} ticket={ticket} attachments={attachments}
-                    onChange={setAttachments} canEdit={canEditAttachments} createdby={ticket.v_entrauserid} modifiedby={account?.localAccountId} />
+                  <ComAttachment ticketuuid={ticket.v_ticketuuid} ticket={liveTicket} attachments={attachments}
+                    onChange={setAttachments} canEdit={canEditAttachments} createdby={ticket.v_entrauserid} modifiedby={account?.localAccountId} refreshKey={attachmentRefreshKey} />
                 )}
-                {activeTab === 'timeline' && <ComTimelineView ticket={ticket} />}
+                {activeTab === 'timeline' && <ComTimelineView ticket={liveTicket} />}
               </div>
             </div>
           )}

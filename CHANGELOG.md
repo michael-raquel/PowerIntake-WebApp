@@ -1,4 +1,392 @@
-# [1.4.0](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.1...v1.4.0) (2026-03-29)
+# [1.4.0-dev.56](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.55...v1.4.0-dev.56) (2026-04-03)
+
+
+### Features
+
+* added tenant for super admins ([c44f9b0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c44f9b0f446a200d5a324040f5ac7f7c43b75778))
+
+# [1.4.0-dev.55](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.54...v1.4.0-dev.55) (2026-04-03)
+
+
+### Bug Fixes
+
+* ST-ticket reactivating a ticket will reflect the change on the ui automatically ([d2fcd74](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d2fcd74abbf980e35f21f5c43e54a5896acade63))
+
+# [1.4.0-dev.54](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.53...v1.4.0-dev.54) (2026-04-03)
+
+
+### Bug Fixes
+
+* ST-ticket change column status - auto task status and add tickets tatus column ([3e05119](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3e05119fc177bf4ecea199aa6542e6f21ecd3db3))
+
+# [1.4.0-dev.53](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.52...v1.4.0-dev.53) (2026-04-02)
+
+
+### Bug Fixes
+
+* Manage Page Table Header should stick when scroll down ([073d211](https://github.com/michael-raquel/PowerIntake-WebApp/commit/073d2114911ae167f8842e5b2650d5a0d7b37380))
+
+# [1.4.0-dev.52](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.51...v1.4.0-dev.52) (2026-04-02)
+
+
+### Bug Fixes
+
+* sticky table + search filter in navbar ([e353b51](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e353b51abf26737e0d9c8edc0e69a3faafef2e14))
+
+# [1.4.0-dev.51](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.50...v1.4.0-dev.51) (2026-04-02)
+
+
+### Bug Fixes
+
+* ST-2180 Manage Page select all filter ([f1399a8](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f1399a8ecb65beed1cdcd08d0e8d6876b06f6006))
+
+# [1.4.0-dev.50](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.49...v1.4.0-dev.50) (2026-04-02)
+
+
+### Reverts
+
+* Revert "fix: added a router push to force logout" ([14d5b7a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/14d5b7ac6b1ee3459d42df885759b1c65e1e8507))
+
+# [1.4.0-dev.49](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.48...v1.4.0-dev.49) (2026-04-02)
+
+
+### Bug Fixes
+
+* added a router push to force logout ([65b8902](https://github.com/michael-raquel/PowerIntake-WebApp/commit/65b89027ec051f1d58afb8a094267278898f3224))
+
+# [1.4.0-dev.48](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.47...v1.4.0-dev.48) (2026-04-02)
+
+
+### Reverts
+
+* Revert "fix: Replaced toast to dialog" ([ed8c021](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ed8c0219bec181f9aa67142481245bf4139ec54b))
+
+# [1.4.0-dev.47](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.46...v1.4.0-dev.47) (2026-04-02)
+
+
+### Bug Fixes
+
+* Replaced toast to dialog ([33e15f6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/33e15f6cdfc3d9f8705b029dd0202c159c938bb8))
+
+# [1.4.0-dev.46](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.45...v1.4.0-dev.46) (2026-04-02)
+
+
+### Bug Fixes
+
+* updated authcontext ([d5353de](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d5353de591a3002af64a5fbfe493fd40e094e665))
+
+# [1.4.0-dev.45](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.44...v1.4.0-dev.45) (2026-04-02)
+
+
+### Bug Fixes
+
+* ST-timeline issue on assigning a technichian to the new one will be reflected on the previous timelines ([ed38e26](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ed38e2618cd4aa9884cd03a52d2b7b08e4c52863))
+
+# [1.4.0-dev.44](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.43...v1.4.0-dev.44) (2026-04-02)
+
+
+### Bug Fixes
+
+* Revert "fix: Revert "fix: fix session storage"" ([ef65cf7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ef65cf7b1bc3d7e2e5f1fa53992266be029ca2c9))
+
+# [1.4.0-dev.43](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.42...v1.4.0-dev.43) (2026-04-02)
+
+
+### Bug Fixes
+
+* Revert "fix: fix session storage" ([9d77826](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9d7782688d58575430430e67a236687bc73c72df))
+
+# [1.4.0-dev.42](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.41...v1.4.0-dev.42) (2026-04-02)
+
+
+### Bug Fixes
+
+* fix session storage ([9dceb64](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9dceb64d41704a5db5a7fdab076c2d51288ca1fa))
+
+# [1.4.0-dev.41](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.40...v1.4.0-dev.41) (2026-04-02)
+
+
+### Bug Fixes
+
+* nice Deactivate ([3f96cde](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3f96cdedb444d9be0435a19c7113f6f22c7f7504))
+
+# [1.4.0-dev.40](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.39...v1.4.0-dev.40) (2026-04-02)
+
+
+### Bug Fixes
+
+* ST-notes and attachment web socket implementation ([f2ec4a3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f2ec4a3a2f379dc0322517fc8674db742cd494f1))
+
+# [1.4.0-dev.39](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.38...v1.4.0-dev.39) (2026-04-02)
+
+
+### Bug Fixes
+
+* ST-ticket annoying toast ([553ed19](https://github.com/michael-raquel/PowerIntake-WebApp/commit/553ed19c26860f623cf9c7381ab75e36dc14652d))
+
+# [1.4.0-dev.38](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.37...v1.4.0-dev.38) (2026-04-01)
+
+
+### Bug Fixes
+
+* Use /checking redirect and disable MSAL navigation ([4de6c11](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4de6c11526495e0e4cac9d5254d00df1b1b229e6))
+
+# [1.4.0-dev.37](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.36...v1.4.0-dev.37) (2026-04-01)
+
+
+### Features
+
+* changed the metrics for superadmin and my team ([01b6d31](https://github.com/michael-raquel/PowerIntake-WebApp/commit/01b6d31c554edd70625f0bef36c34c20d0f40179))
+
+# [1.4.0-dev.36](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.35...v1.4.0-dev.36) (2026-04-01)
+
+
+### Bug Fixes
+
+* issue refresh ([afa6d37](https://github.com/michael-raquel/PowerIntake-WebApp/commit/afa6d375352634bce29fad08bbd67be13c78990b))
+
+# [1.4.0-dev.35](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.34...v1.4.0-dev.35) (2026-04-01)
+
+
+### Bug Fixes
+
+* go to home after ([71323d9](https://github.com/michael-raquel/PowerIntake-WebApp/commit/71323d9b0a80a81ae451e6f6e4aad69440a3e406))
+
+# [1.4.0-dev.34](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.33...v1.4.0-dev.34) (2026-04-01)
+
+
+### Bug Fixes
+
+* refix ([624ccf0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/624ccf0da22074e5ffcaccf84e928b94b168379b))
+
+# [1.4.0-dev.33](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.32...v1.4.0-dev.33) (2026-04-01)
+
+
+### Bug Fixes
+
+* short fix ([2e51050](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2e51050fab37a567f361787a8c99446bd703c725))
+
+# [1.4.0-dev.32](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.31...v1.4.0-dev.32) (2026-04-01)
+
+
+### Bug Fixes
+
+* Add MS consent callback page and update checking ([aead69b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/aead69b9ebb3b20ae29b5172a826f177f39ea804))
+
+# [1.4.0-dev.31](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.30...v1.4.0-dev.31) (2026-04-01)
+
+
+### Bug Fixes
+
+* ST-user logout after changing its role ([5046696](https://github.com/michael-raquel/PowerIntake-WebApp/commit/504669683ba08cf5876dc5607fc10011d7540dcb))
+
+# [1.4.0-dev.30](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.29...v1.4.0-dev.30) (2026-04-01)
+
+
+### Bug Fixes
+
+* ST-user force logout after changing the userrole ([4023af2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4023af2941ee73c927dbc6c45783ca2d569abe42))
+
+# [1.4.0-dev.29](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.28...v1.4.0-dev.29) (2026-04-01)
+
+
+### Bug Fixes
+
+* ST-user create on login when missing on database ([0ba2c88](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0ba2c88bc1f3d8a8201c86f477bb15824c5184f5))
+
+# [1.4.0-dev.28](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.27...v1.4.0-dev.28) (2026-04-01)
+
+
+### Bug Fixes
+
+* ST-ticket double toast on timeline ([355950e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/355950ef1ea3091620d2bc19ed0259d269898fa8))
+
+# [1.4.0-dev.27](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.26...v1.4.0-dev.27) (2026-04-01)
+
+
+### Bug Fixes
+
+* st-2118-ticketpage-filter-v2 ([07b1103](https://github.com/michael-raquel/PowerIntake-WebApp/commit/07b11035b4ec94fea84d1f7e07283b6609bb23fb))
+
+# [1.4.0-dev.26](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.25...v1.4.0-dev.26) (2026-03-31)
+
+
+### Bug Fixes
+
+* Add SpartaAssistContext and widget toggle ([0d21f75](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0d21f75df5e884d0a0bf07ab353eebf9e5486f61))
+
+# [1.4.0-dev.25](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.24...v1.4.0-dev.25) (2026-03-31)
+
+
+### Bug Fixes
+
+* Only Display Sparta upon Authenticated ([4de5c56](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4de5c5647b93eb78c7a82142492554c1d624bf53))
+
+# [1.4.0-dev.24](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.23...v1.4.0-dev.24) (2026-03-31)
+
+
+### Bug Fixes
+
+* ST-ticket apply websocket on update form ([4d87ad0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4d87ad008e4d4b1186d7825d81e7771d170c4d43))
+
+# [1.4.0-dev.23](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.22...v1.4.0-dev.23) (2026-03-31)
+
+
+### Bug Fixes
+
+* Force login prompt and tidy no-consent page ([4074bd3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4074bd352331de86bcd32b32adca75f0ba6dedc7))
+
+# [1.4.0-dev.22](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.21...v1.4.0-dev.22) (2026-03-31)
+
+
+### Bug Fixes
+
+* ST-2155 Disable Toggle button for Users not under Sparta on Super Admin Tab on Manage Page ([cda4845](https://github.com/michael-raquel/PowerIntake-WebApp/commit/cda4845de6a5587b7e21e58191877b82a8b4e85c))
+
+# [1.4.0-dev.21](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.20...v1.4.0-dev.21) (2026-03-31)
+
+
+### Bug Fixes
+
+* issue 2149 Remove Refresh Button on Manage Page for User and Manager ([3bce630](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3bce6308c7c8eca9fe9c85558db5fdb56d138bd4))
+* Move layout and sidebar into AuthGuard ([c7ab116](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c7ab116418dadefd3fbc80c159d570261c23a4e3))
+
+# [1.4.0-dev.20](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.19...v1.4.0-dev.20) (2026-03-30)
+
+
+### Bug Fixes
+
+* made small changes on the table ([714f8fe](https://github.com/michael-raquel/PowerIntake-WebApp/commit/714f8fe278e0b380f73a863cacb23ec643b6785e))
+
+# [1.4.0-dev.19](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.18...v1.4.0-dev.19) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket weebsocket applied on timeline tab ([5f1e64d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5f1e64db00f2bb38254109100132c6cc7a678159))
+
+# [1.4.0-dev.18](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.17...v1.4.0-dev.18) (2026-03-30)
+
+
+### Features
+
+* Refactor filters; add sortable resizable tables ([0981e49](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0981e4974ef3165f4348ab95474c92ee8bd01a0b))
+* Refactor filters; add sortable resizable tables ([ede17f7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ede17f7257cae3874f1abd2ab44540dc546bbd65))
+
+# [1.4.0-dev.17](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.16...v1.4.0-dev.17) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket return the hideCompleted callback ([a31febb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a31febb84f49e7b9d830edf376883cb989e8399c))
+
+# [1.4.0-dev.16](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.15...v1.4.0-dev.16) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket websocket on update ([cc58918](https://github.com/michael-raquel/PowerIntake-WebApp/commit/cc58918747a4c7b6aefe371c22f63ecd2f5c6ab4))
+
+# [1.4.0-dev.15](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.14...v1.4.0-dev.15) (2026-03-30)
+
+
+### Bug Fixes
+
+* st-2118-ticketpageRefactor ticket filters and table filtering ([fda5392](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fda539238c55ec62d686cd3490f214ec1a092dec))
+
+# [1.4.0-dev.14](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.13...v1.4.0-dev.14) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket webhook on update ([d0e38d7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d0e38d758d9c9c63176ab54da3393ce7bc820395))
+
+# [1.4.0-dev.13](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.12...v1.4.0-dev.13) (2026-03-30)
+
+
+### Bug Fixes
+
+* st-2147-UI bug in ticket page ([865270d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/865270da6e504acba88d5e0ab61489e8fb754005))
+
+# [1.4.0-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.11...v1.4.0-dev.12) (2026-03-30)
+
+
+### Bug Fixes
+
+* st-2145-tenant-id-column-fix ([5568d92](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5568d920fdab5025d6905a37934ea27514c206ed))
+
+# [1.4.0-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.10...v1.4.0-dev.11) (2026-03-30)
+
+
+### Bug Fixes
+
+* added hidecompleted ticket on mobile cards ([6a1a7cb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6a1a7cbe10cd04913c758f01abc2bac7e50ba57e))
+
+# [1.4.0-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.9...v1.4.0-dev.10) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-ticket remove from dynamics automatically removes on powerintake without manual refresh ([fc0d5d8](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fc0d5d89c54750c8ed79e0f766b63ca91880b1ec))
+
+# [1.4.0-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.8...v1.4.0-dev.9) (2026-03-30)
+
+
+### Bug Fixes
+
+* Make rows navigable; sync ticket search param ([058c0ed](https://github.com/michael-raquel/PowerIntake-WebApp/commit/058c0ed4f1460925572ae609778a37da2be94bc8))
+
+# [1.4.0-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.7...v1.4.0-dev.8) (2026-03-30)
+
+
+### Bug Fixes
+
+* Added a checkbox filter ([ecf46eb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ecf46eb88caf38ca4ca895de16e3236c1a3abda2))
+* Support multi-select filters and client-side paging ([70a5c7e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/70a5c7eef43d3091ac131e355ab4b7ae6e1892f2))
+
+# [1.4.0-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.6...v1.4.0-dev.7) (2026-03-30)
+
+
+### Bug Fixes
+
+* ST-multiple join rooms on webhook ([4a62a5c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4a62a5cd219448c0f8cdd9c2012ddf72e13a5569))
+
+# [1.4.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.5...v1.4.0-dev.6) (2026-03-30)
+
+
+### Bug Fixes
+
+* ui fix buttons in createticket in mobile view ([9a6bc0a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9a6bc0a59967c99a26308f39afd562bc5266d2be))
+
+# [1.4.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.4...v1.4.0-dev.5) (2026-03-30)
+
+
+### Bug Fixes
+
+* light and dark mode bug in IOS ([2131e8c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2131e8c0b185d68290f2cf7716f5e25e7660b898))
+
+# [1.4.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.3...v1.4.0-dev.4) (2026-03-29)
+
+
+### Bug Fixes
+
+* ST-ticket no v_entrauserid ([c96381b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c96381b0720c27eaaefa4a7421888758ef1b4ee6))
+
+# [1.4.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.2...v1.4.0-dev.3) (2026-03-29)
+
+
+### Bug Fixes
+
+* ST-ticket change syncing label to finalizing ([ff786ce](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ff786cecbc89ff12d5ce9fa3c4edd24043829d2a))
+
+# [1.4.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.1...v1.4.0-dev.2) (2026-03-29)
+
+
+### Bug Fixes
+
+* ST-ticket create background syncing process ([1c637d3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/1c637d3cfa3384fc33bf1af9665320ed44634a04))
+
+# [1.4.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.3.1...v1.4.0-dev.1) (2026-03-29)
 
 
 ### Bug Fixes

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import ManageTabs from "@/components/manage/ManageTabs";
 import MyClientsTab from "@/components/manage/MyClientsTab";
 import MyCompanyTab from "@/components/manage/MyCompanyTab";
@@ -8,28 +8,18 @@ import useManagerCheck from "@/hooks/UseManagerCheck";
 import { useAuth } from "@/context/AuthContext";
 import { ExternalLink, Users } from "lucide-react";
 
-const ROW_HEIGHT = 50;
-const MIN_RECORDS = 1;
-const DEFAULT_ROWS = 10;
-
 export default function Manage() {
-  const { isManager, loading } = useManagerCheck();
+  const { isManager } = useManagerCheck();
   const { tokenInfo } = useAuth();
-  const [activeTab, setActiveTab] = useState("admin");
-  const [searchValue, setSearchValue] = useState("");
-  const [selectedFilters, setSelectedFilters] = useState({});
-  const tableContainerRef = useRef(null);
-  const [recordsPerPage, setRecordsPerPage] = useState(DEFAULT_ROWS);
+  const [activeTab, setActiveTab] = useState("clients");
+  const [filters, setFilters] = useState({
+    search: "",
+    clientname: "",
+    manager: "",
+    selectedRoles: null,
+    status: null,
+  });
   const [isMobile, setIsMobile] = useState(false);
-
-  const updateRecordsPerPage = useCallback(() => {
-    if (!tableContainerRef.current) return;
-    const height = tableContainerRef.current.clientHeight;
-    if (!height) return;
-
-    const calculated = Math.max(MIN_RECORDS, Math.floor(height / ROW_HEIGHT));
-    setRecordsPerPage((prev) => (prev !== calculated ? calculated : prev));
-  }, []);
 
   const roles = tokenInfo?.account?.roles ?? [];
   const isSuperAdmin = roles.includes("SuperAdmin");
@@ -51,15 +41,6 @@ export default function Manage() {
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
-  useEffect(() => {
-    const raf = requestAnimationFrame(updateRecordsPerPage);
-    window.addEventListener("resize", updateRecordsPerPage);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", updateRecordsPerPage);
-    };
-  }, [updateRecordsPerPage, validTab]);
 
   // Mobile 
   if (isMobile) {
@@ -84,16 +65,36 @@ export default function Manage() {
             activeTab={validTab}
             onTabChange={(tab) => {
               setActiveTab(tab);
-              setSearchValue("");
-              setSelectedFilters({});
             }}
           />
 
           <div className="flex-1 min-h-0 flex flex-col">
-            {validTab === "clients" && <MyClientsTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-            {validTab === "admin" && <SuperAdminTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-            {validTab === "company" && <MyCompanyTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-            {validTab === "team" && <MyTeamTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
+            {validTab === "clients" && (
+              <MyClientsTab
+                searchValue={filters.search}
+                onSearchChange={(value) => setFilters((prev) => ({ ...prev, search: value }))}
+              />
+            )}
+            {validTab === "admin" && (
+              <SuperAdminTab
+                filters={filters}
+                onFiltersChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
+              />
+            )}
+            {validTab === "company" && (
+              <MyCompanyTab
+                filters={filters}
+                onFiltersChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
+              />
+            )}
+            {validTab === "team" && (
+              <MyTeamTab
+                selectedFilters={filters}
+                searchValue={filters.search}
+                onFiltersChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
+                onSearchChange={(value) => setFilters((prev) => ({ ...prev, search: value }))}
+              />
+            )}
           </div>
         </div>
 
@@ -169,16 +170,36 @@ export default function Manage() {
           activeTab={validTab}
           onTabChange={(tab) => {
             setActiveTab(tab);
-            setSearchValue("");
-            setSelectedFilters({});
           }}
         />
 
         <div className="flex-1 min-h-0 flex flex-col">
-          {validTab === "clients" && <MyClientsTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-          {validTab === "admin" && <SuperAdminTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-          {validTab === "company" && <MyCompanyTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
-          {validTab === "team" && <MyTeamTab recordsPerPage={recordsPerPage} tableContainerRef={tableContainerRef} selectedFilters={selectedFilters} searchValue={searchValue} onFiltersChange={setSelectedFilters} onSearchChange={setSearchValue} />}
+          {validTab === "clients" && (
+            <MyClientsTab
+              searchValue={filters.search}
+              onSearchChange={(value) => setFilters((prev) => ({ ...prev, search: value }))}
+            />
+          )}
+          {validTab === "admin" && (
+            <SuperAdminTab
+              filters={filters}
+              onFiltersChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
+            />
+          )}
+          {validTab === "company" && (
+            <MyCompanyTab
+              filters={filters}
+              onFiltersChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
+            />
+          )}
+          {validTab === "team" && (
+            <MyTeamTab
+              selectedFilters={filters}
+              searchValue={filters.search}
+              onFiltersChange={(updates) => setFilters((prev) => ({ ...prev, ...updates }))}
+              onSearchChange={(value) => setFilters((prev) => ({ ...prev, search: value }))}
+            />
+          )}
         </div>
       </div>
 

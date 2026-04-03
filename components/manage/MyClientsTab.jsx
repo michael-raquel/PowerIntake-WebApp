@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { RefreshCw, ChevronLeft, ChevronRight, Copy, Check, Search, X } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter } from "next/router";
+import { RefreshCw, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import useFetchMyClients from "@/hooks/UseFetchMyClientUsers";
 import useSyncUsers from "@/hooks/UseSyncUsers";
 import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
@@ -16,34 +17,98 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const TABLE_HEADERS = ["Tenant ID", "Client Name", "Tickets", "Completed Tickets", "In Progress", "Cancelled Tickets", "Completion Rate"];
+import MyClientsTable, { CopyButton } from "./table/MyClientsTable";
+import { formatPercent } from "@/lib/utils";
+
+const TABLE_COLUMNS = [
+  {
+    key: "tenantId",
+    label: "Tenant ID",
+    align: "center",
+    minWidth: 160,
+    defaultWidth: 200,
+    sortValue: (row) => row?.v_tenantid ?? "",
+  },
+  {
+    key: "clientName",
+    label: "Client Name",
+    align: "left",
+    headerClassName: "text-left pl-8",
+    minWidth: 200,
+    defaultWidth: 260,
+    sortValue: (row) => row?.v_tenantname ?? "",
+  },
+  {
+    key: "tickets",
+    label: "Tickets",
+    align: "center",
+    minWidth: 110,
+    defaultWidth: 120,
+    sortValue: (row) => Number(row?.v_totalticket ?? 0),
+  },
+  {
+    key: "new",
+    label: "New",
+    align: "center",
+    minWidth: 130,
+    defaultWidth: 140,
+    sortValue: (row) => Number(row?.v_newticket ?? 0),
+  },
+  {
+    key: "inProgress",
+    label: "In Progress",
+    align: "center",
+    minWidth: 130,
+    defaultWidth: 140,
+    sortValue: (row) => Number(row?.v_openticket ?? 0),
+  },
+  {
+    key: "completed",
+    label: "Completed",
+    align: "center",
+    minWidth: 150,
+    defaultWidth: 160,
+    sortValue: (row) => Number(row?.v_completed ?? 0),
+  },
+  {
+    key: "completionRate",
+    label: "Completion Rate",
+    align: "center",
+    minWidth: 160,
+    defaultWidth: 170,
+    sortValue: (row) => Number(row?.v_completion ?? 0),
+  },
+];
 const DEFAULT_ROWS = 10;
 
-function CopyButton({ value }) {
-  const [copied, setCopied] = useState(false);
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-  return (
-    <button
-      onClick={handleCopy}
-      className="ml-1.5 p-0.5 rounded text-gray-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors"
-      title="Copy Tenant ID"
-    >
-      {copied
-        ? <Check className="w-3.5 h-3.5 text-green-500" />
-        : <Copy className="w-3.5 h-3.5" />
-      }
-    </button>
-  );
-}
+const compareSortValues = (aValue, bValue) => {
+  const aEmpty = aValue === null || aValue === undefined || aValue === "";
+  const bEmpty = bValue === null || bValue === undefined || bValue === "";
 
-export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tableContainerRef, selectedFilters = {}, searchValue = "", onFiltersChange = () => {}, onSearchChange = () => {} }) {
+  if (aEmpty && bEmpty) return 0;
+  if (aEmpty) return 1;
+  if (bEmpty) return -1;
+
+  const aNumber = typeof aValue === "number" ? aValue : Number(aValue);
+  const bNumber = typeof bValue === "number" ? bValue : Number(bValue);
+  const aIsNumber = !Number.isNaN(aNumber) && String(aValue).trim() !== "";
+  const bIsNumber = !Number.isNaN(bNumber) && String(bValue).trim() !== "";
+
+  if (aIsNumber && bIsNumber) return aNumber - bNumber;
+
+  return String(aValue).localeCompare(String(bValue), undefined, { numeric: true, sensitivity: "base" });
+};
+
+
+
+export default function MyClientsTab({ searchValue = "", onSearchChange = () => {} }) {
   const { accounts } = useMsal();
+  const router = useRouter();
   const [localPage, setLocalPage] = useState(1);
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
+  const [columnWidths, setColumnWidths] = useState({});
+  const resizeStateRef = useRef(null);
 
   const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
@@ -64,10 +129,9 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
   const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
 
   const {
-    data, loading, error,
-    page, total, totalPages,
-    hasNext, hasPrev, fetchData,
-    totals, filterOptions,
+    data, loading,
+    fetchData,
+    totals,
   } = useFetchMyClients(1, effectiveLimit);
 
   useEffect(() => {
@@ -75,6 +139,18 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
       fetchData(1, {});
     }
   }, [selectedRowsPerPage, fetchData]);
+
+  useEffect(() => {
+    setColumnWidths((prev) => {
+      const next = { ...prev };
+      TABLE_COLUMNS.forEach((column) => {
+        if (next[column.key] == null && column.defaultWidth) {
+          next[column.key] = column.defaultWidth;
+        }
+      });
+      return next;
+    });
+  }, []);
 
   const handleSearchChange = useCallback((value) => {
     setLocalPage(1);
@@ -108,6 +184,64 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
     }
   };
 
+  const handleRowClick = useCallback((row) => {
+    const searchText = String(row?.v_tenantname || "").trim();
+    if (!searchText) return;
+    const params = new URLSearchParams({ tab: "my-client", search: searchText });
+    router.push(`/ticket?${params.toString()}`);
+  }, [router]);
+
+  const handleSort = useCallback((key) => {
+    setSortConfig((prev) => {
+      if (prev.key === key) {
+        return { key, direction: prev.direction === "asc" ? "desc" : "asc" };
+      }
+      return { key, direction: "asc" };
+    });
+    setLocalPage(1);
+  }, []);
+
+  const handleResize = useCallback((event) => {
+    if (!resizeStateRef.current) return;
+    const { key, startX, startWidth, minWidth } = resizeStateRef.current;
+    const delta = event.clientX - startX;
+    const nextWidth = Math.max(minWidth, startWidth + delta);
+    setColumnWidths((prev) => ({
+      ...prev,
+      [key]: nextWidth,
+    }));
+  }, []);
+
+  const stopResize = useCallback(function stopResizeHandler() {
+    resizeStateRef.current = null;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    window.removeEventListener("mousemove", handleResize);
+    window.removeEventListener("mouseup", stopResizeHandler);
+  }, [handleResize]);
+
+  const handleResizeStart = useCallback((event, key, minWidth) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const th = event.currentTarget.closest("th");
+    if (!th) return;
+    resizeStateRef.current = {
+      key,
+      startX: event.clientX,
+      startWidth: th.getBoundingClientRect().width,
+      minWidth,
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", handleResize);
+    window.addEventListener("mouseup", stopResize);
+  }, [handleResize, stopResize]);
+
+  useEffect(() => () => {
+    window.removeEventListener("mousemove", handleResize);
+    window.removeEventListener("mouseup", stopResize);
+  }, [handleResize, stopResize]);
+
   const filteredData = useMemo(() => {
     if (!data || data.length === 0) return [];
 
@@ -132,10 +266,19 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
   const displayHasPrev = localPage > 1;
   const displayHasNext = localPage < displayTotalPages;
 
+  const sortedData = useMemo(() => {
+    if (!sortConfig.key) return filteredData;
+    const column = TABLE_COLUMNS.find((entry) => entry.key === sortConfig.key);
+    if (!column) return filteredData;
+    const next = [...filteredData];
+    next.sort((a, b) => compareSortValues(column.sortValue(a), column.sortValue(b)));
+    return sortConfig.direction === "asc" ? next : next.reverse();
+  }, [filteredData, sortConfig]);
+
   const pagedData = useMemo(() => {
     const start = (localPage - 1) * effectiveLimit;
-    return filteredData.slice(start, start + effectiveLimit);
-  }, [filteredData, effectiveLimit, localPage]);
+    return sortedData.slice(start, start + effectiveLimit);
+  }, [sortedData, effectiveLimit, localPage]);
 
 
   return (
@@ -159,6 +302,21 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
             </button>
           )}
         </div>
+        <div className="md:hidden">
+          <Select value={String(selectedRowsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
+            <SelectTrigger size="sm" className="h-8 px-2 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="15">15</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -177,13 +335,13 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
               {syncResult.message}
             </span>
           )}
-          <button
+          {/* <button
             onClick={handleSync}
             disabled={loading || syncing}
             className="p-1.5 rounded-lg text-violet-500 font-bold hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-5 h-5 ${loading || syncing ? "animate-spin" : ""}`} />
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -195,7 +353,11 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
         ) : (
           <div className="grid grid-cols-1 gap-3 p-4">
             {pagedData.map((row, i) => (
-              <div key={i} className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3">
+              <div
+                key={i}
+                onClick={() => handleRowClick(row)}
+                className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm p-4 space-y-3 cursor-pointer hover:border-violet-300 dark:hover:border-violet-700 transition-colors"
+              >
                 <div className="flex items-center gap-3 ">
                   <div className="w-9 h-9 rounded-md bg-violet-600 dark:bg-violet-500 flex items-center justify-center text-white font-bold text-sm shrink-0">
                     {row.v_tenantname?.charAt(0).toUpperCase()}
@@ -217,16 +379,20 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_totalticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
-                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completed ?? 0}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">New</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_newticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                     <p className="text-xs text-gray-500 dark:text-gray-400">In Progress</p>
                     <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_openticket ?? 0}</p>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
-                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_cancelled ?? 0}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{row.v_completed ?? 0}</p>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2 col-span-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{formatPercent(row.v_completion)}</p>
                   </div>
                 </div>
               </div>
@@ -244,9 +410,9 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">New</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.completedTickets ?? 0}
+                    {totals?.newTickets ?? 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
@@ -256,16 +422,14 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Cancelled</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Completed</p>
                   <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.cancelledTickets ?? 0}
+                    {totals?.completedTickets ?? 0}
                   </p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg px-3 py-2">
                   <p className="text-xs text-gray-500 dark:text-gray-400">Completion Rate</p>
-                  <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">
-                    {totals?.completionRate ?? 0}%
-                  </p>
+                    <p className="text-sm font-semibold text-center text-gray-900 dark:text-white">{formatPercent(totals?.completionRate)}</p>
                 </div>
               </div>
             </div>
@@ -273,74 +437,17 @@ export default function MyClientsTab({ recordsPerPage: parentRecordsPerPage, tab
         )}
       </div>
 
-      <div className="hidden md:flex flex-col flex-1 min-h-0" ref={tableContainerRef}>
-        <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-800">
-              {TABLE_HEADERS.map((header) => (
-                <th key={header} className="px-4 py-3 text-center text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap">
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
-            {loading ? (
-              <tr>
-                <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  Loading...
-                </td>
-              </tr>
-            ) : pagedData.length === 0 ? (
-              <tr>
-                <td colSpan={TABLE_HEADERS.length} className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
-                  No records found.
-                </td>
-              </tr>
-            ) : (
-              pagedData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 text-center dark:hover:bg-gray-800 transition-colors">
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-1">
-                      <span className="text-gray-600 dark:text-gray-300 truncate max-w-[120px] block">{row.v_tenantid}</span>
-                      <CopyButton value={row.v_tenantid} />
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-900 dark:text-white whitespace-nowrap">{row.v_tenantname}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_totalticket ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completed ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_openticket ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_cancelled ?? 0}</td>
-                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 whitespace-nowrap">{row.v_completion ?? 0}%</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-          <tfoot className="border-t border-gray-200 dark:border-gray-800 bg-gray-50/70 dark:bg-gray-800/60">
-            <tr className="text-center">
-              <td colSpan={2} className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.totalTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.completedTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.openTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.cancelledTickets ?? 0}
-              </td>
-              <td className="px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white">
-                {totals?.completionRate ?? 0}%
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-        </div>
-      </div>
+      <MyClientsTable
+        columns={TABLE_COLUMNS}
+        columnWidths={columnWidths}
+        handleResizeStart={handleResizeStart}
+        sortConfig={sortConfig}
+        handleSort={handleSort}
+        pagedData={pagedData}
+        loading={loading}
+        totals={totals}
+        handleRowClick={handleRowClick}
+      />
 
       <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 pr-20">
         <div className="text-xs text-gray-500 dark:text-gray-400">
