@@ -3,9 +3,9 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import { ExternalLink, Clock, User, Tag, Building2, ArrowUpRight, Flag, Wrench, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import { useFetchTicket } from '@/hooks/UseFetchTicket';
+import { useFetchHomeTicket } from '@/hooks/home/UseFetchHomeTicket';
 import { useRouter } from 'next/navigation';
-import { useFetchMyTeamUsers } from '@/hooks/UseFetchMyTeam';
+import { useFetchHomeManagerTicket } from '@/hooks/home/UseFetchHomeManagerTicket';
 import useManagerCheck from '@/hooks/UseManagerCheck';
 
 const images = [
@@ -21,13 +21,6 @@ const footerLinks = [
   { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
   { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
 ];
-
-const IN_PROGRESS_STATUSES = new Set([
-  'Assigned', 'Information Provided', 'Escalate To Onsite',
-  'Client Responded', 'Reschedule', 'Scheduling Required',
-  'Working Issue Now', 'Waiting', 'Waiting Approval', 'Pending Closure',
-  'Technician Rejected',
-]);
 
 const STATUS_CONFIG = {
   'New': { pill: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-900', dot: 'bg-green-500' },
@@ -69,7 +62,7 @@ const StatCard = ({ icon, label, value, dots }) => (
     </div>
     <p className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white leading-none tracking-tight">{value}</p>
     {dots?.length > 0 && (
-      <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-1.5 border-t border-gray-100 dark:border-gray-800">
+      <div className="grid grid-cols-2 gap-x-2 gap-y-1 pt-1.5 border-t border-gray-100 dark:border-gray-800 sm:flex sm:flex-nowrap sm:items-center sm:gap-x-3 sm:gap-y-0">
         {dots.map((d, i) => <DotRow key={i} color={d.color} label={d.label} />)}
       </div>
     )}
@@ -98,11 +91,11 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
   const dateLabel = createdAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
   const timeLabel = createdAt.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: true });
 
-  const clientInitial = ticket.v_tenantname ? ticket.v_tenantname.charAt(0).toUpperCase() : '?';
+  const clientInitial = ticket.v_clientname ? ticket.v_clientname.charAt(0).toUpperCase() : '?';
 
   const metadataItems = [
     ticket.v_source && { label: 'Source', value: ticket.v_source },
-    { label: 'Client', value: ticket.v_tenantname },
+    { label: 'Client', value: ticket.v_clientname },
     showOwner && { label: 'Requester', value: ticket.v_username },
     { label: 'Category', value: ticket.v_ticketcategory },
     ticket.v_technicianname && { label: 'Technician', value: ticket.v_technicianname },
@@ -129,7 +122,7 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
             {clientInitial}
           </div>
           <span className="text-sm font-semibold text-violet-600 dark:text-violet-300 truncate leading-snug">
-            {ticket.v_tenantname || '—'}
+            {ticket.v_clientname || '—'}
           </span>
         </div>
 
@@ -259,23 +252,28 @@ export default function HomePage() {
     return { enabled: true, scope: 'my-ticket', entrauserid: userId };
   }, [userId, safeActiveTab, tokenInfo?.account?.tenantId]);
 
-  const { tickets: myTickets = [] } = useFetchTicket(ticketQuery);
-  const { data: teamTickets = [] } = useFetchMyTeamUsers({ managerentrauserid: userId, enabled: !!userId && safeActiveTab === 'my-team' });
+  const { tickets: myTickets = [], totals: myTotals = {} } = useFetchHomeTicket(ticketQuery);
+  const { data: teamTickets = [], totals: teamTotals = {} } = useFetchHomeManagerTicket({
+    managerentrauserid: userId,
+    enabled: !!userId && safeActiveTab === 'my-team',
+  });
 
   const tickets = safeActiveTab === 'my-team' && isManager ? teamTickets : myTickets;
+  const activeTotals = safeActiveTab === 'my-team' && isManager ? teamTotals : myTotals;
 
   const stats = useMemo(() => {
-    const total = tickets.length;
-    const newCount = tickets.filter(t => t.v_status === 'New').length;
-    const inProgressCount = tickets.filter(t => IN_PROGRESS_STATUSES.has(t.v_status)).length;
-    const cancelledOnlyCount = tickets.filter(t => t.v_status === 'Cancelled').length;
-    const mergedCount = tickets.filter(t => t.v_status === 'Merged').length;
-    const cancelledCount = cancelledOnlyCount + mergedCount;
+    const total = Number(activeTotals?.total_count ?? 0);
+    const newCount = Number(activeTotals?.v_new ?? 0);
+    const inProgressCount = Number(activeTotals?.v_inprogress ?? 0);
+    const completedCount = Number(activeTotals?.v_completed ?? 0);
+    const completionRate = activeTotals?.v_completionrate ?? 0;
+    return { total, newCount, inProgressCount, completedCount, completionRate };
+  }, [activeTotals]);
+
+  const completionBreakdown = useMemo(() => {
     const workCompletedCount = tickets.filter(t => t.v_status === 'Work Completed').length;
-    const problemSolvedCount = tickets.filter(t => t.v_status === 'Problem Solved').length;
-    const completedCount = workCompletedCount + problemSolvedCount;
-    const completionRate = Math.round((completedCount / (total - cancelledCount)) * 100) || 0;
-    return { total, newCount, inProgressCount, cancelledOnlyCount, mergedCount, cancelledCount, workCompletedCount, problemSolvedCount, completedCount, completionRate };
+    const completeCount = tickets.filter(t => t.v_status === 'Complete').length;
+    return { workCompletedCount, completeCount };
   }, [tickets]);
 
   const recentTickets = useMemo(() =>
@@ -324,10 +322,10 @@ export default function HomePage() {
         <TabBar active={safeActiveTab} onChange={setActiveTab} tabs={tabs} />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <StatCard icon="/icons/myticket.svg" label="My Tickets" value={stats.total} dots={[{ color: 'green', label: `${stats.newCount} New` }, { color: 'blue', label: `${stats.inProgressCount} In Progress` }, { color: 'red', label: `${stats.cancelledCount} Cancelled` }, { color: 'purple', label: `${stats.completedCount} Completed` }]} />
+          <StatCard icon="/icons/myticket.svg" label="My Tickets" value={stats.total} dots={[{ color: 'green', label: `${stats.newCount} New` }, { color: 'blue', label: `${stats.inProgressCount} In Progress` }, { color: 'purple', label: `${stats.completedCount} Completed` }]} />
+          <StatCard icon="/icons/completed.svg" label="New" value={stats.newCount} dots={[{ color: 'green', label: `${stats.newCount} New` }]} />
           <StatCard icon="/icons/inprogress.svg" label="In Progress" value={stats.inProgressCount} dots={[{ color: 'blue', label: 'Being worked on' }]} />
-          <StatCard icon="/icons/completed.svg" label="Cancelled" value={stats.cancelledCount} dots={[{ color: 'red', label: `${stats.cancelledOnlyCount} Cancelled` }, { color: 'orange', label: `${stats.mergedCount} Merged` }]} />
-          <StatCard icon="/icons/completionrate.svg" label="Completion Rate" value={`${stats.completionRate}%`} dots={[{ color: 'purple', label: `${stats.workCompletedCount} Work Completed` }, { color: 'green', label: `${stats.problemSolvedCount} Problem Solved` }]} />
+          <StatCard icon="/icons/completionrate.svg" label="Completion Rate" value={`${stats.completionRate}%`} dots={[{ color: 'purple', label: `${completionBreakdown.workCompletedCount} Work Completed` }, { color: 'green', label: `${completionBreakdown.completeCount} Complete` }]} />
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
