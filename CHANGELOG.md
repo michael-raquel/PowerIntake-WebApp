@@ -1,3 +1,10 @@
+# [1.4.0-dev.56](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.55...v1.4.0-dev.56) (2026-04-03)
+
+
+### Features
+
+* added tenant for super admins ([c44f9b0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c44f9b0f446a200d5a324040f5ac7f7c43b75778))
+
 # [1.4.0-dev.55](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.54...v1.4.0-dev.55) (2026-04-03)
 
 
