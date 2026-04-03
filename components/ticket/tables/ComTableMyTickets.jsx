@@ -144,16 +144,19 @@ export default function ComTableMyTickets({
       );
       onSynced?.();
     };
+
     const onFailedWS = ({ ticketuuid }) => {
       console.warn('[WS] Dynamics sync failed for ticket:', ticketuuid);
       onSyncFailed?.();
     };
+
     const onDeletedWS = ({ ticketuuid }) => {
       setTickets((prev) => prev.filter((t) => t.v_ticketuuid !== ticketuuid));
       if (selectedTicket && String(selectedTicket.v_ticketuuid) === String(ticketuuid))
         setSelectedTicket(null);
       onDeleted?.();
     };
+
     const onUpdatedWS = ({ ticketuuid, ticket }) => {
       if (!ticket) return;
       setTickets((prev) =>
@@ -165,15 +168,28 @@ export default function ComTableMyTickets({
       onUpdated?.();
     };
 
+    const onReactivatedWS = ({ ticketuuid, ticket }) => {
+      if (!ticket) return;
+      setTickets((prev) =>
+          prev.map((t) => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
+      );
+      setSelectedTicket((prev) =>
+          prev && String(prev.v_ticketuuid) === String(ticketuuid) ? { ...prev, ...ticket } : prev
+      );
+      onUpdated?.();
+  };
+
     socket.on('ticket:synced',      onSyncedWS);
     socket.on('ticket:sync_failed', onFailedWS);
     socket.on('ticket:deleted',     onDeletedWS);
     socket.on('ticket:updated',     onUpdatedWS);
+    socket.on('ticket:reactivated', onReactivatedWS);
     return () => {
       socket.off('ticket:synced',      onSyncedWS);
       socket.off('ticket:sync_failed', onFailedWS);
       socket.off('ticket:deleted',     onDeletedWS);
       socket.off('ticket:updated',     onUpdatedWS);
+      socket.off('ticket:reactivated', onReactivatedWS);
     };
   }, [setTickets, onSynced, onSyncFailed, onDeleted, onUpdated, selectedTicket]);
 

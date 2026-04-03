@@ -54,7 +54,7 @@ const PRIORITY_COLORS = {
 
 const CALL_DURATION_MS = 2 * 60 * 60 * 1000;
 const CLOSED_STATUSES = ['Work Completed', 'Problem Solved', 'Technician Rejected', 'Cancelled', 'Merged'];
-const REACTIVATABLE_STATUSES = ['Work Completed', 'Problem Solved', 'Cancelled', 'Merged', 'Complete'];
+const REACTIVATABLE_STATUSES = ['Resolved', 'Cancelled'];
 
 const toHHMM = (date) => `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
@@ -148,7 +148,9 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const isEditableStatus = liveTicket ? !CLOSED_STATUSES.includes(liveTicket.v_status) : false;
   const canEdit = ticket ? (ticket.v_entrauserid === account?.localAccountId && liveTicket.v_status === 'New') : false;
   const canEditAttachments = isEditableStatus;
-  const canReactivate = ticket ? (ticket.v_entrauserid === account?.localAccountId && REACTIVATABLE_STATUSES.includes(liveTicket.v_status)) : false;
+ const canReactivate = liveTicket 
+  ? REACTIVATABLE_STATUSES.includes(liveTicket.v_ticketstatus)
+  : false;
 
   const selectedDates = useMemo(() => supportCalls.map(c => c.date?.toDateString()).filter(Boolean), [supportCalls]);
 
@@ -282,6 +284,19 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   };
 
   useEffect(() => {
+    const handleReactivated = ({ ticketuuid, ticket: updated }) => {
+        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+        if (updated) setLiveTicket(updated);
+        toast.success("Ticket Reactivated", {
+            description: `Ticket #${updated?.v_ticketnumber ?? liveTicket.v_ticketnumber} is now active`
+        });
+    };
+
+    socket.on("ticket:reactivated", handleReactivated);
+    return () => socket.off("ticket:reactivated", handleReactivated);
+}, [ticket?.v_ticketuuid, liveTicket.v_ticketnumber]);
+
+  useEffect(() => {
     const handleNoteSynced = ({ ticketuuid }) => {
         if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
         setNoteRefreshKey(k => k + 1);
@@ -366,6 +381,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                   { label: 'Category',   value: liveTicket.v_ticketcategory },
                   { label: 'Lifecycle',  value: liveTicket.v_ticketlifecycle },
                   { label: 'Technician', value: liveTicket.v_technicianname },
+                  { label: 'Ticket Status', value: liveTicket.v_ticketstatus },
                 ].map(({ label, value }) => (
                   <div key={label} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 lg:px-4 lg:py-3 border border-gray-200 dark:border-gray-700 md:flex-1">
                     <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">{label}</p>
