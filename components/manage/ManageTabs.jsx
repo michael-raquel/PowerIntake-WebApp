@@ -1,5 +1,5 @@
 export default function ManageTabs({ tabs, activeTab, onTabChange }) {
-    
+    //shoutout kay daniel for the help with this component, i was struggling to make it work and he came in clutch with the solution
   return (
     <div className="flex border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
       <nav className="flex gap-x-1">
