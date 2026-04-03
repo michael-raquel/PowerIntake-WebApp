@@ -9,6 +9,7 @@ import useSyncUsers from "@/hooks/UseSyncUsers";
 import useCreatePromoteSuperAdmin from "@/hooks/UseCreatePromoteSuperAdmin";
 import useDeleteDemoteAdmin from "@/hooks/UseDeleteDemoteAdmin";
 import useUpdateUserRole from "@/hooks/UseUpdateUserRole";
+import { useFetchUserRole } from "@/hooks/UseFetchUserRole";
 import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
 import { useUpdateRecordCount } from "@/hooks/UseUpdateRecordCount";
 import { Switch } from "@/components/ui/switch";
@@ -79,6 +80,7 @@ export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {}
     roleDisplayName: "SuperAdmin",
   });
   const { updateUserRole } = useUpdateUserRole();
+  const { fetchUserRole } = useFetchUserRole();
 
   const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
@@ -108,14 +110,21 @@ export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {}
       .map((role) => role.trim())
       .filter(Boolean);
 
-    const roleSet = new Set(rawRoles.map((role) => role.toLowerCase()));
-    const roleKey = roleName.toLowerCase();
+    const normalizeRoleKey = (role) =>
+      String(role || "")
+        .replace(/\s+/g, "")
+        .toLowerCase();
+
+    const roleSet = new Set(rawRoles.map((role) => normalizeRoleKey(role)));
+    const roleKey = normalizeRoleKey(roleName);
 
     if (checked) {
       roleSet.add(roleKey);
     } else {
       roleSet.delete(roleKey);
     }
+
+    roleSet.add("user");
 
     const priority = ["superadmin", "admin", "user"];
     const normalized = new Map([
@@ -130,7 +139,7 @@ export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {}
     });
 
     rawRoles.forEach((role) => {
-      const key = role.toLowerCase();
+      const key = normalizeRoleKey(role);
       if (!priority.includes(key) && roleSet.has(key)) {
         ordered.push(role);
       }
@@ -141,7 +150,17 @@ export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {}
 
   const handleSuperAdminToggle = async (row, checked) => {
     const userKey = row?.v_entrauserid;
-    const updatedRole = buildRoleString(row?.v_role, "SuperAdmin", checked);
+    let baseRole = userKey ? (roleOverrides[userKey] ?? row?.v_role) : row?.v_role;
+    if (userKey) {
+      try {
+        const roleSnapshot = await fetchUserRole(userKey);
+        if (roleSnapshot?.roleValue) {
+          baseRole = roleSnapshot.roleValue;
+        }
+      } catch (err) {
+      }
+    }
+    const updatedRole = buildRoleString(baseRole, "SuperAdmin", checked);
     if (userKey) {
       setRoleOverrides((prev) => ({
         ...prev,
@@ -166,7 +185,7 @@ export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {}
 
       await updateUserRole({
         entrauserid: row?.v_entrauserid,
-        userrole: buildRoleString(row?.v_role, "SuperAdmin", checked),
+        userrole: updatedRole,
         modifiedby: accounts?.[0]?.username || null,
       });
     } catch (err) {

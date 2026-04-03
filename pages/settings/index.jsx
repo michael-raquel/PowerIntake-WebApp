@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
-import { useSpartaAssist } from '@/context/SpartaAssistContext'; // ← ADD
+import { useSpartaAssist } from '@/context/SpartaAssistContext';
 import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateUserSettings } from '@/hooks/UseUpdateUserSettings';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ export default function SettingsPage() {
   const { accounts } = useMsal();
   const { account } = useAuth();
   const { isDarkMode, toggleTheme } = useAppTheme();
-  const { updateSpartaAssist } = useSpartaAssist(); // ← ADD
+  const { updateSpartaAssist } = useSpartaAssist();
   const [localSettings, setLocalSettings] = useState({});
   const [initialSettings, setInitialSettings] = useState({});
   const [isSaving, setIsSaving] = useState(false);
@@ -55,7 +55,7 @@ export default function SettingsPage() {
       setLocalSettings(newSettings);
       setInitialSettings(newSettings);
       setSettingsLoaded(true);
-      updateSpartaAssist(newSettings.spartaassist); // ← ADD: sync on initial load
+      updateSpartaAssist(newSettings.spartaassist);
     }
   }, [userSettings, entrauserid, settingsLoaded]);
 
@@ -70,7 +70,6 @@ export default function SettingsPage() {
     const updatedSettings = { ...localSettings, [setting]: value };
     setLocalSettings(updatedSettings);
 
-    // ← ADD: instantly update context when spartaassist is toggled
     if (setting === 'spartaassist') {
       updateSpartaAssist(value);
     }
@@ -83,7 +82,6 @@ export default function SettingsPage() {
       setInitialSettings(updatedSettings);
     } catch {
       setLocalSettings(localSettings);
-      // ← ADD: revert context on failure
       if (setting === 'spartaassist') {
         updateSpartaAssist(localSettings.spartaassist);
       }
@@ -110,7 +108,7 @@ export default function SettingsPage() {
       };
       setLocalSettings(resetSettings);
       setInitialSettings(resetSettings);
-      updateSpartaAssist(true); // ← ADD: reset also updates context
+      updateSpartaAssist(true);
       await updateUserSettings(resetSettings);
       if (!isDarkMode) await toggleTheme();
     } catch {
