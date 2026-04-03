@@ -1,3 +1,10 @@
+# [1.5.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.0-dev.1...v1.5.0-dev.2) (2026-04-03)
+
+
+### Bug Fixes
+
+* rename only and refractor ([a21e6b2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a21e6b28487c2ef591acb2efeb00f82b594d69f0))
+
 # [1.5.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0...v1.5.0-dev.1) (2026-04-03)
 
 
