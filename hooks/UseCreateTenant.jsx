@@ -25,9 +25,8 @@ export function useCreateTenant({ account, onSuccess } = {}) {
       tenantemail,
       createdby,
       dynamicsaccountid,
-      superadmingroupid,
       admingroupid,
-      companyallgroupid,
+      usergroupid,
     } = {}) => {
       setLoading(true);
       setError(null);
@@ -38,9 +37,8 @@ export function useCreateTenant({ account, onSuccess } = {}) {
         tenantemail: tenantemail?.trim() || null,
         createdby: createdby ?? account?.localAccountId ?? null,
         dynamicsaccountid: dynamicsaccountid?.trim() || null,
-        superadmingroupid: superadmingroupid?.trim() || null,
         admingroupid: admingroupid?.trim() || null,
-        companyallgroupid: companyallgroupid?.trim() || null,
+        usergroupid: usergroupid?.trim() || null,
       };
 
       try {

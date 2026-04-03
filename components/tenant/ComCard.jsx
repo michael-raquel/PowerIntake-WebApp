@@ -69,16 +69,12 @@ const formatTime = (value) => {
 
 export default function ComCard({ tenant = {}, onClick, isSyncing = false }) {
   const tenantName = readField(tenant, ["v_tenantname", "tenantname"], "-");
-  const tenantId = readField(
-    tenant,
-    ["v_tenantid", "tenantid", "v_tenantuuid", "tenantuuid"],
-    "-",
-  );
   const entraTenantId = readField(
     tenant,
     ["v_entratenantid", "entratenantid"],
     "-",
   );
+  const userGroupId = readField(tenant, ["v_usergroupid", "usergroupid"], "-");
   const tenantEmail = readField(tenant, ["v_tenantemail", "tenantemail"], "-");
   const createdAt = readField(tenant, ["v_createdat", "createdat"], null);
 
@@ -168,18 +164,18 @@ export default function ComCard({ tenant = {}, onClick, isSyncing = false }) {
         <div className="grid grid-cols-1 gap-1.5 mb-2.5">
           <div className="bg-gray-50 dark:bg-gray-900/60 rounded-md px-2.5 py-1.5 min-w-0 border border-gray-100 dark:border-gray-700/50">
             <p className="text-[9px] text-gray-400 dark:text-gray-500 mb-0.5 uppercase tracking-wider">
-              Tenant ID
-            </p>
-            <p className="text-[11px] font-medium truncate text-gray-800 dark:text-gray-200">
-              {tenantId}
-            </p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-900/60 rounded-md px-2.5 py-1.5 min-w-0 border border-gray-100 dark:border-gray-700/50">
-            <p className="text-[9px] text-gray-400 dark:text-gray-500 mb-0.5 uppercase tracking-wider">
               Entra Tenant ID
             </p>
             <p className="text-[11px] font-medium truncate text-gray-800 dark:text-gray-200">
               {entraTenantId}
+            </p>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-900/60 rounded-md px-2.5 py-1.5 min-w-0 border border-gray-100 dark:border-gray-700/50">
+            <p className="text-[9px] text-gray-400 dark:text-gray-500 mb-0.5 uppercase tracking-wider">
+              User Group ID
+            </p>
+            <p className="text-[11px] font-medium truncate text-gray-800 dark:text-gray-200">
+              {userGroupId}
             </p>
           </div>
         </div>
