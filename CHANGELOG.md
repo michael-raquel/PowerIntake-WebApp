@@ -1,3 +1,10 @@
+# [1.5.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.0-dev.3...v1.5.0-dev.4) (2026-04-03)
+
+
+### Bug Fixes
+
+* rename hooks ([87ace39](https://github.com/michael-raquel/PowerIntake-WebApp/commit/87ace397c767875df5768f1fb3e353b2eb9c7700))
+
 # [1.5.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.0-dev.2...v1.5.0-dev.3) (2026-04-03)
 
 
