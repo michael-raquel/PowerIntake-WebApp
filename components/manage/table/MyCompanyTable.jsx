@@ -50,11 +50,11 @@ export default function MyCompanyTable({
 									: "none";
 
 								return (
-									<th
-										key={column.key}
-										aria-sort={ariaSort}
-										className={`relative py-3 font-bold text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap ${alignClass} ${paddingClass} border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden`}
-									>
+										<th
+											key={column.key}
+											aria-sort={ariaSort}
+											className={`sticky top-0 z-10 bg-white dark:bg-gray-900 py-3 font-bold text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap ${alignClass} ${paddingClass} border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden`}
+										>
 										<button
 											type="button"
 											onClick={() => handleSort(column.key)}

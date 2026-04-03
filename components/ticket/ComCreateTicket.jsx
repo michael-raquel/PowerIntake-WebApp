@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, Fragment } from 'react';
+import { useState, useRef } from 'react';
 import { X, Plus, Upload, Clock, MapPin, Calendar as CalendarIcon, AlertCircle, FileText, RefreshCw } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,67 @@ const LOCATIONS = ['Remote', 'Hybrid', 'Office'];
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const CALL_DURATION_HOURS = 2;
+const END_TIME_THRESHOLD_MINUTES = 23 * 60 + 30;
+const END_TIME_CAP = '23:59';
+
+const getDefaultStartTime = (now = new Date()) => {
+  const totalMinutes = now.getHours() * 60 + now.getMinutes() + 30;
+  const rounded = Math.ceil(totalMinutes / 30) * 30;
+  const capped = Math.min(rounded, END_TIME_THRESHOLD_MINUTES);
+  const time = new Date(now);
+  time.setHours(0, capped, 0, 0);
+  return format(time, 'HH:mm');
+};
+
+const calculateEndTime = (date, startTime) => {
+  if (!date || !startTime) return '';
+  const [hours, minutes] = startTime.split(':').map(Number);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return '';
+  const endMinutes = hours * 60 + minutes + CALL_DURATION_HOURS * 60;
+  if (endMinutes > END_TIME_THRESHOLD_MINUTES) return END_TIME_CAP;
+  const end = new Date(date);
+  end.setHours(0, endMinutes, 0, 0);
+  return format(end, 'HH:mm');
+};
+
+const validateCall = (call, now = new Date()) => {
+  const fieldRef = `call-${call.id}-date`;
+  
+  const formatTime12hr = (time24) => {
+    if (!time24) return '';
+    const [hours, minutes] = time24.split(':');
+    const date = new Date();
+    date.setHours(parseInt(hours), parseInt(minutes));
+    return format(date, 'h:mm a');
+  };
+
+  const isToday = new Date(call.date).toDateString() === now.toDateString();
+  const currentTime = format(now, 'HH:mm');
+  
+  if (isToday && call.fromTime <= currentTime) {
+    const formattedNow = format(now, 'h:mm a');
+    const formattedSelected = formatTime12hr(call.fromTime);
+    return {
+      isValid: false,
+      title: 'Start time has passed',
+      description: `You selected ${formattedSelected}, but it's currently ${formattedNow}. Please choose a later time.`,
+      fieldRef,
+    };
+  }
+
+  if (call.fromTime >= call.toTime) {
+    const formattedStart = formatTime12hr(call.fromTime);
+    const formattedEnd = formatTime12hr(call.toTime);
+    return {
+      isValid: false,
+      title: 'Invalid time range',
+      description: `End time (${formattedEnd}) must be after start time (${formattedStart}). Same-day calls only.`,
+      fieldRef,
+    };
+  }
+
+  return { isValid: true };
+};
 
 const USER_FIELDS = [
   ['NAME', 'displayName'],
@@ -59,54 +120,65 @@ const detectTimezone = () => {
   return match?.value ?? detected;
 };
 
-const toHHMM = d => `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-
-const formatTo12Hour = (time24) => {
-  if (!time24) return '';
-  const [hours, minutes] = time24.split(':').map(Number);
-  const period = hours >= 12 ? 'PM' : 'AM';
-  const hours12 = hours % 12 || 12;
-  return `${hours12}:${minutes.toString().padStart(2, '0')} ${period}`;
-};
-
-const getMinTimeForToday = () => {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() + 30);
-  const minutes = now.getMinutes();
-  if (minutes % 30 !== 0) now.setMinutes(Math.ceil(minutes / 30) * 30);
-  now.setSeconds(0, 0);
-  if (now.getMinutes() === 60) {
-    now.setHours(now.getHours() + 1);
-    now.setMinutes(0);
-  }
-  if (now.getHours() > 23 || (now.getHours() === 23 && now.getMinutes() > 30)) return '23:30';
-  return toHHMM(now);
-};
-
-const calcEndTime = (date, startTime) => {
-  if (!date || !startTime) return '';
-  const [h, m] = startTime.split(':').map(Number);
-  const end = new Date(date);
-  end.setHours(h, m, 0, 0);
-  end.setTime(end.getTime() + CALL_DURATION_HOURS * 3600000);
-  if (end.getDate() > new Date(date).getDate()) return '23:59';
-  if (end.getHours() > 23 || (end.getHours() === 23 && end.getMinutes() > 30)) return '23:30';
-  return toHHMM(end);
-};
-
 const detectedTimezone = detectTimezone();
-const initialStart = getMinTimeForToday();
+const DEFAULT_FORM = { title: '', description: '' };
 
-const DEFAULT_FORM = { title: '', description: '', timezone: detectedTimezone, location: 'Remote' };
-const newCall = (overrides = {}) => ({
-  id: Date.now(),
-  date: new Date(),
-  fromTime: initialStart,
-  toTime: calcEndTime(new Date(), initialStart),
-  timezone: detectedTimezone,
-  location: 'Remote',
-  ...overrides,
-});
+const buildSupportCall = (overrides = {}) => {
+  const date = overrides.date ? new Date(overrides.date) : new Date();
+  const fromTime = overrides.fromTime ?? getDefaultStartTime();
+  const toTime = overrides.toTime ?? calculateEndTime(date, fromTime);
+
+  return {
+    id: overrides.id ?? Date.now(),
+    date,
+    fromTime,
+    toTime,
+    timezone: overrides.timezone ?? detectedTimezone,
+    location: overrides.location ?? 'Remote',
+  };
+};
+
+const useSupportCalls = () => {
+  const [supportCalls, setSupportCalls] = useState([buildSupportCall()]);
+
+  const handleCallChange = (id, field, value) => {
+    setSupportCalls(prev => prev.map(call => {
+      if (call.id !== id) return call;
+
+      if (field === 'date') {
+        const newDate = value ? new Date(value) : null;
+        return { ...call, date: newDate, toTime: calculateEndTime(newDate, call.fromTime) };
+      }
+
+      if (field === 'fromTime') {
+        return { ...call, fromTime: value, toTime: calculateEndTime(call.date, value) };
+      }
+
+      if (field === 'toTime') {
+        return { ...call, toTime: value };
+      }
+
+      return { ...call, [field]: value };
+    }));
+  };
+
+  const addCall = () => {
+    const usedDates = new Set(supportCalls.map(c => c.date?.toDateString()).filter(Boolean));
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() + 1);
+    while (usedDates.has(date.toDateString())) date.setDate(date.getDate() + 1);
+
+    const fromTime = getDefaultStartTime();
+    setSupportCalls(prev => [...prev, buildSupportCall({ date, fromTime })]);
+    toast.success('Support call added', { description: `Scheduled for ${format(date, 'MM/dd/yyyy')}.` });
+  };
+
+  const removeCall = id => setSupportCalls(prev => prev.filter(call => call.id !== id));
+  const resetCalls = () => setSupportCalls([buildSupportCall()]);
+
+  return { supportCalls, handleCallChange, addCall, removeCall, resetCalls };
+};
 
 function UserInfoPanel({ profile, profileLoading }) {
   return (
@@ -138,14 +210,13 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   const { uploadImage } = useUploadImage();
 
   const [formData, setFormData] = useState(DEFAULT_FORM);
-  const [supportCalls, setSupportCalls] = useState([newCall()]);
+  const { supportCalls, handleCallChange, addCall, removeCall, resetCalls } = useSupportCalls();
   const [attachments, setAttachments] = useState([]);
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
-  const [openPopovers, setOpenPopovers] = useState({});
 
   const getAccessToken = async () => {
     if (!accounts?.[0]) return null;
@@ -156,47 +227,6 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   const handleInputChange = ({ target: { name, value } }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: false }));
-  };
-
-  const isToday = date => {
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    return new Date(date).toDateString() === today.toDateString();
-  };
-
-  const handleCallChange = (id, field, value) => {
-    setSupportCalls(prev => {
-      const call = prev.find(c => c.id === id);
-      if (!call) return prev;
-
-      if (field === 'date') {
-        const newDate = new Date(value);
-        let fromTime = call.fromTime;
-        if (isToday(newDate)) {
-          const min = getMinTimeForToday();
-          if (fromTime < min) fromTime = min;
-        }
-        return prev.map(c => c.id === id ? { ...c, date: newDate, fromTime, toTime: calcEndTime(newDate, fromTime) } : c);
-      }
-
-      if (field === 'fromTime') {
-        return prev.map(c => c.id === id ? { ...c, fromTime: value, toTime: calcEndTime(call.date, value) } : c);
-      }
-
-      if (field === 'toTime') {
-        return prev.map(c => c.id === id ? { ...c, toTime: value } : c);
-      }
-
-      return prev.map(c => c.id === id ? { ...c, [field]: value } : c);
-    });
-  };
-
-  const handleAddCall = () => {
-    const usedDates = new Set(supportCalls.map(c => c.date?.toDateString()).filter(Boolean));
-    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + 1);
-    while (usedDates.has(d.toDateString())) d.setDate(d.getDate() + 1);
-    const from = getMinTimeForToday();
-    setSupportCalls(prev => [...prev, newCall({ id: Date.now(), date: d, fromTime: from, toTime: calcEndTime(d, from) })]);
-    toast.success('Support call added', { description: `Scheduled for ${format(d, 'MM/dd/yyyy')}` });
   };
 
   const processFiles = files => {
@@ -216,29 +246,20 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
       if (!formData.description) errs.description = true;
       setErrors(errs);
       fieldRefs.current[!formData.title ? 'title' : 'description']?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      toast.error('Please fill in all required fields');
+      toast.error('Missing required details', {
+        description: 'Please add a title and description before submitting your request.',
+      });
       return false;
     }
 
     const now = new Date();
-    const currentTime = toHHMM(now);
-
     for (const call of supportCalls) {
-      if (!call.date) {
-        toast.error('Please select a date for all support calls');
-        return false;
-      }
-
-      if (isToday(call.date)) {
-        if (call.fromTime < currentTime) {
-          fieldRefs.current[`call-${call.id}-date`]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          toast.error('Invalid start time', { description: `Start time cannot be in the past. Current time is ${formatTo12Hour(currentTime)}` });
-          return false;
+      const result = validateCall(call, now);
+      if (!result.isValid) {
+        if (result.fieldRef) {
+          fieldRefs.current[result.fieldRef]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-      }
-
-      if (call.fromTime >= call.toTime && call.toTime !== '23:59') {
-        toast.error('Start time must be earlier than end time');
+        toast.error(result.title, { description: result.description });
         return false;
       }
     }
@@ -258,6 +279,9 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
       );
 
       const accessToken = await getAccessToken();
+      const primaryCall = supportCalls[0];
+      const callTimezone = primaryCall?.timezone ?? detectedTimezone;
+      const callLocation = primaryCall?.location ?? 'Remote';
 
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets`, {
         method: 'POST',
@@ -270,8 +294,8 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
           entratenantid: tokenInfo?.account?.tenantId,
           title: formData.title,
           description: formData.description,
-          usertimezone: formData.timezone,
-          officelocation: formData.location?.toLowerCase(),
+          usertimezone: callTimezone,
+          officelocation: callLocation.toLowerCase(),
           date: supportCalls.map(c => format(c.date, 'yyyy-MM-dd')),
           starttime: supportCalls.map(c => c.fromTime),
           endtime: supportCalls.map(c => c.toTime),
@@ -355,7 +379,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                   <p className="text-xs text-gray-500">Add one or more available date/time slots.</p>
                 </div>
                 <Button
-                  variant="outline" size="sm" onClick={handleAddCall}
+                  variant="outline" size="sm" onClick={addCall}
                   className="gap-1 bg-white text-gray-900 border-gray-300 hover:bg-gray-100
     dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800
     appearance-none"
@@ -369,7 +393,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                 <div key={call.id} className="relative p-4 bg-gray-50 dark:bg-gray-800 rounded-lg border mb-4 last:mb-0">
                   {supportCalls.length > 1 && (
                     <Button
-                      variant="ghost" size="icon" onClick={() => setSupportCalls(prev => prev.filter(c => c.id !== call.id))}
+                      variant="ghost" size="icon" onClick={() => removeCall(call.id)}
                       className="absolute top-2 right-2 h-8 w-8"
                       disabled={submitting}
                     >
@@ -380,10 +404,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div ref={el => fieldRefs.current[`call-${call.id}-date`] = el}>
                       <Label className="text-xs mb-1 block">Date <span className="text-red-500">*</span></Label>
-                      <Popover
-                        open={openPopovers[call.id] || false}
-                        onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [call.id]: open }))}
-                      >
+                      <Popover>
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -400,11 +421,8 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                           <Calendar
                             mode="single"
                             selected={call.date}
-                            onSelect={(d) => {
-                              if (d) {
-                                handleCallChange(call.id, 'date', d);
-                                setOpenPopovers(prev => ({ ...prev, [call.id]: false }));
-                              }
+                            onSelect={d => {
+                              if (d) handleCallChange(call.id, 'date', d);
                             }}
                             disabled={date => {
                               const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -421,25 +439,31 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     <div>
                       <Label className="text-xs mb-1 block">Time <span className="text-red-500">*</span></Label>
                       <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2">
-                        {(['fromTime', 'toTime']).map((key, i) => (
-                          <Fragment key={key}>
-                            {i === 1 && (
-                              <span className="text-sm text-gray-500 text-center sm:text-left">to</span>
-                            )}
-                            <div className="relative flex-1 min-w-0">
-                              <Input
-                                type="time"
-                                value={call[key]}
-                                onChange={e => handleCallChange(call.id, key, e.target.value)}
-                                step="900"
-                                className="pl-8 h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none
-                                  dark:bg-gray-800 dark:text-white dark:border-gray-600"
-                                disabled={submitting}
-                              />
-                              <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
-                            </div>
-                          </Fragment>
-                        ))}
+                        <div className="relative flex-1 min-w-0">
+                          <Input
+                            type="time"
+                            value={call.fromTime}
+                            onChange={e => handleCallChange(call.id, 'fromTime', e.target.value)}
+                            step="900"
+                            className="pl-8 h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none
+                              dark:bg-gray-800 dark:text-white dark:border-gray-600"
+                            disabled={submitting}
+                          />
+                          <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                        </div>
+                        <span className="text-sm text-gray-500 text-center sm:text-left">to</span>
+                        <div className="relative flex-1 min-w-0">
+                          <Input
+                            type="time"
+                            value={call.toTime}
+                            onChange={e => handleCallChange(call.id, 'toTime', e.target.value)}
+                            step="900"
+                            className="pl-8 h-9 text-sm w-full min-w-0 max-w-full truncate bg-white text-gray-900 border-gray-300 appearance-none
+                              dark:bg-gray-800 dark:text-white dark:border-gray-600"
+                            disabled={submitting}
+                          />
+                          <Clock className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -531,7 +555,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                   variant="outline"
                   onClick={() => {
                     setFormData(DEFAULT_FORM);
-                    setSupportCalls([newCall()]);
+                    resetCalls();
                     setAttachments([]);
                     setErrors({});
                   }}

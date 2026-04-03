@@ -72,7 +72,7 @@ export default function MyClientsTable({
                   <th
                     key={column.key}
                     aria-sort={ariaSort}
-                    className={`relative py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap ${alignClass} ${paddingClass} border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden`}
+                    className={`sticky top-0 z-10 bg-white dark:bg-gray-900 py-3 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider whitespace-nowrap ${alignClass} ${paddingClass} border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden`}
                   >
                     <button
                       type="button"

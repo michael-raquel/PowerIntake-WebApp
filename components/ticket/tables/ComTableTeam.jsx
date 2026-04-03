@@ -180,7 +180,7 @@ export default function ComTableTeam({
         const s = searchValue.toLowerCase().trim();
         return (
           (!s ||
-            t.v_title?.toLowerCase().includes(s) ||
+            t.v_username?.toLowerCase().includes(s) ||
             t.v_ticketnumber?.toLowerCase().includes(s) ||
             t.v_ticketcategory?.toLowerCase().includes(s)) &&
           matchesFilter(filters.Source,   t.v_source,         'Source') &&
