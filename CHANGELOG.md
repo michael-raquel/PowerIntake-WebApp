@@ -1,3 +1,10 @@
+# [1.5.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.0-dev.2...v1.5.0-dev.3) (2026-04-03)
+
+
+### Bug Fixes
+
+* Refactor ticket creation; update table labels ([45387c1](https://github.com/michael-raquel/PowerIntake-WebApp/commit/45387c1276e277760521c48a1de6cb1193bfd473))
+
 # [1.5.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.0-dev.1...v1.5.0-dev.2) (2026-04-03)
 
 
