@@ -13,10 +13,9 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
+import { useCreateTicket } from "@/hooks/UseCreateTicket";
 import { toast } from "sonner";
 import useUploadImage from '@/hooks/UseUploadImage';
-import { useMsal } from "@azure/msal-react";
-import { apiRequest } from "@/lib/msalConfig";
 
 const LOCATIONS = ['Remote', 'Hybrid', 'Office'];
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
@@ -204,10 +203,10 @@ function UserInfoPanel({ profile, profileLoading }) {
 }
 
 export default function ComCreateTicket({ onClose, onTicketCreated }) {
-  const { account, tokenInfo } = useAuth();
-  const { instance, accounts } = useMsal();
+  const { account } = useAuth();
   const { profile, loading: profileLoading } = useFetchUserProfile(account?.localAccountId);
   const { uploadImage } = useUploadImage();
+  const { createTicket } = useCreateTicket({ account, onSuccess: onTicketCreated });
 
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const { supportCalls, handleCallChange, addCall, removeCall, resetCalls } = useSupportCalls();
@@ -217,12 +216,6 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
-
-  const getAccessToken = async () => {
-    if (!accounts?.[0]) return null;
-    const token = await instance.acquireTokenSilent({ ...apiRequest, account: accounts[0] });
-    return token?.accessToken ?? null;
-  };
 
   const handleInputChange = ({ target: { name, value } }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -278,37 +271,19 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
         })
       );
 
-      const accessToken = await getAccessToken();
       const primaryCall = supportCalls[0];
       const callTimezone = primaryCall?.timezone ?? detectedTimezone;
       const callLocation = primaryCall?.location ?? 'Remote';
 
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tickets`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-        },
-        body: JSON.stringify({
-          entrauserid: tokenInfo?.account?.localAccountId,
-          entratenantid: tokenInfo?.account?.tenantId,
-          title: formData.title,
-          description: formData.description,
-          usertimezone: callTimezone,
-          officelocation: callLocation.toLowerCase(),
-          date: supportCalls.map(c => format(c.date, 'yyyy-MM-dd')),
-          starttime: supportCalls.map(c => c.fromTime),
-          endtime: supportCalls.map(c => c.toTime),
-          attachments: uploadedAttachments.map(a => a.url),
-          createdby: tokenInfo?.account?.localAccountId,
-        }),
+      await createTicket({
+        formData,
+        supportCalls,
+        attachments: uploadedAttachments,
+        timezone: callTimezone,
+        location: callLocation,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to submit ticket');
-
       toast.success('Ticket submitted successfully!');
-      onTicketCreated?.(data.ticketuuid);
       onClose?.();
 
     } catch (err) {

@@ -83,12 +83,12 @@ const COLUMNS = [
     render: (t) => t.v_target ? new Date(t.v_target).toLocaleString() : '—',
   },
    {
-    key: 'status', label: 'Auto Task Status', defaultWidth: 130, minWidth: 90,
+    key: 'status', label: 'Ticket Status', defaultWidth: 130, minWidth: 90,
     sortValue: (t) => t.v_status ?? '',
     render: (t) => t.v_status || '—',
   },
    {
-    key: 'ticketstatus', label: 'Ticket Status', defaultWidth: 130, minWidth: 90,
+    key: 'ticketstatus', label: 'Status', defaultWidth: 130, minWidth: 90,
     sortValue: (t) => t.v_ticketstatus ?? '',
     render: (t) => t.v_ticketstatus || '—',
   },
