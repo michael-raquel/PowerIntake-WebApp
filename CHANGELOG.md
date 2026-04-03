@@ -1,3 +1,10 @@
+## [1.5.1-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.1-dev.1...v1.5.1-dev.2) (2026-04-03)
+
+
+### Bug Fixes
+
+* manifest ([5e6ba0f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5e6ba0fe4a62d4b5aa0c3e5069012cdc6d466a75))
+
 ## [1.5.1-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.0...v1.5.1-dev.1) (2026-04-03)
 
 
