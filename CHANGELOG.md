@@ -1,3 +1,10 @@
+# [1.4.0-dev.54](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.53...v1.4.0-dev.54) (2026-04-03)
+
+
+### Bug Fixes
+
+* ST-ticket change column status - auto task status and add tickets tatus column ([3e05119](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3e05119fc177bf4ecea199aa6542e6f21ecd3db3))
+
 # [1.4.0-dev.53](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.52...v1.4.0-dev.53) (2026-04-02)
 
 
