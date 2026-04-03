@@ -20,9 +20,8 @@ const DEFAULT_FORM = {
   entratenantid: "",
   tenantemail: "",
   dynamicsaccountid: "",
-  superadmingroupid: "",
   admingroupid: "",
-  companyallgroupid: "",
+  usergroupid: "",
 };
 
 const USER_FIELDS = [
@@ -44,10 +43,14 @@ function UserInfoPanel({ profile, profileLoading }) {
             </div>
           ))
         : USER_FIELDS.map(([label, key, transform, span]) => {
-            const value = transform ? transform(profile?.[key]) : profile?.[key];
+            const value = transform
+              ? transform(profile?.[key])
+              : profile?.[key];
             return (
               <div key={label} className={span}>
-                <p className="text-xs font-medium text-gray-500 uppercase">{label}</p>
+                <p className="text-xs font-medium text-gray-500 uppercase">
+                  {label}
+                </p>
                 <p className="text-sm text-gray-900 dark:text-white mt-1 break-all">
                   {value ?? "-"}
                 </p>
@@ -85,7 +88,10 @@ export default function ComCreateTenant({ onClose, onTenantCreated }) {
       nextErrors.entratenantid = "Entra tenant ID must be a valid UUID.";
     }
 
-    if (formData.tenantemail.trim() && !EMAIL_REGEX.test(formData.tenantemail.trim())) {
+    if (
+      formData.tenantemail.trim() &&
+      !EMAIL_REGEX.test(formData.tenantemail.trim())
+    ) {
       nextErrors.tenantemail = "Enter a valid tenant email address.";
     }
 
@@ -118,9 +124,8 @@ export default function ComCreateTenant({ onClose, onTenantCreated }) {
         tenantemail: formData.tenantemail.trim() || null,
         createdby: account?.localAccountId ?? null,
         dynamicsaccountid: formData.dynamicsaccountid.trim() || null,
-        superadmingroupid: formData.superadmingroupid.trim() || null,
         admingroupid: formData.admingroupid.trim() || null,
-        companyallgroupid: formData.companyallgroupid.trim() || null,
+        usergroupid: formData.usergroupid.trim() || null,
       });
 
       toast.success("Tenant created successfully.");
@@ -267,13 +272,12 @@ export default function ComCreateTenant({ onClose, onTenantCreated }) {
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
                     <div className="space-y-2 md:col-span-2">
                       <Label
                         htmlFor="dynamicsaccountid"
                         className="text-xs mb-1 block"
                       >
-                      Dynamics Account ID
+                        Dynamics Account ID
                       </Label>
                       <Input
                         id="dynamicsaccountid"
@@ -286,22 +290,11 @@ export default function ComCreateTenant({ onClose, onTenantCreated }) {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="superadmingroupid" className="text-xs mb-1 block">
-                      Super Admin Group ID
-                      </Label>
-                      <Input
-                        id="superadmingroupid"
-                        name="superadmingroupid"
-                        value={formData.superadmingroupid}
-                        onChange={handleChange}
-                        placeholder="superadmin-group-id-value"
-                        disabled={isBusy}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="admingroupid" className="text-xs mb-1 block">
-                      Admin Group ID
+                      <Label
+                        htmlFor="admingroupid"
+                        className="text-xs mb-1 block"
+                      >
+                        Admin Group ID
                       </Label>
                       <Input
                         id="admingroupid"
@@ -313,16 +306,19 @@ export default function ComCreateTenant({ onClose, onTenantCreated }) {
                       />
                     </div>
 
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="companyallgroupid" className="text-xs mb-1 block">
-                      Company All Group ID
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="usergroupid"
+                        className="text-xs mb-1 block"
+                      >
+                        User Group ID
                       </Label>
                       <Input
-                        id="companyallgroupid"
-                        name="companyallgroupid"
-                        value={formData.companyallgroupid}
+                        id="usergroupid"
+                        name="usergroupid"
+                        value={formData.usergroupid}
                         onChange={handleChange}
-                        placeholder="company-all-group-id-value"
+                        placeholder="user-group-id-value"
                         disabled={isBusy}
                       />
                     </div>
@@ -361,7 +357,10 @@ export default function ComCreateTenant({ onClose, onTenantCreated }) {
 
             <div className="block lg:hidden bg-white dark:bg-gray-900 rounded-lg border p-6">
               <h2 className="text-lg font-medium mb-4">User Information</h2>
-              <UserInfoPanel profile={profile} profileLoading={profileLoading} />
+              <UserInfoPanel
+                profile={profile}
+                profileLoading={profileLoading}
+              />
             </div>
           </div>
 

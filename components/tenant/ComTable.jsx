@@ -103,7 +103,7 @@ function CopyButton({ value }) {
     <button
       onClick={handleCopy}
       className="ml-1.5 p-0.5 rounded text-gray-400 hover:text-violet-500 dark:hover:text-violet-400 transition-colors"
-      title="Copy Tenant ID"
+      title="Copy value"
     >
       {copied ? (
         <Check className="w-3.5 h-3.5 text-green-500" />
@@ -115,22 +115,6 @@ function CopyButton({ value }) {
 }
 
 const COLUMNS = [
-  {
-    key: "tenantid",
-    label: "Tenant ID",
-    align: "center",
-    minWidth: 140,
-    defaultWidth: 170,
-    sortValue: (row) => row.tenantid,
-  },
-  {
-    key: "tenantuuid",
-    label: "Tenant UUID",
-    align: "left",
-    minWidth: 250,
-    defaultWidth: 300,
-    sortValue: (row) => row.tenantuuid,
-  },
   {
     key: "entratenantid",
     label: "Entra Tenant ID",
@@ -172,20 +156,12 @@ const COLUMNS = [
     sortValue: (row) => row.admingroupid,
   },
   {
-    key: "superadmingroupid",
-    label: "Super Admin Group ID",
+    key: "usergroupid",
+    label: "User Group ID",
     align: "left",
     minWidth: 250,
     defaultWidth: 300,
-    sortValue: (row) => row.superadmingroupid,
-  },
-  {
-    key: "companyallgroupid",
-    label: "Company All Group ID",
-    align: "left",
-    minWidth: 250,
-    defaultWidth: 300,
-    sortValue: (row) => row.companyallgroupid,
+    sortValue: (row) => row.usergroupid,
   },
   {
     key: "isconsented",
@@ -214,13 +190,10 @@ const COLUMNS = [
 ];
 
 const COPYABLE_COLUMNS = new Set([
-  "tenantid",
-  "tenantuuid",
   "entratenantid",
   "dynamicsaccountid",
   "admingroupid",
-  "superadmingroupid",
-  "companyallgroupid",
+  "usergroupid",
 ]);
 
 export default function ComTable({
@@ -238,8 +211,8 @@ export default function ComTable({
   const { tenants, loading, error } = useFetchTenant({ refreshKey });
   const previousFilteredLengthRef = useRef();
   const [sortConfig, setSortConfig] = useState({
-    key: "tenantid",
-    direction: "asc",
+    key: "createdat",
+    direction: "desc",
   });
   const [columnWidths, setColumnWidths] = useState({});
   const resizeStateRef = useRef(null);
@@ -248,8 +221,6 @@ export default function ComTable({
     () =>
       (tenants || []).map((tenant) => ({
         source: tenant,
-        tenantid: readField(tenant, ["tenantid", "v_tenantid"], "-"),
-        tenantuuid: readField(tenant, ["tenantuuid", "v_tenantuuid"], "-"),
         entratenantid: readField(
           tenant,
           ["entratenantid", "v_entratenantid"],
@@ -278,16 +249,7 @@ export default function ComTable({
           ["admingroupid", "v_admingroupid"],
           "-",
         ),
-        superadmingroupid: readField(
-          tenant,
-          ["superadmingroupid", "v_superadmingroupid"],
-          "-",
-        ),
-        companyallgroupid: readField(
-          tenant,
-          ["companyallgroupid", "v_companyallgroupid"],
-          "-",
-        ),
+        usergroupid: readField(tenant, ["usergroupid", "v_usergroupid"], "-"),
         statusLabel: toStatusLabel(
           readField(tenant, ["v_isactive", "isactive"], null),
         ),
@@ -334,9 +296,11 @@ export default function ComTable({
       if (search) {
         const searchable = [
           row.tenantName,
-          row.tenantId,
           row.entraTenantId,
           row.tenantEmail,
+          row.dynamicsaccountid,
+          row.admingroupid,
+          row.usergroupid,
         ]
           .map((value) => String(value || "").toLowerCase())
           .join(" ");
@@ -358,25 +322,24 @@ export default function ComTable({
   }, [filteredTenants.length, onTotalRecordsChange]);
 
   const paginated = useMemo(() => {
-    const start = (currentPage - 1) * recordsPerPage;
-    const pageRows = filteredTenants.slice(start, start + recordsPerPage);
     const selectedColumn = COLUMNS.find(
       (column) => column.key === sortConfig.key,
     );
     const sorted = selectedColumn
-      ? [...pageRows].sort((a, b) =>
+      ? [...filteredTenants].sort((a, b) =>
           compareSortValues(
             selectedColumn.sortValue(a),
             selectedColumn.sortValue(b),
           ),
         )
-      : [...pageRows];
+      : [...filteredTenants];
 
     if (sortConfig.direction === "desc") {
       sorted.reverse();
     }
 
-    return sorted;
+    const start = (currentPage - 1) * recordsPerPage;
+    return sorted.slice(start, start + recordsPerPage);
   }, [filteredTenants, currentPage, recordsPerPage, sortConfig]);
 
   const handleSort = (key) => {
@@ -439,15 +402,12 @@ export default function ComTable({
   );
 
   const renderCellValue = (row, key) => {
-    if (key === "tenantid") return row.tenantid;
-    if (key === "tenantuuid") return row.tenantuuid;
     if (key === "entratenantid") return row.entratenantid;
     if (key === "tenantname") return row.tenantName;
     if (key === "tenantemail") return row.tenantEmail;
     if (key === "dynamicsaccountid") return row.dynamicsaccountid;
     if (key === "admingroupid") return row.admingroupid;
-    if (key === "superadmingroupid") return row.superadmingroupid;
-    if (key === "companyallgroupid") return row.companyallgroupid;
+    if (key === "usergroupid") return row.usergroupid;
     if (key === "isconsented") return row.consentLabel;
     if (key === "isactive") return row.statusLabel;
     if (key === "createdat") return formatDateTime(row.createdAt);

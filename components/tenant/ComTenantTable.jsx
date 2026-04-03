@@ -1,10 +1,12 @@
 import ComTable from "./ComTable";
 
+const DEFAULT_TAB = "all-tenant";
+
 const TABLES = {
-  "all-tenant": ComTable,
+  [DEFAULT_TAB]: ComTable,
 };
 
 export default function ComTenantTable({ activeTab, ...props }) {
-  const TableComponent = TABLES[activeTab] || ComTable;
+  const TableComponent = TABLES[activeTab] || TABLES[DEFAULT_TAB];
   return <TableComponent {...props} />;
 }

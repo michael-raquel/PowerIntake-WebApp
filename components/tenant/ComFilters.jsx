@@ -93,7 +93,7 @@ export default function ComFilters({
         <Input
           value={searchValue}
           onChange={(e) => onSearch?.(e.target.value)}
-          placeholder="Search tenants..."
+          placeholder="Search name, email, or Entra ID..."
           className="pl-7 sm:pl-9 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 text-xs sm:text-sm h-8 sm:h-10"
         />
       </div>
