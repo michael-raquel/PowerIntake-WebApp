@@ -13,7 +13,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
-import { useCreateTicket } from "@/hooks/UseCreateTicket";
+import { useCreateTicket } from "@/hooks/useCreateTicket";
 import { toast } from "sonner";
 import useUploadImage from '@/hooks/UseUploadImage';
 
