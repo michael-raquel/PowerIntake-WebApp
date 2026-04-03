@@ -1,3 +1,10 @@
+# [1.6.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.2...v1.6.0-dev.3) (2026-04-03)
+
+
+### Bug Fixes
+
+* Admin can now view manage page ([6254014](https://github.com/michael-raquel/PowerIntake-WebApp/commit/625401477dd7e21942f6569448c169b4636dcc05))
+
 # [1.6.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.1...v1.6.0-dev.2) (2026-04-03)
 
 
