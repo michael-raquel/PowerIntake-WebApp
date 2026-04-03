@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
 const FILTER_CONFIG = {
-  'my-client': ['Client', 'Department', 'Source', 'Priority', 'Category', 'Status'],
-  'my-company': ['Department', 'Source', 'Priority', 'Category', 'Status'],
-  'my-team': ['Source', 'Priority', 'Category', 'Status'],
-  'my-ticket': ['Source', 'Priority', 'Category', 'Status'],
+  'my-client': ['Client', 'Department', 'Source', 'Priority', 'Category', 'Ticket Status', 'Status'],
+  'my-company': ['Department', 'Source', 'Priority', 'Category', 'Ticket Status', 'Status'],
+  'my-team': ['Source', 'Priority', 'Category', 'Ticket Status', 'Status'],
+  'my-ticket': ['Source', 'Priority', 'Category', 'Ticket Status', 'Status'],
 };
 
 const TEXT_INPUT_FILTERS = new Set(['Client', 'Manager']);
@@ -96,8 +96,9 @@ export default function ComFilters({
           value={searchValue}
           onChange={(e) => onSearch?.(e.target.value)}
           placeholder="Search..."
-          className="pl-7 sm:pl-9 pr-8 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 text-xs sm:text-sm h-8 sm:h-10"
+          className="pl-7 sm:pl-9 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 text-xs sm:text-sm h-8 sm:h-10"
         />
+
         {searchValue && (
           <button
             onClick={() => onSearch?.("")}
@@ -122,7 +123,7 @@ export default function ComFilters({
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent className="w-64 p-3 dark:bg-gray-900 dark:border-gray-800 max-h-[min(80vh,600px)] overflow-y-auto z-[29]" align="end" sideOffset={5} avoidCollisions={false}>
+          <PopoverContent className="w-64 p-3 dark:bg-gray-900 dark:border-gray-800 max-h-[min(84vh,630px)] overflow-y-auto z-[29]" align="end" sideOffset={5} avoidCollisions={false}>
             <div className="space-y-3">
               <div className="flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 pb-1 z-[29]">
                 <h4 className="font-medium text-sm dark:text-gray-200">Filter by</h4>

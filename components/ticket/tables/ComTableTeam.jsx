@@ -24,8 +24,8 @@ const FIELD_LABELS = {
   Source:   { key: 'v_source',         label: 'Source'   },
   Priority: { key: 'v_priority',       label: 'Priority' },
   Category: { key: 'v_ticketcategory', label: 'Category' },
-  Status:   { key: 'v_status',         label: 'Status'   },
-  TicketStatus: { key: 'v_ticketstatus', label: 'Ticket Status' },
+  'Ticket Status': { key: 'v_status',         label: 'Ticket Status' },
+  Status:          { key: 'v_ticketstatus', label: 'Status' },
 };
 
 const getPriorityClass = (p) => {
@@ -203,7 +203,8 @@ export default function ComTableTeam({
           matchesFilter(filters.Source,   t.v_source,         'Source') &&
           matchesFilter(filters.Priority, t.v_priority,       'Priority') &&
           matchesFilter(filters.Category, t.v_ticketcategory, 'Category') &&
-          matchesFilter(filters.Status,   t.v_status,         'Status') &&
+          matchesFilter(filters['Ticket Status'], t.v_status,         'Ticket Status') &&
+          matchesFilter(filters.Status,           t.v_ticketstatus,   'Status') &&
           (!hideCompleted ||
             (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved'))
         );
