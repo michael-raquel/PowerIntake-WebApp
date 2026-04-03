@@ -1,3 +1,10 @@
+# [1.4.0-dev.55](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.54...v1.4.0-dev.55) (2026-04-03)
+
+
+### Bug Fixes
+
+* ST-ticket reactivating a ticket will reflect the change on the ui automatically ([d2fcd74](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d2fcd74abbf980e35f21f5c43e54a5896acade63))
+
 # [1.4.0-dev.54](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.4.0-dev.53...v1.4.0-dev.54) (2026-04-03)
 
 
