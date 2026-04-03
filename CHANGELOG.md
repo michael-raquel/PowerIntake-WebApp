@@ -1,3 +1,10 @@
+# [1.6.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.5...v1.6.0-dev.6) (2026-04-03)
+
+
+### Bug Fixes
+
+* bugs of update tenant ([4a5ec05](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4a5ec055a7c9b6b20edcc4ebab2ea3efd8077344))
+
 # [1.6.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.4...v1.6.0-dev.5) (2026-04-03)
 
 
