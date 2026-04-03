@@ -1,3 +1,10 @@
+## [1.5.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.3...v1.5.4) (2026-04-03)
+
+
+### Bug Fixes
+
+* better Tenant ([3631ee1](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3631ee10798d6e76a203447f529f3156f0c96bad))
+
 ## [1.5.4-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.3...v1.5.4-dev.1) (2026-04-03)
 
 
