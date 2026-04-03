@@ -96,8 +96,16 @@ export default function ComFilters({
           value={searchValue}
           onChange={(e) => onSearch?.(e.target.value)}
           placeholder="Search..."
-          className="pl-7 sm:pl-9 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 text-xs sm:text-sm h-8 sm:h-10"
+          className="pl-7 sm:pl-9 pr-8 w-full dark:bg-gray-900 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500 text-xs sm:text-sm h-8 sm:h-10"
         />
+        {searchValue && (
+          <button
+            onClick={() => onSearch?.("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
 
       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
