@@ -1,3 +1,10 @@
+# [1.6.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.3...v1.6.0-dev.4) (2026-04-03)
+
+
+### Features
+
+* Switch to Omnichannel live chat script ([af968a7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/af968a7cbcf2a5b8f0dca97492476d7bea8b09c0))
+
 # [1.6.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.2...v1.6.0-dev.3) (2026-04-03)
 
 
