@@ -18,6 +18,7 @@ const CARD_FIELDS = [
   { key: 'v_createdat',      label: 'Created At' },
   { key: 'v_target',         label: 'Target'     },
   { key: 'v_status',         label: 'Status'     },
+  { key: 'v_ticketstatus',   label: 'Ticket Status' },
 ];
 
 const FIELD_LABELS = {
@@ -27,6 +28,7 @@ const FIELD_LABELS = {
   Priority:   { key: 'v_priority',       label: 'Priority'   },
   Category:   { key: 'v_ticketcategory', label: 'Category'   },
   Status:     { key: 'v_status',         label: 'Status'     },
+  TicketStatus: { key: 'v_ticketstatus', label: 'Ticket Status' },
 };
 
 const getPriorityClass = (p) => {
@@ -94,9 +96,14 @@ const COLUMNS = [
     render: (t) => t.v_target ? new Date(t.v_target).toLocaleString() : '—',
   },
   {
-    key: 'status', label: 'Status', defaultWidth: 130, minWidth: 90,
+    key: 'status', label: 'Auto Task Status', defaultWidth: 130, minWidth: 90,
     sortValue: (t) => t.v_status ?? '',
     render: (t) => t.v_status || '—',
+  },
+   {
+    key: 'ticketstatus', label: 'Ticket Status', defaultWidth: 130, minWidth: 90,
+    sortValue: (t) => t.v_ticketstatus ?? '',
+    render: (t) => t.v_ticketstatus || '—',
   },
   {
     key: 'technician', label: 'Technician', defaultWidth: 140, minWidth: 100,
