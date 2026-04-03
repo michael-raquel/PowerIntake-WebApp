@@ -1,3 +1,10 @@
+# [1.6.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.4-dev.1...v1.6.0-dev.1) (2026-04-03)
+
+
+### Features
+
+* Admin Manage Page Missing ([32b6f48](https://github.com/michael-raquel/PowerIntake-WebApp/commit/32b6f4862d42c0497a814e825a3981e03e550b35))
+
 ## [1.5.4-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.3...v1.5.4-dev.1) (2026-04-03)
 
 
