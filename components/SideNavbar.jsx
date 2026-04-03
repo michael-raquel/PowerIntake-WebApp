@@ -5,6 +5,7 @@ import {
   Ticket,
   LifeBuoy,
   Users,
+  Building2,
   Settings,
   Sun,
   Moon,
@@ -56,7 +57,9 @@ export default function SideNavbar() {
     return "user";
   }, [account]);
 
-  const isPrivileged = ["manager", "system-admin", "super-admin"].includes(currentRole);
+  const isPrivileged = ["manager", "system-admin", "super-admin"].includes(
+    currentRole,
+  );
 
   const menuItems = useMemo(() => {
     const items = [
@@ -64,10 +67,13 @@ export default function SideNavbar() {
       { icon: Ticket, label: "Ticket", path: "/ticket" },
       { icon: LifeBuoy, label: "Support", path: "/support" },
     ];
-    if (isPrivileged) items.push({ icon: Users, label: "Manage", path: "/manage" });
+    if (isPrivileged)
+      items.push({ icon: Users, label: "Manage", path: "/manage" });
+    if (currentRole === "super-admin")
+      items.push({ icon: Building2, label: "Tenant", path: "/tenant" });
     items.push({ icon: Settings, label: "Settings", path: "/settings" });
     return items;
-  }, [isPrivileged]);
+  }, [currentRole, isPrivileged]);
 
   const initials = useMemo(
     () =>
@@ -77,7 +83,7 @@ export default function SideNavbar() {
         .join("")
         .toUpperCase()
         .slice(0, 2) ?? "U",
-    [account]
+    [account],
   );
 
   const handleNavigate = useCallback(
@@ -85,7 +91,7 @@ export default function SideNavbar() {
       router.push(path);
       setShowLogout(false);
     },
-    [router]
+    [router],
   );
 
   const handleLogout = useCallback(() => {
@@ -99,9 +105,16 @@ export default function SideNavbar() {
         <div className="fixed top-0 left-0 right-0 h-14 bg-white dark:bg-[#111] border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between px-4 z-30">
           <div className="flex items-center gap-2">
             <div className="relative w-6 h-6">
-              <Image src="/icons/powerintakelogo.png" alt="Logo" fill className="object-contain" />
+              <Image
+                src="/icons/powerintakelogo.png"
+                alt="Logo"
+                fill
+                className="object-contain"
+              />
             </div>
-            <span className="font-semibold text-gray-900 dark:text-white">Power Intake</span>
+            <span className="font-semibold text-gray-900 dark:text-white">
+              Power Intake
+            </span>
           </div>
 
           <div className="flex items-center gap-3">
@@ -116,9 +129,11 @@ export default function SideNavbar() {
                   isDarkMode ? "translate-x-[22px]" : "translate-x-[2px]"
                 }`}
               >
-                {isDarkMode
-                  ? <Moon className="w-3 h-3 text-indigo-500" />
-                  : <Sun className="w-3 h-3 text-yellow-500" />}
+                {isDarkMode ? (
+                  <Moon className="w-3 h-3 text-indigo-500" />
+                ) : (
+                  <Sun className="w-3 h-3 text-yellow-500" />
+                )}
               </span>
             </button>
 
@@ -132,14 +147,21 @@ export default function SideNavbar() {
 
               {showLogout && (
                 <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowLogout(false)} />
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowLogout(false)}
+                  />
                   <div
                     className="absolute right-0 top-10 w-56 bg-white dark:bg-[#242526] border border-gray-100 dark:border-white/[0.08] rounded-2xl z-50 overflow-hidden"
                     style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.10)" }}
                   >
                     <div className="px-4 pt-4 pb-3 border-b border-gray-100 dark:border-white/[0.06]">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">{account?.name}</p>
-                      <p className="text-xs text-gray-400 truncate mt-0.5">{account?.username}</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
+                        {account?.name}
+                      </p>
+                      <p className="text-xs text-gray-400 truncate mt-0.5">
+                        {account?.username}
+                      </p>
                     </div>
                     <button
                       onClick={handleLogout}
@@ -197,7 +219,12 @@ export default function SideNavbar() {
           {isCollapsed ? (
             <div className="flex items-center justify-center w-full gap-1.5">
               <div className="relative w-6 h-6 flex-shrink-0">
-                <Image src="/icons/powerintakelogo.png" alt="Logo" fill className="object-contain" />
+                <Image
+                  src="/icons/powerintakelogo.png"
+                  alt="Logo"
+                  fill
+                  className="object-contain"
+                />
               </div>
               <button
                 onClick={() => setIsCollapsed(false)}
@@ -211,7 +238,12 @@ export default function SideNavbar() {
             <>
               <div className="flex items-center flex-1 min-w-0">
                 <div className="relative w-6 h-6 flex-shrink-0">
-                  <Image src="/icons/powerintakelogo.png" alt="Logo" fill className="object-contain" />
+                  <Image
+                    src="/icons/powerintakelogo.png"
+                    alt="Logo"
+                    fill
+                    className="object-contain"
+                  />
                 </div>
                 <span className="ml-3 font-semibold text-gray-900 dark:text-white truncate">
                   Power Intake
@@ -245,8 +277,14 @@ export default function SideNavbar() {
                         : "text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04]"
                     }`}
                   >
-                    <Icon className={`w-5 h-5 flex-shrink-0 ${!isCollapsed ? "mr-3" : ""}`} />
-                    {!isCollapsed && <span className="text-sm font-medium truncate">{label}</span>}
+                    <Icon
+                      className={`w-5 h-5 flex-shrink-0 ${!isCollapsed ? "mr-3" : ""}`}
+                    />
+                    {!isCollapsed && (
+                      <span className="text-sm font-medium truncate">
+                        {label}
+                      </span>
+                    )}
                   </button>
                 </li>
               );
@@ -255,7 +293,9 @@ export default function SideNavbar() {
         </nav>
 
         <div className="border-t border-gray-100 dark:border-white/[0.06] p-3 space-y-2">
-          <div className={`flex items-center px-3 py-2.5 rounded-lg overflow-hidden ${isCollapsed ? "justify-center" : "gap-3"}`}>
+          <div
+            className={`flex items-center px-3 py-2.5 rounded-lg overflow-hidden ${isCollapsed ? "justify-center" : "gap-3"}`}
+          >
             <button
               onClick={toggleTheme}
               aria-label="Toggle theme"
@@ -267,9 +307,11 @@ export default function SideNavbar() {
                   isDarkMode ? "translate-x-[22px]" : "translate-x-[2px]"
                 }`}
               >
-                {isDarkMode
-                  ? <Moon className="w-3 h-3 text-indigo-500" />
-                  : <Sun className="w-3 h-3 text-yellow-500" />}
+                {isDarkMode ? (
+                  <Moon className="w-3 h-3 text-indigo-500" />
+                ) : (
+                  <Sun className="w-3 h-3 text-yellow-500" />
+                )}
               </span>
             </button>
 
@@ -278,7 +320,9 @@ export default function SideNavbar() {
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300 leading-tight">
                   {isDarkMode ? "Light mode" : "Dark mode"}
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">Switch appearance</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  Switch appearance
+                </p>
               </div>
             )}
           </div>
@@ -296,15 +340,22 @@ export default function SideNavbar() {
               </div>
               {!isCollapsed && (
                 <div className="flex-1 text-left min-w-0">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">{account?.name}</p>
-                  <p className="text-xs text-gray-400 truncate">{account?.username}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {account?.name}
+                  </p>
+                  <p className="text-xs text-gray-400 truncate">
+                    {account?.username}
+                  </p>
                 </div>
               )}
             </button>
 
             {showLogout && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setShowLogout(false)} />
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowLogout(false)}
+                />
                 <div
                   className={`absolute bg-white dark:bg-[#242526] border border-gray-100 dark:border-white/[0.08] rounded-2xl z-50 overflow-hidden ${
                     isCollapsed
@@ -329,7 +380,9 @@ export default function SideNavbar() {
         </div>
       </aside>
 
-      <div className={`flex-shrink-0 transition-[width] duration-300 ease-in-out ${sidebarWidth}`} />
+      <div
+        className={`flex-shrink-0 transition-[width] duration-300 ease-in-out ${sidebarWidth}`}
+      />
     </>
   );
 }
