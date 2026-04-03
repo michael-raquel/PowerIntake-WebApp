@@ -1,3 +1,10 @@
+# [1.6.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.1...v1.6.0-dev.2) (2026-04-03)
+
+
+### Bug Fixes
+
+* comcard adjust ([ae9881e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ae9881e67bccdc6e804d8a8e4167fd08da7f18e6))
+
 # [1.6.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.4-dev.1...v1.6.0-dev.1) (2026-04-03)
 
 
