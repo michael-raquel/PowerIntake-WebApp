@@ -1,5 +1,4 @@
-
-name: Azure Static Web Apps CI/CD
+name: Azure Static Web Apps CI/CD (MAIN)
 
 on:
   workflow_run:
@@ -14,6 +13,7 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     name: Build and Deploy Job
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -21,7 +21,7 @@ jobs:
           lfs: false
           fetch-depth: 0
 
-      # 1️⃣ Resolve version and date — git describe picks up v1.1.2 prod tag
+      # 1️⃣ Resolve version and date — production tag
       - name: Set version and date env vars
         run: |
           git fetch --tags
@@ -29,7 +29,7 @@ jobs:
           echo "NEXT_PUBLIC_APP_VERSION=${VERSION}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
 
-      # 2️⃣ Write .env.production so Next.js picks it up during internal build
+      # 2️⃣ Write .env.production for Next.js build
       - name: Write .env.production
         run: |
           echo "NEXT_PUBLIC_APP_VERSION=${{ env.NEXT_PUBLIC_APP_VERSION }}" >> .env.production
@@ -37,6 +37,11 @@ jobs:
           echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" >> .env.production
           echo "NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID }}" >> .env.production
 
+          # ✅ PRODUCTION values (no _DEV)
+          echo "NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}" >> .env.production
+          echo "NEXT_PUBLIC_AZURE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_AZURE_CLIENT_ID }}" >> .env.production
+
+      # 3️⃣ Build & Deploy
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -48,17 +53,23 @@ jobs:
           api_location: ""
           output_location: "out"
           production_branch: "main"
-        # 3️⃣ Safety net — passed to the action's own process as well
+
+        # 4️⃣ Safety net envs
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
           NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID }}
           NEXT_PUBLIC_APP_VERSION: ${{ env.NEXT_PUBLIC_APP_VERSION }}
           NEXT_PUBLIC_APP_RELEASE_DATE: ${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}
 
+          # ✅ PRODUCTION values
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_AZURE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_AZURE_CLIENT_ID }}
+
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
     name: Close Pull Request Job
+
     steps:
       - name: Close Pull Request
         id: closepullrequest
