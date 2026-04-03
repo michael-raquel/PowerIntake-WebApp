@@ -1,3 +1,10 @@
+# [1.6.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.4...v1.6.0-dev.5) (2026-04-03)
+
+
+### Bug Fixes
+
+* add tenant PUT ([20b6be3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/20b6be3e1bb32b044b8e0d3718efd1dee96adc3f))
+
 # [1.6.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.3...v1.6.0-dev.4) (2026-04-03)
 
 
