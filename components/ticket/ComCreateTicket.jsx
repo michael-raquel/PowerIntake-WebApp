@@ -300,7 +300,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
           starttime: supportCalls.map(c => c.fromTime),
           endtime: supportCalls.map(c => c.toTime),
           attachments: uploadedAttachments.map(a => a.url),
-          createdby: tokenInfo?.account?.name,
+          createdby: tokenInfo?.account?.localAccountId,
         }),
       });
 
