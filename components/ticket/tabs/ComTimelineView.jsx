@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Clock, XCircle, User, UserCog } from 'lucide-react';
+import { CheckCircle2, Clock, XCircle, User, UserCog, RefreshCw } from 'lucide-react';
 import { useEffect } from 'react';
 import { useFetchTimeline } from '@/hooks/UseFetchTicketTechnician';
 import socket from "@/lib/socket";
@@ -21,6 +21,12 @@ const STATUS_STYLES = {
   'Cancelled':            { icon: XCircle,      color: 'text-rose-600 dark:text-rose-400',       bg: 'bg-rose-50 dark:bg-rose-950/30',         border: 'border-rose-200 dark:border-rose-800/50' },
   'Technician Rejected':  { icon: XCircle,      color: 'text-rose-600 dark:text-rose-400',       bg: 'bg-rose-50 dark:bg-rose-950/30',         border: 'border-rose-200 dark:border-rose-800/50' },
   'Merged':               { icon: XCircle,      color: 'text-rose-600 dark:text-rose-400',       bg: 'bg-rose-50 dark:bg-rose-950/30',         border: 'border-rose-200 dark:border-rose-800/50' },
+  'Reactivated': { 
+    icon: RefreshCw, 
+    color: 'text-amber-600 dark:text-amber-400', 
+    bg: 'bg-amber-50 dark:bg-amber-950/30', 
+    border: 'border-amber-200 dark:border-amber-800/50' 
+},
 };
 
 const defaultStyle = {
@@ -79,8 +85,18 @@ export default function ComTimelineView({ ticket }) {
         const style   = STATUS_STYLES[s.v_status] || defaultStyle;
         const Icon    = style.icon;
         const isLast  = idx === timeline.length - 1;
-        const isNew   = s.v_status === 'New';
-        const person  = isNew ? ticket?.v_username : (s.v_technicianname ?? null);
+        const isNew = s.v_status === 'New';
+        const isReactivated = s.v_status === 'Reactivated';
+
+        const person = isNew 
+            ? ticket?.v_username 
+            : (s.v_technicianname ?? null);
+
+        const personLabel = isNew 
+            ? 'Created by' 
+            : isReactivated 
+                ? 'Reactivated by'
+                : 'Technician';
 
         return (
           <div key={s.v_ticketstatusid} className="relative flex gap-4 pb-8 last:pb-0">
@@ -114,21 +130,23 @@ export default function ComTimelineView({ ticket }) {
                   </div>
                 </div>
 
-                {person && (
+               {person && (
                   <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                    {isNew ? (
-                      <User className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-                    ) : (
-                      <UserCog className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-                    )}
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {isNew ? 'Created by' : 'Technician'}:
-                    </span>
-                    <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                      {person}
-                    </span>
+                      {isNew ? (
+                          <User className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                      ) : isReactivated ? (
+                          <RefreshCw className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+                      ) : (
+                          <UserCog className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                      )}
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {personLabel}:
+                      </span>
+                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                          {person}
+                      </span>
                   </div>
-                )}
+              )}
               </div>
             </div>
           </div>

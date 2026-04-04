@@ -270,11 +270,11 @@ const handleReactivate = async () => {
     if (!ticket.v_ticketuuid || !canReactivate) return;
 
     try {
-        await reactivateTicket({ ticketuuid: ticket.v_ticketuuid });
+        await reactivateTicket({ ticketuuid: ticket.v_ticketuuid, createdby: account?.localAccountId });
         toast.success("Ticket Reactivated", {
-            description: `Ticket #${liveTicket.v_ticketnumber} has been reactivated successfully`
+            description: `Ticket ${liveTicket.v_ticketnumber} has been reactivated successfully`
         });
-        onUpdated?.(ticket.v_ticketuuid); 
+        onUpdated?.(ticket.v_ticketuuid ); 
         onClose?.();
     } catch (error) {
         toast.error("Reactivation Failed", {
@@ -282,22 +282,6 @@ const handleReactivate = async () => {
         });
     }
 };
-
-
-  //   useEffect(() => {
-  //     const handleReactivated = ({ ticketuuid, ticket: updated }) => {
-  //         if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
-  //         if (updated) setLiveTicket(updated);
-  //         toast.success("Ticket Reactivated", {
-  //             description: `Ticket #${updated?.v_ticketnumber ?? liveTicket.v_ticketnumber} is now active`
-  //         });
-  //         onUpdated?.(ticketuuid);
-  //         onClose?.();             
-  //     };
-
-  //     socket.on("ticket:reactivated", handleReactivated);
-  //     return () => socket.off("ticket:reactivated", handleReactivated);
-  // }, [ticket?.v_ticketuuid, liveTicket.v_ticketnumber, onUpdated, onClose]);
 
   useEffect(() => {
     const handleNoteSynced = ({ ticketuuid }) => {

@@ -16,7 +16,7 @@ export function useReactivateTicket() {
     return token?.accessToken ?? null;
   }, [accounts, instance]);
 
-  const reactivateTicket = useCallback(async ({ ticketuuid }) => {
+  const reactivateTicket = useCallback(async ({ ticketuuid, createdby  }) => {
     setLoading(true);
     setError(null);
     try {
@@ -27,7 +27,7 @@ export function useReactivateTicket() {
           "Content-Type": "application/json",
           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: JSON.stringify({ ticketuuid }),
+        body: JSON.stringify({ ticketuuid, createdby }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to reactivate ticket");
