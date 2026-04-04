@@ -33,29 +33,32 @@ export default function Checking() {
         const data = await res.json();
         const claims = JSON.parse(atob(tokenRes.accessToken.split(".")[1]));
         const tid = claims?.tid;
+        const consented = data?.consented === true;
+        const isactive = data?.isactive === true;
+        const isapproved = data?.isapproved === true;
 
         console.log("[CHECKING]", data);
 
-        if (data.tenantExists && data.consented && !data.isactive) {
+        if (!isapproved) {
+          setStatus("Your organization is not registered...");
+          router.replace("/no-consent?reason=not-registered");
+          return;
+        }
+
+        if (consented && !isactive) {
           setStatus("Your organization has been deactivated...");
           router.replace("/no-consent?reason=deactivated");
           return;
         }
 
-        if (data.tenantExists && data.consented) {
+        if (consented) {
           setStatus("Access granted. Redirecting...");
           sessionStorage.setItem("consent_verified", "1");
           router.replace("/home");
           return;
         }
 
-        if (!data.tenantExists) {
-          setStatus("Your organization is not registered...");
-          router.replace("/no-consent?reason=not-registered");
-          return;
-        }
-
-        if (data.tenantExists && !data.consented) {
+        if (!consented) {
           if (isGlobalAdmin) {
             setStatus("Redirecting to Microsoft for approval...");
 
