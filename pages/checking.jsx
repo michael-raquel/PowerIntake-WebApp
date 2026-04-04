@@ -1,38 +1,20 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
-import { InteractionStatus } from "@azure/msal-browser";
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { useAuth } from "@/context/AuthContext";
-import { apiRequest, loginRequest } from "@/lib/msalConfig";
-
-const PENDING_MS_CONSENT_KEY = "pending_ms_consent_query";
-const MS_CONSENT_LOGIN_ATTEMPT_KEY = "ms_consent_login_attempted";
+import { apiRequest } from "@/lib/msalConfig";
 
 export default function Checking() {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts, inProgress } = useMsal();
+  const { instance, accounts } = useMsal();
   const { isGlobalAdmin } = useAuth();
   const router = useRouter();
 
   const [status, setStatus] = useState("Verifying your access...");
 
   useEffect(() => {
-    if (!isAuthenticated && inProgress === InteractionStatus.None) {
-      instance.loginRedirect(loginRequest);
-    }
-  }, [isAuthenticated, inProgress, instance]);
-
-  useEffect(() => {
     if (!isAuthenticated || !accounts?.[0]) return;
-
-    const pendingRedirect = sessionStorage.getItem(PENDING_MS_CONSENT_KEY);
-    if (pendingRedirect) {
-      sessionStorage.removeItem(PENDING_MS_CONSENT_KEY);
-      sessionStorage.removeItem(MS_CONSENT_LOGIN_ATTEMPT_KEY);
-      router.replace(pendingRedirect);
-      return;
-    }
 
     const check = async () => {
       try {
