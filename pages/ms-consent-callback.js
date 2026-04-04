@@ -1,14 +1,17 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { useMsal } from "@azure/msal-react";
+import { apiRequest } from "@/lib/msalConfig";
 
 export default function MsConsentCallback() {
   const router = useRouter();
+  const { instance, accounts } = useMsal();
   const [status, setStatus] = useState("Processing consent...");
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!router.isReady) return;
+    if (!router.isReady || !accounts?.[0]) return;
 
     const { tenant, admin_consent, error: msError } = router.query;
 
@@ -16,7 +19,6 @@ export default function MsConsentCallback() {
 
     const run = async () => {
       try {
-        // ── Guard: if Microsoft returned an error ──────
         if (msError) {
           console.error("[MS-CONSENT-CALLBACK] Microsoft returned error:", msError);
           setError(`Microsoft error: ${msError}`);
@@ -31,6 +33,14 @@ export default function MsConsentCallback() {
           return;
         }
 
+        setStatus("Authenticating...");
+
+        const tokenRes = await instance.acquireTokenSilent({
+          ...apiRequest,
+          account: accounts[0],
+        });
+        const accessToken = tokenRes?.accessToken ?? null;
+
         setStatus("Confirming with server...");
 
         const params = new URLSearchParams();
@@ -40,7 +50,11 @@ export default function MsConsentCallback() {
         const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-callback?${params.toString()}`;
         console.log("[MS-CONSENT-CALLBACK] Fetching:", url);
 
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          headers: {
+            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+          },
+        });
 
         console.log("[MS-CONSENT-CALLBACK] Response status:", res.status);
 
@@ -63,14 +77,14 @@ export default function MsConsentCallback() {
           setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
         }
       } catch (err) {
-        console.error("[MS-CONSENT-CALLBACK] Fetch failed:", err.message);
-        setError(`Network error: ${err.message}`);
+        console.error("[MS-CONSENT-CALLBACK] Failed:", err.message);
+        setError(`Error: ${err.message}`);
         setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
       }
     };
 
     run();
-  }, [router.isReady, router.query]);
+  }, [router.isReady, router.query, accounts, instance]);
 
   return (
     <>
@@ -95,7 +109,6 @@ export default function MsConsentCallback() {
 
         <div className="relative z-10 flex flex-col items-center gap-5">
           {error ? (
-            // ── Error state ──────────────────────────────
             <>
               <div className="h-10 w-10 rounded-full border-2 border-red-500/30 flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -106,7 +119,6 @@ export default function MsConsentCallback() {
               <p className="text-xs text-zinc-600">Redirecting...</p>
             </>
           ) : (
-            // ── Loading state ────────────────────────────
             <>
               <div className="h-10 w-10 rounded-full border-2 border-white/10 border-t-violet-500 animate-spin" />
               <p className="text-sm text-zinc-500">{status}</p>
