@@ -1,3 +1,10 @@
+# [1.6.0-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.6...v1.6.0-dev.7) (2026-04-04)
+
+
+### Bug Fixes
+
+* ST-ticket status has been removed on the UI ([114bdd0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/114bdd087552d1ab17b9405fa99320d20705729a))
+
 # [1.6.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.5...v1.6.0-dev.6) (2026-04-03)
 
 
