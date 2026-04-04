@@ -1,3 +1,10 @@
+# [1.6.0-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.7...v1.6.0-dev.8) (2026-04-04)
+
+
+### Bug Fixes
+
+* updated filter removed the status filter ([ad480b4](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ad480b438fc99c10c6c01b0e20720e902e2f00a8))
+
 # [1.6.0-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.6...v1.6.0-dev.7) (2026-04-04)
 
 

@@ -41,7 +41,7 @@ export default function Checking() {
           router.replace("/no-consent?reason=deactivated");
           return;
         }
-        
+
         if (data.tenantExists && data.consented) {
           setStatus("Access granted. Redirecting...");
           sessionStorage.setItem("consent_verified", "1");
@@ -63,6 +63,7 @@ export default function Checking() {
               `https://login.microsoftonline.com/${tid}/adminconsent`,
               `?client_id=${process.env.NEXT_PUBLIC_AZURE_CLIENT_ID}`,
               `&redirect_uri=${process.env.NEXT_PUBLIC_APP_URL}/ms-consent-callback`,
+              `&prompt=consent`, // ← forces full permission screen
             ].join("");
 
             window.location.href = consentUrl;
