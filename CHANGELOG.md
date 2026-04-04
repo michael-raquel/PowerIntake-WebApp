@@ -1,3 +1,11 @@
+# [1.6.0-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.8...v1.6.0-dev.9) (2026-04-04)
+
+
+### Bug Fixes
+
+* ST-reactivation of a ticket now reflect on the ui the new status automatically ([e7cf9c7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e7cf9c7c2dadb4265f2d5518217d7f11c9aa5345))
+* ST-ticket reactivating a ticket will now reflected on ui immediately ([72a63bc](https://github.com/michael-raquel/PowerIntake-WebApp/commit/72a63bc357d2eaf5a3790fad29664bc895f30e4a))
+
 # [1.6.0-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.7...v1.6.0-dev.8) (2026-04-04)
 
 
