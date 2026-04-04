@@ -3,18 +3,42 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { useAuth } from "@/context/AuthContext";
-import { apiRequest } from "@/lib/msalConfig";
+import { apiRequest, loginRequest } from "@/lib/msalConfig";
 
 export default function Checking() {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts } = useMsal();
+  const { instance, accounts, inProgress } = useMsal();
   const { isGlobalAdmin } = useAuth();
   const router = useRouter();
 
   const [status, setStatus] = useState("Verifying your access...");
 
   useEffect(() => {
-    if (!isAuthenticated || !accounts?.[0]) return;
+    if (!isAuthenticated) {
+      if (inProgress !== "none") {
+        setStatus("Restoring authentication session...");
+        return;
+      }
+
+      setStatus("Redirecting to Microsoft login...");
+      instance.loginRedirect(loginRequest);
+      return;
+    }
+
+    if (!accounts?.[0]) {
+      setStatus("Restoring authentication session...");
+      return;
+    }
+
+    const pendingConsentQuery = sessionStorage.getItem(
+      "pending_ms_consent_query",
+    );
+    if (pendingConsentQuery) {
+      sessionStorage.removeItem("pending_ms_consent_query");
+      setStatus("Resuming consent callback...");
+      router.replace(`/ms-consent-callback?${pendingConsentQuery}`);
+      return;
+    }
 
     const check = async () => {
       try {
@@ -81,7 +105,7 @@ export default function Checking() {
     };
 
     check();
-  }, [isAuthenticated, accounts, instance, router, isGlobalAdmin]);
+  }, [isAuthenticated, accounts, instance, router, isGlobalAdmin, inProgress]);
 
   return (
     <>
