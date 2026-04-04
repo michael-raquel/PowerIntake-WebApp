@@ -40,8 +40,8 @@ export default function Checking() {
         console.log("[CHECKING]", data);
 
         if (!isapproved) {
-          setStatus("Your organization is not registered...");
-          router.replace("/no-consent?reason=not-registered");
+          setStatus("Awaiting Sparta Services approval...");
+          router.replace("/no-consent?reason=pending-approval");
           return;
         }
 

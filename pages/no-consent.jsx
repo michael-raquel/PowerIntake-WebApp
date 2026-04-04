@@ -48,6 +48,11 @@ const SCENARIOS = {
     body: "Admin consent was granted, but we couldn't finalize your setup. Please retry or contact support.",
     actions: "retry-contact",
   },
+  "pending-approval": {
+  title: "Awaiting Approval",
+  body: "Your organization has been registered and is pending approval from Sparta Services.",
+  actions: "contact",
+},
 };
 
 const DEFAULT_SCENARIO = SCENARIOS["error"];
