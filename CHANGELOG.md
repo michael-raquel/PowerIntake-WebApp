@@ -1,3 +1,10 @@
+# [1.6.0-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.10...v1.6.0-dev.11) (2026-04-04)
+
+
+### Bug Fixes
+
+* update with console logs for the consent call back ([17dbd70](https://github.com/michael-raquel/PowerIntake-WebApp/commit/17dbd7093767a7cd341b381e8f5e00c6ba819241))
+
 # [1.6.0-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.9...v1.6.0-dev.10) (2026-04-04)
 
 
