@@ -156,26 +156,26 @@ export default function ComTableTeam({
     };
     
     const onUpdatedWS = ({ ticketuuid, ticket }) => {
-      if (!ticket) return;
-      setTickets((prev) =>
+    if (!ticket) return;
+    setTeamTickets((prev) =>
         prev.map((t) => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
-      );
-      setSelectedTicket((prev) =>         
+    );
+    setSelectedTicket((prev) =>
         prev && String(prev.v_ticketuuid) === String(ticketuuid) ? { ...prev, ...ticket } : prev
+    );
+    onUpdated?.();
+  };
+
+  const onReactivatedWS = ({ ticketuuid, ticket }) => {
+      if (!ticket) return;
+      setTeamTickets((prev) =>
+          prev.map((t) => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
+      );
+      setSelectedTicket((prev) =>
+          prev && String(prev.v_ticketuuid) === String(ticketuuid) ? { ...prev, ...ticket } : prev
       );
       onUpdated?.();
-    };
-
-    const onReactivatedWS = ({ ticketuuid, ticket }) => {
-        if (!ticket) return;
-        setTickets((prev) =>
-            prev.map((t) => String(t.v_ticketuuid) === String(ticketuuid) ? { ...t, ...ticket } : t)
-        );
-        setSelectedTicket((prev) =>
-            prev && String(prev.v_ticketuuid) === String(ticketuuid) ? { ...prev, ...ticket } : prev
-        );
-        onUpdated?.();
-    };
+  };
 
     socket.on('ticket:synced',      onSyncedWS);
     socket.on('ticket:sync_failed', onFailedWS);

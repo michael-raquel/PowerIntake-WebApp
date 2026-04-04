@@ -98,7 +98,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const [noteRefreshKey, setNoteRefreshKey]           = useState(0);
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
-
+  
   const [liveTicket, setLiveTicket] = useState(ticket);
   useEffect(() => { setLiveTicket(ticket); }, [ticket]);
 
@@ -266,35 +266,38 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     onClose?.();
   };
 
-  const handleReactivate = async () => {
+const handleReactivate = async () => {
     if (!ticket.v_ticketuuid || !canReactivate) return;
 
     try {
-      await reactivateTicket({ ticketuuid: ticket.v_ticketuuid });
-      toast.success("Ticket Reactivated", {
-        description: `Ticket #${liveTicket.v_ticketnumber} has been reactivated successfully`
-      });
-      onUpdated?.(ticket.v_ticketuuid);
-      onClose?.();
-    } catch (error) {
-      toast.error("Reactivation Failed", {
-        description: error.message || "Unable to reactivate ticket. Please try again."
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleReactivated = ({ ticketuuid, ticket: updated }) => {
-        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
-        if (updated) setLiveTicket(updated);
+        await reactivateTicket({ ticketuuid: ticket.v_ticketuuid });
         toast.success("Ticket Reactivated", {
-            description: `Ticket #${updated?.v_ticketnumber ?? liveTicket.v_ticketnumber} is now active`
+            description: `Ticket #${liveTicket.v_ticketnumber} has been reactivated successfully`
         });
-    };
+        onUpdated?.(ticket.v_ticketuuid); 
+        onClose?.();
+    } catch (error) {
+        toast.error("Reactivation Failed", {
+            description: error.message || "Unable to reactivate ticket. Please try again."
+        });
+    }
+};
 
-    socket.on("ticket:reactivated", handleReactivated);
-    return () => socket.off("ticket:reactivated", handleReactivated);
-}, [ticket?.v_ticketuuid, liveTicket.v_ticketnumber]);
+
+  //   useEffect(() => {
+  //     const handleReactivated = ({ ticketuuid, ticket: updated }) => {
+  //         if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+  //         if (updated) setLiveTicket(updated);
+  //         toast.success("Ticket Reactivated", {
+  //             description: `Ticket #${updated?.v_ticketnumber ?? liveTicket.v_ticketnumber} is now active`
+  //         });
+  //         onUpdated?.(ticketuuid);
+  //         onClose?.();             
+  //     };
+
+  //     socket.on("ticket:reactivated", handleReactivated);
+  //     return () => socket.off("ticket:reactivated", handleReactivated);
+  // }, [ticket?.v_ticketuuid, liveTicket.v_ticketnumber, onUpdated, onClose]);
 
   useEffect(() => {
     const handleNoteSynced = ({ ticketuuid }) => {
