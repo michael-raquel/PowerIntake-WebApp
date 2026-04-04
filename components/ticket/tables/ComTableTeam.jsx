@@ -206,7 +206,7 @@ export default function ComTableTeam({
           matchesFilter(filters['Ticket Status'], t.v_status,         'Ticket Status') &&
           matchesFilter(filters.Status,           t.v_ticketstatus,   'Status') &&
           (!hideCompleted ||
-            (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved'))
+            (t.v_status !== 'Work Completed' && t.v_status !== 'Complete'))
         );
       }),
     [teamTickets, searchValue, filters, hideCompleted]

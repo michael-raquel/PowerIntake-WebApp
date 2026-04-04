@@ -218,7 +218,7 @@ export default function ComTableClients({
           matchesFilter(filters['Ticket Status'], t.v_status,         'Ticket Status') &&
           matchesFilter(filters.Status,           t.v_ticketstatus,   'Status') &&
           (!hideCompleted ||
-            (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved'))
+            (t.v_status !== 'Work Completed' && t.v_status !== 'Complete'))
         );
       }),
     [tickets, searchValue, filters, hideCompleted]
