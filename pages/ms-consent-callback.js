@@ -1,93 +1,52 @@
 import Head from "next/head";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useMsal } from "@azure/msal-react";
-import { apiRequest, loginRequest } from "@/lib/msalConfig";
+import { apiRequest } from "@/lib/msalConfig";
 
 export default function MsConsentCallback() {
   const router = useRouter();
-  const { instance, accounts, inProgress } = useMsal();
+  const { instance, accounts } = useMsal();
   const [status, setStatus] = useState("Initializing...");
   const [error, setError] = useState(null);
   const [logs, setLogs] = useState([]);
-  const authRecoveryStartedRef = useRef(false);
 
   const addLog = (msg) => {
     console.log(`[MS-CONSENT-CALLBACK] ${msg}`);
-    setLogs((prev) => [
-      ...prev,
-      { time: new Date().toLocaleTimeString(), msg },
-    ]);
+    setLogs((prev) => [...prev, { time: new Date().toLocaleTimeString(), msg }]);
   };
 
   useEffect(() => {
-    addLog(
-      `router.isReady=${router.isReady} | accounts=${accounts?.length ?? 0} | inProgress=${inProgress}`,
-    );
+    addLog(`router.isReady=${router.isReady} | accounts=${accounts?.length ?? 0}`);
 
     if (!router.isReady) {
       setStatus("Waiting for router...");
       return;
     }
 
-    const tenant = Array.isArray(router.query.tenant)
-      ? router.query.tenant[0]
-      : router.query.tenant;
-    const admin_consent = Array.isArray(router.query.admin_consent)
-      ? router.query.admin_consent[0]
-      : router.query.admin_consent;
-    const msError = Array.isArray(router.query.error)
-      ? router.query.error[0]
-      : router.query.error;
-
     if (!accounts?.[0]) {
       setStatus("Waiting for authentication session...");
       addLog("No MSAL account yet — will retry when accounts populate");
-
-      if (authRecoveryStartedRef.current) return;
-      if (inProgress !== "none") return;
-
-      const pendingParams = new URLSearchParams();
-      if (tenant) pendingParams.set("tenant", tenant);
-      if (admin_consent) pendingParams.set("admin_consent", admin_consent);
-      if (msError) pendingParams.set("error", msError);
-      sessionStorage.setItem(
-        "pending_ms_consent_query",
-        pendingParams.toString(),
-      );
-
-      authRecoveryStartedRef.current = true;
-      setStatus("Refreshing authentication session...");
-      addLog(
-        "No account after consent redirect — starting loginRedirect recovery",
-      );
-      instance.loginRedirect(loginRequest);
       return;
     }
 
-    addLog(
-      `Params — tenant=${tenant} | admin_consent=${admin_consent} | error=${msError ?? "none"}`,
-    );
+    const { tenant, admin_consent, error: msError } = router.query;
+
+    addLog(`Params — tenant=${tenant} | admin_consent=${admin_consent} | error=${msError ?? "none"}`);
 
     const run = async () => {
       try {
         if (msError) {
           addLog(`Microsoft returned error: ${msError}`);
           setError(`Microsoft error: ${msError}`);
-          setTimeout(
-            () => router.replace("/consent-callback?consent=failed"),
-            3000,
-          );
+          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
           return;
         }
 
         if (!tenant) {
           addLog("Missing tenant parameter in query string");
           setError("Missing tenant parameter.");
-          setTimeout(
-            () => router.replace("/consent-callback?consent=failed"),
-            3000,
-          );
+          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
           return;
         }
 
@@ -99,9 +58,7 @@ export default function MsConsentCallback() {
           account: accounts[0],
         });
         const accessToken = tokenRes?.accessToken ?? null;
-        addLog(
-          `Token acquired — scopes: ${tokenRes?.scopes?.join(", ") ?? "unknown"}`,
-        );
+        addLog(`Token acquired — scopes: ${tokenRes?.scopes?.join(", ") ?? "unknown"}`);
 
         setStatus("Sending consent confirmation to server...");
         addLog(`Calling backend consent-callback for tenant=${tenant}`);
@@ -111,7 +68,7 @@ export default function MsConsentCallback() {
         if (admin_consent) params.set("admin_consent", admin_consent);
 
         const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-callback?${params.toString()}`;
-        addLog(`GET → ${url}`);
+        addLog(`POST → ${url}`);
 
         const res = await fetch(url, {
           headers: {
@@ -125,10 +82,7 @@ export default function MsConsentCallback() {
           const text = await res.text();
           addLog(`Backend error body: ${text}`);
           setError(`Server error: ${res.status} — ${text}`);
-          setTimeout(
-            () => router.replace("/consent-callback?consent=failed"),
-            3000,
-          );
+          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
           return;
         }
 
@@ -143,23 +97,17 @@ export default function MsConsentCallback() {
         } else {
           addLog("No redirectUrl in response — unexpected payload");
           setError("Unexpected server response.");
-          setTimeout(
-            () => router.replace("/consent-callback?consent=failed"),
-            3000,
-          );
+          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
         }
       } catch (err) {
         addLog(`Exception caught: ${err.message}`);
         setError(`Error: ${err.message}`);
-        setTimeout(
-          () => router.replace("/consent-callback?consent=failed"),
-          3000,
-        );
+        setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
       }
     };
 
     run();
-  }, [router.isReady, router.query, accounts, instance, inProgress]);
+  }, [router.isReady, router.query, accounts, instance]);
 
   return (
     <>
@@ -179,29 +127,15 @@ export default function MsConsentCallback() {
         <div
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full"
-          style={{
-            background:
-              "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)",
-          }}
+          style={{ background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)" }}
         />
 
         <div className="relative z-10 flex flex-col items-center gap-5 w-full max-w-sm">
           {error ? (
             <>
               <div className="h-10 w-10 rounded-full border-2 border-red-500/30 flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 text-red-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-                  />
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
               </div>
               <p className="text-sm text-red-400 text-center">{error}</p>
@@ -218,10 +152,7 @@ export default function MsConsentCallback() {
           {logs.length > 0 && (
             <div className="w-full mt-2 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-1 max-h-48 overflow-y-auto">
               {logs.map((log, i) => (
-                <div
-                  key={i}
-                  className="flex gap-2 text-[10px] font-mono leading-relaxed"
-                >
+                <div key={i} className="flex gap-2 text-[10px] font-mono leading-relaxed">
                   <span className="text-zinc-600 shrink-0">{log.time}</span>
                   <span className="text-zinc-400">{log.msg}</span>
                 </div>
@@ -232,9 +163,7 @@ export default function MsConsentCallback() {
 
         <div className="relative z-10 mt-10 flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-violet-500 opacity-60" />
-          <p className="text-xs text-zinc-700 tracking-wide">
-            Power Intake · Sparta Services, LLC
-          </p>
+          <p className="text-xs text-zinc-700 tracking-wide">Power Intake · Sparta Services, LLC</p>
         </div>
       </div>
     </>
