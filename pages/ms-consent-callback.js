@@ -7,48 +7,68 @@ import { apiRequest } from "@/lib/msalConfig";
 export default function MsConsentCallback() {
   const router = useRouter();
   const { instance, accounts } = useMsal();
-  const [status, setStatus] = useState("Processing consent...");
+  const [status, setStatus] = useState("Initializing...");
   const [error, setError] = useState(null);
+  const [logs, setLogs] = useState([]);
+
+  const addLog = (msg) => {
+    console.log(`[MS-CONSENT-CALLBACK] ${msg}`);
+    setLogs((prev) => [...prev, { time: new Date().toLocaleTimeString(), msg }]);
+  };
 
   useEffect(() => {
-    if (!router.isReady || !accounts?.[0]) return;
+    addLog(`router.isReady=${router.isReady} | accounts=${accounts?.length ?? 0}`);
+
+    if (!router.isReady) {
+      setStatus("Waiting for router...");
+      return;
+    }
+
+    if (!accounts?.[0]) {
+      setStatus("Waiting for authentication session...");
+      addLog("No MSAL account yet — will retry when accounts populate");
+      return;
+    }
 
     const { tenant, admin_consent, error: msError } = router.query;
 
-    console.log("[MS-CONSENT-CALLBACK] Params received:", { tenant, admin_consent, error: msError });
+    addLog(`Params — tenant=${tenant} | admin_consent=${admin_consent} | error=${msError ?? "none"}`);
 
     const run = async () => {
       try {
         if (msError) {
-          console.error("[MS-CONSENT-CALLBACK] Microsoft returned error:", msError);
+          addLog(`Microsoft returned error: ${msError}`);
           setError(`Microsoft error: ${msError}`);
           setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
           return;
         }
 
         if (!tenant) {
-          console.error("[MS-CONSENT-CALLBACK] No tenant param received");
+          addLog("Missing tenant parameter in query string");
           setError("Missing tenant parameter.");
           setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
           return;
         }
 
-        setStatus("Authenticating...");
+        setStatus("Acquiring access token...");
+        addLog("Calling acquireTokenSilent...");
 
         const tokenRes = await instance.acquireTokenSilent({
           ...apiRequest,
           account: accounts[0],
         });
         const accessToken = tokenRes?.accessToken ?? null;
+        addLog(`Token acquired — scopes: ${tokenRes?.scopes?.join(", ") ?? "unknown"}`);
 
-        setStatus("Confirming with server...");
+        setStatus("Sending consent confirmation to server...");
+        addLog(`Calling backend consent-callback for tenant=${tenant}`);
 
         const params = new URLSearchParams();
         params.set("tenant", tenant);
         if (admin_consent) params.set("admin_consent", admin_consent);
 
         const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-callback?${params.toString()}`;
-        console.log("[MS-CONSENT-CALLBACK] Fetching:", url);
+        addLog(`POST → ${url}`);
 
         const res = await fetch(url, {
           headers: {
@@ -56,28 +76,31 @@ export default function MsConsentCallback() {
           },
         });
 
-        console.log("[MS-CONSENT-CALLBACK] Response status:", res.status);
+        addLog(`Backend responded with HTTP ${res.status}`);
 
         if (!res.ok) {
           const text = await res.text();
-          console.error("[MS-CONSENT-CALLBACK] Backend error body:", text);
-          setError(`Server error: ${res.status}`);
+          addLog(`Backend error body: ${text}`);
+          setError(`Server error: ${res.status} — ${text}`);
           setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
           return;
         }
 
+        setStatus("Processing server response...");
         const data = await res.json();
-        console.log("[MS-CONSENT-CALLBACK] Backend response:", data);
+        addLog(`Backend response: ${JSON.stringify(data)}`);
 
         if (data?.redirectUrl) {
+          addLog(`Redirecting to: ${data.redirectUrl}`);
+          setStatus("Redirecting...");
           router.replace(data.redirectUrl);
         } else {
-          console.error("[MS-CONSENT-CALLBACK] No redirectUrl in response:", data);
+          addLog("No redirectUrl in response — unexpected payload");
           setError("Unexpected server response.");
           setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
         }
       } catch (err) {
-        console.error("[MS-CONSENT-CALLBACK] Failed:", err.message);
+        addLog(`Exception caught: ${err.message}`);
         setError(`Error: ${err.message}`);
         setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
       }
@@ -107,7 +130,7 @@ export default function MsConsentCallback() {
           style={{ background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)" }}
         />
 
-        <div className="relative z-10 flex flex-col items-center gap-5">
+        <div className="relative z-10 flex flex-col items-center gap-5 w-full max-w-sm">
           {error ? (
             <>
               <div className="h-10 w-10 rounded-full border-2 border-red-500/30 flex items-center justify-center">
@@ -115,14 +138,26 @@ export default function MsConsentCallback() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
                 </svg>
               </div>
-              <p className="text-sm text-red-400">{error}</p>
+              <p className="text-sm text-red-400 text-center">{error}</p>
               <p className="text-xs text-zinc-600">Redirecting...</p>
             </>
           ) : (
             <>
               <div className="h-10 w-10 rounded-full border-2 border-white/10 border-t-violet-500 animate-spin" />
-              <p className="text-sm text-zinc-500">{status}</p>
+              <p className="text-sm text-zinc-400">{status}</p>
             </>
+          )}
+
+          {/* Live debug log panel */}
+          {logs.length > 0 && (
+            <div className="w-full mt-2 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-1 max-h-48 overflow-y-auto">
+              {logs.map((log, i) => (
+                <div key={i} className="flex gap-2 text-[10px] font-mono leading-relaxed">
+                  <span className="text-zinc-600 shrink-0">{log.time}</span>
+                  <span className="text-zinc-400">{log.msg}</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
