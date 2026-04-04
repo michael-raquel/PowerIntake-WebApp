@@ -204,10 +204,6 @@ export default function HomePage() {
   const isSuperAdmin = roles.includes('SuperAdmin');
   const isAdmin = roles.includes('Admin');
   const userId = tokenInfo?.account?.localAccountId;
-  const accesstoken = tokenInfo?.accessToken;
-  const idtoken = tokenInfo?.idToken;
-  console.log('Access Token ', accesstoken);
-  console.log('ID Token:', idtoken);
 
   const nextSlide = useCallback(() => setCurrentSlide(p => (p + 1) % images.length), []);
   useEffect(() => { const t = setInterval(nextSlide, 5000); return () => clearInterval(t); }, [nextSlide]);
