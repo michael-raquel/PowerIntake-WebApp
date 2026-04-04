@@ -1,12 +1,16 @@
 import Head from "next/head";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import { InteractionStatus } from "@azure/msal-browser";
 import { useMsal } from "@azure/msal-react";
-import { apiRequest } from "@/lib/msalConfig";
+import { apiRequest, loginRequest } from "@/lib/msalConfig";
+
+const PENDING_MS_CONSENT_KEY = "pending_ms_consent_query";
+const MS_CONSENT_LOGIN_ATTEMPT_KEY = "ms_consent_login_attempted";
 
 export default function MsConsentCallback() {
   const router = useRouter();
-  const { instance, accounts } = useMsal();
+  const { instance, accounts, inProgress } = useMsal();
   const [status, setStatus] = useState("Initializing...");
   const [error, setError] = useState(null);
   const [logs, setLogs] = useState([]);
@@ -24,32 +28,56 @@ export default function MsConsentCallback() {
       return;
     }
 
-    if (!accounts?.[0]) {
-      setStatus("Waiting for authentication session...");
-      addLog("No MSAL account yet — will retry when accounts populate");
-      return;
-    }
-
     const { tenant, admin_consent, error: msError } = router.query;
 
     addLog(`Params — tenant=${tenant} | admin_consent=${admin_consent} | error=${msError ?? "none"}`);
 
+    if (msError) {
+      addLog(`Microsoft returned error: ${msError}`);
+      setError(`Microsoft error: ${msError}`);
+      setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+      return;
+    }
+
+    if (!tenant) {
+      addLog("Missing tenant parameter in query string");
+      setError("Missing tenant parameter.");
+      setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+      return;
+    }
+
+    if (!accounts?.[0]) {
+      setStatus("Waiting for authentication session...");
+
+      if (typeof window !== "undefined") {
+        const currentPath = `${window.location.pathname}${window.location.search}`;
+        sessionStorage.setItem(PENDING_MS_CONSENT_KEY, currentPath);
+
+        if (inProgress === InteractionStatus.None) {
+          const attempted =
+            sessionStorage.getItem(MS_CONSENT_LOGIN_ATTEMPT_KEY) === "1";
+
+          if (!attempted) {
+            sessionStorage.setItem(MS_CONSENT_LOGIN_ATTEMPT_KEY, "1");
+            setStatus("Redirecting to sign-in...");
+            addLog("No MSAL account yet — redirecting to sign-in");
+            instance.loginRedirect(loginRequest);
+            return;
+          }
+        }
+      }
+
+      addLog("No MSAL account yet — will retry when accounts populate");
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(PENDING_MS_CONSENT_KEY);
+      sessionStorage.removeItem(MS_CONSENT_LOGIN_ATTEMPT_KEY);
+    }
+
     const run = async () => {
       try {
-        if (msError) {
-          addLog(`Microsoft returned error: ${msError}`);
-          setError(`Microsoft error: ${msError}`);
-          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
-          return;
-        }
-
-        if (!tenant) {
-          addLog("Missing tenant parameter in query string");
-          setError("Missing tenant parameter.");
-          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
-          return;
-        }
-
         setStatus("Acquiring access token...");
         addLog("Calling acquireTokenSilent...");
 
@@ -107,7 +135,7 @@ export default function MsConsentCallback() {
     };
 
     run();
-  }, [router.isReady, router.query, accounts, instance]);
+  }, [router.isReady, router.query, accounts, instance, inProgress]);
 
   return (
     <>
