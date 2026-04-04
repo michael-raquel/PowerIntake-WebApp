@@ -1,3 +1,10 @@
+# [1.6.0-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.9...v1.6.0-dev.10) (2026-04-04)
+
+
+### Bug Fixes
+
+* consent to add bearer ([f65a69e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f65a69ea10cc7850cbe153c39c517359c65afa8d))
+
 # [1.6.0-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.8...v1.6.0-dev.9) (2026-04-04)
 
 
