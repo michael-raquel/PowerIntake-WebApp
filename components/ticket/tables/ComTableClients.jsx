@@ -100,11 +100,11 @@ const COLUMNS = [
     sortValue: (t) => t.v_status ?? '',
     render: (t) => t.v_status || '—',
   },
-   {
-    key: 'ticketstatus', label: 'Status', defaultWidth: 130, minWidth: 90,
-    sortValue: (t) => t.v_ticketstatus ?? '',
-    render: (t) => t.v_ticketstatus || '—',
-  },
+  //  {
+  //   key: 'ticketstatus', label: 'Status', defaultWidth: 130, minWidth: 90,
+  //   sortValue: (t) => t.v_ticketstatus ?? '',
+  //   render: (t) => t.v_ticketstatus || '—',
+  // },
   {
     key: 'technician', label: 'Technician', defaultWidth: 140, minWidth: 100,
     sortValue: (t) => t.v_technicianname ?? '',
