@@ -1,3 +1,10 @@
+# [1.6.0-dev.16](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.15...v1.6.0-dev.16) (2026-04-05)
+
+
+### Bug Fixes
+
+* ST-ticket resolve and cancelled ticket will hide the resolve button ([2905691](https://github.com/michael-raquel/PowerIntake-WebApp/commit/29056918dc28650f26a48d063c23a4ac81313958))
+
 # [1.6.0-dev.15](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.14...v1.6.0-dev.15) (2026-04-05)
 
 
