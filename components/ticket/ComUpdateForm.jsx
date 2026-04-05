@@ -331,7 +331,7 @@ const handleReactivate = async () => {
                 variant="outline"
                 size="sm"
                 onClick={handleReactivate}
-                disabled={reactivateLoading}
+                disabled={reactivateLoading && liveTicket.v_ticketstatus !== 'Cancelled' && liveTicket.v_ticketstatus !== 'Resolved'}
                 className="gap-2 border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-950/30"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5", reactivateLoading && "animate-spin")} />
