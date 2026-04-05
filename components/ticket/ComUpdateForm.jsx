@@ -146,7 +146,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   }, [title, description, supportCalls, original]);
 
   const isEditableStatus = liveTicket ? !CLOSED_STATUSES.includes(liveTicket.v_status) : false;
-  const canEdit = ticket ? (ticket.v_entrauserid === account?.localAccountId && liveTicket.v_status === 'New') : false;
+  const canEdit = ticket ? (liveTicket.v_status === 'New') : false;
   const canEditAttachments = isEditableStatus;
  const canReactivate = liveTicket 
   ? REACTIVATABLE_STATUSES.includes(liveTicket.v_ticketstatus)
@@ -303,8 +303,6 @@ const handleReactivate = async () => {
     };
 }, [ticket?.v_ticketuuid]);
 
-
-
   const formatTime = (t) => {
     if (!t) return '—';
     const [h, m] = t.split(':').map(Number);
@@ -368,7 +366,7 @@ const handleReactivate = async () => {
                   { label: 'Category',   value: liveTicket.v_ticketcategory },
                   { label: 'Lifecycle',  value: liveTicket.v_ticketlifecycle },
                   { label: 'Technician', value: liveTicket.v_technicianname },
-                  { label: 'Ticket Status', value: liveTicket.v_status },
+                  { label: 'Status', value: liveTicket.v_status },
                 ].map(({ label, value }) => (
                   <div key={label} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 lg:px-4 lg:py-3 border border-gray-200 dark:border-gray-700 md:flex-1">
                     <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">{label}</p>
