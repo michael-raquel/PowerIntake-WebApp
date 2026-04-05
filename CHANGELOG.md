@@ -1,3 +1,10 @@
+# [1.6.0-dev.14](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.13...v1.6.0-dev.14) (2026-04-05)
+
+
+### Bug Fixes
+
+* ST-ticket change the ticket status value to v_status ([38fe769](https://github.com/michael-raquel/PowerIntake-WebApp/commit/38fe7697cfc1a89fb7e4ad1f57e09f2188ad3c97))
+
 # [1.6.0-dev.13](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.12...v1.6.0-dev.13) (2026-04-05)
 
 
