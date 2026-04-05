@@ -1,3 +1,10 @@
+# [1.6.0-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.11...v1.6.0-dev.12) (2026-04-05)
+
+
+### Bug Fixes
+
+* refresh to index ([9b8e62a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9b8e62a18e48e2d66b294a0582d050d6321a192d))
+
 # [1.6.0-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.10...v1.6.0-dev.11) (2026-04-04)
 
 
