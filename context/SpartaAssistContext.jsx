@@ -40,7 +40,7 @@ export function SpartaAssistProvider({ children }) {
       return str === "true" || str === "1";
     };
 
-    setSpartaAssistEnabled(parseBool(settings.v_spartaassist));
+    setTimeout(() => setSpartaAssistEnabled(parseBool(settings.v_spartaassist)), 0);
   }, [entrauserid, userSettings, loading]);
 
   // Called by SettingsPage on toggle — instant UI update, no refetch needed

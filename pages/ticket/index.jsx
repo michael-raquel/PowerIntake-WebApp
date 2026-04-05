@@ -255,6 +255,8 @@ export default function TicketPage() {
         onClose={() => setShowCreateTicket(false)}
         onTicketCreated={(ticketuuid) => {
           setPendingSyncUuid(ticketuuid);
+          setRefreshKey(k => k + 1);
+          setCurrentPage(1);
           setShowCreateTicket(false);
         }}
       />

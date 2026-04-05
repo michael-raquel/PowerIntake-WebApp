@@ -71,6 +71,7 @@ export function AuthProvider({ children }) {
       try {
         const response    = await instance.acquireTokenSilent({ ...apiRequest, account });
         const token       = response.accessToken;
+        const idToken     = response.idToken;
         const claims      = decodeJwt(token);
         const expectedAud = msalConfig.auth.clientId;
 
@@ -79,9 +80,13 @@ export function AuthProvider({ children }) {
           return;
         }
 
+        // console.log("[AUTH] Access Token (silent):", token);
+        // console.log("[AUTH] ID Token (silent):", idToken);
+
         setAccessToken(token);
         setTokenInfo({
           accessToken: token,
+          idToken,
           expiresOn:   response.expiresOn?.toString(),
           scopes:      response.scopes,
           account: {
@@ -98,10 +103,16 @@ export function AuthProvider({ children }) {
           try {
             const response = await instance.acquireTokenPopup({ ...apiRequest, account });
             const token    = response.accessToken;
+            const idToken  = response.idToken;
             const claims   = decodeJwt(token);
+
+            // console.log("[AUTH] Access Token (popup):", token);
+            // console.log("[AUTH] ID Token (popup):", idToken);
+
             setAccessToken(token);
             setTokenInfo({
               accessToken: token,
+              idToken,
               expiresOn:   response.expiresOn?.toString(),
               scopes:      response.scopes,
               account: {

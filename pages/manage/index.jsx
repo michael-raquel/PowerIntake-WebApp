@@ -11,7 +11,7 @@ import { ExternalLink, Users } from "lucide-react";
 export default function Manage() {
   const { isManager } = useManagerCheck();
   const { tokenInfo } = useAuth();
-  const [activeTab, setActiveTab] = useState("clients");
+  const [activeTab, setActiveTab] = useState("company");
   const [filters, setFilters] = useState({
     search: "",
     clientname: "",
@@ -27,8 +27,8 @@ export default function Manage() {
   const tabs = [
     ...(isSuperAdmin ? [{ id: "clients", label: "My Clients" }] : []),
     ...(isSuperAdmin ? [{ id: "admin", label: "Super Admin" }] : []),
-    { id: "company", label: "My Company" },
     ...(isManager ? [{ id: "team", label: "My Team" }] : []),
+    { id: "company", label: "My Company" },
   ];
 
   const validTab = tabs.find((t) => t.id === activeTab)

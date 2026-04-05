@@ -98,7 +98,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
   const [noteRefreshKey, setNoteRefreshKey]           = useState(0);
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
-
+  
   const [liveTicket, setLiveTicket] = useState(ticket);
   useEffect(() => { setLiveTicket(ticket); }, [ticket]);
 
@@ -146,7 +146,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   }, [title, description, supportCalls, original]);
 
   const isEditableStatus = liveTicket ? !CLOSED_STATUSES.includes(liveTicket.v_status) : false;
-  const canEdit = ticket ? (ticket.v_entrauserid === account?.localAccountId && liveTicket.v_status === 'New') : false;
+  const canEdit = ticket ? (liveTicket.v_status === 'New') : false;
   const canEditAttachments = isEditableStatus;
  const canReactivate = liveTicket 
   ? REACTIVATABLE_STATUSES.includes(liveTicket.v_ticketstatus)
@@ -171,7 +171,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     return () => socket.off("ticket:updated", handleTicketUpdated);
   }, [handleTicketUpdated]);
 
-  if (!ticket) return null;
+  
 
   const isToday = (date) => {
     const today = new Date();
@@ -266,35 +266,22 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     onClose?.();
   };
 
-  const handleReactivate = async () => {
+const handleReactivate = async () => {
     if (!ticket.v_ticketuuid || !canReactivate) return;
 
     try {
-      await reactivateTicket({ ticketuuid: ticket.v_ticketuuid });
-      toast.success("Ticket Reactivated", {
-        description: `Ticket #${liveTicket.v_ticketnumber} has been reactivated successfully`
-      });
-      onUpdated?.(ticket.v_ticketuuid);
-      onClose?.();
-    } catch (error) {
-      toast.error("Reactivation Failed", {
-        description: error.message || "Unable to reactivate ticket. Please try again."
-      });
-    }
-  };
-
-  useEffect(() => {
-    const handleReactivated = ({ ticketuuid, ticket: updated }) => {
-        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
-        if (updated) setLiveTicket(updated);
+        await reactivateTicket({ ticketuuid: ticket.v_ticketuuid, createdby: account?.localAccountId });
         toast.success("Ticket Reactivated", {
-            description: `Ticket #${updated?.v_ticketnumber ?? liveTicket.v_ticketnumber} is now active`
+            description: `Ticket ${liveTicket.v_ticketnumber} has been reactivated successfully`
         });
-    };
-
-    socket.on("ticket:reactivated", handleReactivated);
-    return () => socket.off("ticket:reactivated", handleReactivated);
-}, [ticket?.v_ticketuuid, liveTicket.v_ticketnumber]);
+        onUpdated?.(ticket.v_ticketuuid ); 
+        onClose?.();
+    } catch (error) {
+        toast.error("Reactivation Failed", {
+            description: error.message || "Unable to reactivate ticket. Please try again."
+        });
+    }
+};
 
   useEffect(() => {
     const handleNoteSynced = ({ ticketuuid }) => {
@@ -316,7 +303,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     };
 }, [ticket?.v_ticketuuid]);
 
-
+if (!ticket) return null;
 
   const formatTime = (t) => {
     if (!t) return '—';
@@ -346,7 +333,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                 variant="outline"
                 size="sm"
                 onClick={handleReactivate}
-                disabled={reactivateLoading}
+                disabled={reactivateLoading && liveTicket.v_ticketstatus !== 'Cancelled' && liveTicket.v_ticketstatus !== 'Resolved'}
                 className="gap-2 border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-950/30"
               >
                 <RefreshCw className={cn("w-3.5 h-3.5", reactivateLoading && "animate-spin")} />
@@ -381,7 +368,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
                   { label: 'Category',   value: liveTicket.v_ticketcategory },
                   { label: 'Lifecycle',  value: liveTicket.v_ticketlifecycle },
                   { label: 'Technician', value: liveTicket.v_technicianname },
-                  { label: 'Ticket Status', value: liveTicket.v_ticketstatus },
+                  { label: 'Status', value: liveTicket.v_status },
                 ].map(({ label, value }) => (
                   <div key={label} className="bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2.5 lg:px-4 lg:py-3 border border-gray-200 dark:border-gray-700 md:flex-1">
                     <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">{label}</p>

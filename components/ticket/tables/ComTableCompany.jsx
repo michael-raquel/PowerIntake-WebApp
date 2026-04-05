@@ -24,7 +24,6 @@ const FIELD_LABELS = {
   Priority:   { key: 'v_priority',       label: 'Priority'   },
   Category:   { key: 'v_ticketcategory', label: 'Category'   },
   'Ticket Status': { key: 'v_status',         label: 'Ticket Status' },
-  Status:          { key: 'v_ticketstatus', label: 'Status' },
 };
 
 const getPriorityClass = (p) => {
@@ -90,11 +89,6 @@ const COLUMNS = [
     key: 'status', label: 'Ticket Status', defaultWidth: 130, minWidth: 90,
     sortValue: (t) => t.v_status ?? '',
     render: (t) => t.v_status || '—',
-  },
-   {
-    key: 'ticketstatus', label: 'Status', defaultWidth: 130, minWidth: 90,
-    sortValue: (t) => t.v_ticketstatus ?? '',
-    render: (t) => t.v_ticketstatus || '—',
   },
   {
     key: 'technician', label: 'Technician', defaultWidth: 140, minWidth: 100,
@@ -210,9 +204,8 @@ export default function ComTableCompany({
           matchesFilter(filters.Priority,   t.v_priority,       'Priority') &&
           matchesFilter(filters.Category,   t.v_ticketcategory, 'Category') &&
           matchesFilter(filters['Ticket Status'], t.v_status,         'Ticket Status') &&
-          matchesFilter(filters.Status,           t.v_ticketstatus,   'Status') &&
           (!hideCompleted ||
-            (t.v_status !== 'Work Completed' && t.v_status !== 'Problem Solved'))
+            (t.v_status !== 'Work Completed' && t.v_status !== 'Complete'))
         );
       }),
     [tickets, searchValue, filters, hideCompleted]

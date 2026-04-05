@@ -33,29 +33,32 @@ export default function Checking() {
         const data = await res.json();
         const claims = JSON.parse(atob(tokenRes.accessToken.split(".")[1]));
         const tid = claims?.tid;
+        const consented = data?.consented === true;
+        const isactive = data?.isactive === true;
+        const isapproved = data?.isapproved === true;
 
-        console.log("[CHECKING]", data);
+        // console.log("[CHECKING]", data);
 
-        if (data.tenantExists && data.consented && !data.isactive) {
+        if (!isapproved) {
+          setStatus("Awaiting Sparta Services approval...");
+          router.replace("/no-consent?reason=pending-approval");
+          return;
+        }
+
+        if (consented && !isactive) {
           setStatus("Your organization has been deactivated...");
           router.replace("/no-consent?reason=deactivated");
           return;
         }
-        
-        if (data.tenantExists && data.consented) {
+
+        if (consented) {
           setStatus("Access granted. Redirecting...");
           sessionStorage.setItem("consent_verified", "1");
           router.replace("/home");
           return;
         }
 
-        if (!data.tenantExists) {
-          setStatus("Your organization is not registered...");
-          router.replace("/no-consent?reason=not-registered");
-          return;
-        }
-
-        if (data.tenantExists && !data.consented) {
+        if (!consented) {
           if (isGlobalAdmin) {
             setStatus("Redirecting to Microsoft for approval...");
 
@@ -63,6 +66,7 @@ export default function Checking() {
               `https://login.microsoftonline.com/${tid}/adminconsent`,
               `?client_id=${process.env.NEXT_PUBLIC_AZURE_CLIENT_ID}`,
               `&redirect_uri=${process.env.NEXT_PUBLIC_APP_URL}/ms-consent-callback`,
+              `&prompt=consent`, // ← forces full permission screen
             ].join("");
 
             window.location.href = consentUrl;

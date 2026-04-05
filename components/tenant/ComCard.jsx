@@ -170,14 +170,6 @@ export default function ComCard({ tenant = {}, onClick, isSyncing = false }) {
               {entraTenantId}
             </p>
           </div>
-          <div className="bg-gray-50 dark:bg-gray-900/60 rounded-md px-2.5 py-1.5 min-w-0 border border-gray-100 dark:border-gray-700/50">
-            <p className="text-[9px] text-gray-400 dark:text-gray-500 mb-0.5 uppercase tracking-wider">
-              User Group ID
-            </p>
-            <p className="text-[11px] font-medium truncate text-gray-800 dark:text-gray-200">
-              {userGroupId}
-            </p>
-          </div>
         </div>
       </div>
 

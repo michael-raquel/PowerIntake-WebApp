@@ -9,10 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
 const FILTER_CONFIG = {
-  'my-client': ['Client', 'Department', 'Source', 'Priority', 'Category', 'Ticket Status', 'Status'],
-  'my-company': ['Department', 'Source', 'Priority', 'Category', 'Ticket Status', 'Status'],
-  'my-team': ['Source', 'Priority', 'Category', 'Ticket Status', 'Status'],
-  'my-ticket': ['Source', 'Priority', 'Category', 'Ticket Status', 'Status'],
+  'my-client': ['Client', 'Department', 'Source', 'Priority', 'Category', 'Ticket Status'],
+  'my-company': ['Department', 'Source', 'Priority', 'Category', 'Ticket Status'],
+  'my-team': ['Source', 'Priority', 'Category', 'Ticket Status'],
+  'my-ticket': ['Source', 'Priority', 'Category', 'Ticket Status'],
 };
 
 const TEXT_INPUT_FILTERS = new Set(['Client', 'Manager']);
@@ -57,7 +57,16 @@ export default function ComFilters({
 
       const options = getOptions(filter);
       const prev = prevOptionsRef.current[filter] || [];
-      const selected = getSelected(filter);
+      let selected = getSelected(filter);
+
+      if (options.length > 0 && selected.length > 0) {
+        const pruned = selected.filter((value) => options.includes(value));
+        if (pruned.length !== selected.length) {
+          selected = pruned;
+          next[filter] = pruned.length ? pruned : undefined;
+          changed = true;
+        }
+      }
 
       if (options.length > 0 && prev.length === 0 && selected.length === 0) {
         next[filter] = [...options];
