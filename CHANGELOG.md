@@ -1,3 +1,10 @@
+# [1.6.0-dev.15](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.14...v1.6.0-dev.15) (2026-04-05)
+
+
+### Bug Fixes
+
+* ST-ticket other user can reactivate ([f76b3d3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f76b3d38a00cdf27e731a0b92d1f724736ade3ac))
+
 # [1.6.0-dev.14](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.13...v1.6.0-dev.14) (2026-04-05)
 
 
