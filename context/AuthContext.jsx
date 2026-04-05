@@ -80,8 +80,8 @@ export function AuthProvider({ children }) {
           return;
         }
 
-        console.log("[AUTH] Access Token (silent):", token);
-        console.log("[AUTH] ID Token (silent):", idToken);
+        // console.log("[AUTH] Access Token (silent):", token);
+        // console.log("[AUTH] ID Token (silent):", idToken);
 
         setAccessToken(token);
         setTokenInfo({
@@ -106,8 +106,8 @@ export function AuthProvider({ children }) {
             const idToken  = response.idToken;
             const claims   = decodeJwt(token);
 
-            console.log("[AUTH] Access Token (popup):", token);
-            console.log("[AUTH] ID Token (popup):", idToken);
+            // console.log("[AUTH] Access Token (popup):", token);
+            // console.log("[AUTH] ID Token (popup):", idToken);
 
             setAccessToken(token);
             setTokenInfo({

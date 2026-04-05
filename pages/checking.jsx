@@ -37,7 +37,7 @@ export default function Checking() {
         const isactive = data?.isactive === true;
         const isapproved = data?.isapproved === true;
 
-        console.log("[CHECKING]", data);
+        // console.log("[CHECKING]", data);
 
         if (!isapproved) {
           setStatus("Awaiting Sparta Services approval...");

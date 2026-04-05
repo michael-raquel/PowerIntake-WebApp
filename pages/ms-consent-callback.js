@@ -1,5 +1,5 @@
 import Head from "next/head";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest, loginRequest } from "@/lib/msalConfig";
@@ -33,21 +33,174 @@ export default function MsConsentCallback() {
   const [error, setError] = useState(null);
   const [logs, setLogs] = useState([]);
 
-  const addLog = (msg) => {
-    console.log(`[MS-CONSENT-CALLBACK] ${msg}`);
-    setLogs((prev) => [
-      ...prev,
-      { time: new Date().toLocaleTimeString(), msg },
-    ]);
-  };
+  const addLog = useCallback((msg) => {
+      console.log(`[MS-CONSENT-CALLBACK] ${msg}`);
+      setLogs((prev) => [
+        ...prev,
+        { time: new Date().toLocaleTimeString(), msg },
+      ]);
+  }, []);
+
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     addLog(`router.isReady=${router.isReady} | accounts=${accounts?.length ?? 0}`);
+  //   }, 0);
+
+  //   if (!router.isReady) {
+  //   setTimeout(() => setStatus("Waiting for router..."), 0);
+  //   return;
+  // }
+
+  //   const {
+  //     tenant: queryTenant,
+  //     admin_consent: queryAdminConsent,
+  //     error: msError,
+  //   } = router.query;
+  //   const stored = readStoredConsent();
+  //   const tenant = normalizeParam(queryTenant) ?? stored?.tenant ?? null;
+  //   const adminConsent =
+  //     normalizeParam(queryAdminConsent) ?? stored?.admin_consent ?? null;
+
+  //   writeStoredConsent({ tenant, admin_consent: adminConsent });
+
+  //  setTimeout(() => {
+  //     addLog(
+  //       `Params — tenant=${tenant ?? "none"} | admin_consent=${adminConsent ?? "none"} | error=${msError ?? "none"}`,
+  //     );
+  //   }, 0);
+
+  //   if (!accounts?.[0]) {
+  //     if (inProgress !== "none") {
+  //       setStatus("Finishing sign-in...");
+  //       addLog(`MSAL in progress: ${inProgress}`);
+  //       return;
+  //     }
+
+  //     setStatus("Sign-in required. Redirecting to Microsoft...");
+  //     addLog("No MSAL account yet - starting login redirect");
+
+  //     if (typeof window !== "undefined") {
+  //       const attempted =
+  //         sessionStorage.getItem(CONSENT_LOGIN_ATTEMPT_KEY) === "1";
+  //       if (!attempted) {
+  //         sessionStorage.setItem(CONSENT_LOGIN_ATTEMPT_KEY, "1");
+  //         instance.loginRedirect({
+  //           ...loginRequest,
+  //           redirectUri: `${window.location.origin}/ms-consent-callback`,
+  //         });
+  //         return;
+  //       }
+  //     }
+
+  //     setError(
+  //       "Sign-in required to complete consent. Please refresh and try again.",
+  //     );
+  //     return;
+  //   }
+
+  //   if (typeof window !== "undefined") {
+  //     sessionStorage.removeItem(CONSENT_LOGIN_ATTEMPT_KEY);
+  //   }
+
+  //   const run = async () => {
+  //     try {
+  //       if (msError) {
+  //         addLog(`Microsoft returned error: ${msError}`);
+  //         setError(`Microsoft error: ${msError}`);
+  //         setTimeout(
+  //           () => router.replace("/consent-callback?consent=failed"),
+  //           3000,
+  //         );
+  //         return;
+  //       }
+
+  //       if (!tenant) {
+  //         addLog("Missing tenant parameter in query string");
+  //         setError("Missing tenant parameter.");
+  //         setTimeout(
+  //           () => router.replace("/consent-callback?consent=failed"),
+  //           3000,
+  //         );
+  //         return;
+  //       }
+
+  //       setStatus("Acquiring access token...");
+  //       addLog("Calling acquireTokenSilent...");
+
+  //       const tokenRes = await instance.acquireTokenSilent({
+  //         ...apiRequest,
+  //         account: accounts[0],
+  //       });
+  //       const accessToken = tokenRes?.accessToken ?? null;
+  //       addLog(
+  //         `Token acquired — scopes: ${tokenRes?.scopes?.join(", ") ?? "unknown"}`,
+  //       );
+
+  //       setStatus("Sending consent confirmation to server...");
+  //       addLog(`Calling backend consent-callback for tenant=${tenant}`);
+
+  //       const params = new URLSearchParams();
+  //       params.set("tenant", tenant);
+  //       if (adminConsent) params.set("admin_consent", adminConsent);
+
+  //       const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-callback?${params.toString()}`;
+  //       addLog(`POST → ${url}`);
+
+  //       const res = await fetch(url, {
+  //         headers: {
+  //           ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+  //         },
+  //       });
+
+  //       addLog(`Backend responded with HTTP ${res.status}`);
+
+  //       if (!res.ok) {
+  //         const text = await res.text();
+  //         addLog(`Backend error body: ${text}`);
+  //         setError(`Server error: ${res.status} — ${text}`);
+  //         setTimeout(
+  //           () => router.replace("/consent-callback?consent=failed"),
+  //           3000,
+  //         );
+  //         return;
+  //       }
+
+  //       setStatus("Processing server response...");
+  //       const data = await res.json();
+  //       addLog(`Backend response: ${JSON.stringify(data)}`);
+
+  //       if (data?.redirectUrl) {
+  //         addLog(`Redirecting to: ${data.redirectUrl}`);
+  //         setStatus("Redirecting...");
+  //         router.replace(data.redirectUrl);
+  //       } else {
+  //         addLog("No redirectUrl in response — unexpected payload");
+  //         setError("Unexpected server response.");
+  //         setTimeout(
+  //           () => router.replace("/consent-callback?consent=failed"),
+  //           3000,
+  //         );
+  //       }
+  //     } catch (err) {
+  //       addLog(`Exception caught: ${err.message}`);
+  //       setError(`Error: ${err.message}`);
+  //       setTimeout(
+  //         () => router.replace("/consent-callback?consent=failed"),
+  //         3000,
+  //       );
+  //     }
+  //   };
+
+  //   run();
+  // }, [router.isReady, router.query, accounts, instance, inProgress, router]);
 
   useEffect(() => {
-    addLog(
-      `router.isReady=${router.isReady} | accounts=${accounts?.length ?? 0}`,
-    );
+    setTimeout(() => {
+      addLog(`router.isReady=${router.isReady} | accounts=${accounts?.length ?? 0}`);
+    }, 0);
 
     if (!router.isReady) {
-      setStatus("Waiting for router...");
+      setTimeout(() => setStatus("Waiting for router..."), 0);
       return;
     }
 
@@ -56,30 +209,35 @@ export default function MsConsentCallback() {
       admin_consent: queryAdminConsent,
       error: msError,
     } = router.query;
+
     const stored = readStoredConsent();
     const tenant = normalizeParam(queryTenant) ?? stored?.tenant ?? null;
-    const adminConsent =
-      normalizeParam(queryAdminConsent) ?? stored?.admin_consent ?? null;
+    const adminConsent = normalizeParam(queryAdminConsent) ?? stored?.admin_consent ?? null;
 
     writeStoredConsent({ tenant, admin_consent: adminConsent });
 
-    addLog(
-      `Params — tenant=${tenant ?? "none"} | admin_consent=${adminConsent ?? "none"} | error=${msError ?? "none"}`,
-    );
+    setTimeout(() => {
+      addLog(
+        `Params — tenant=${tenant ?? "none"} | admin_consent=${adminConsent ?? "none"} | error=${msError ?? "none"}`,
+      );
+    }, 0);
 
     if (!accounts?.[0]) {
       if (inProgress !== "none") {
-        setStatus("Finishing sign-in...");
-        addLog(`MSAL in progress: ${inProgress}`);
+        setTimeout(() => {
+          setStatus("Finishing sign-in...");
+          addLog(`MSAL in progress: ${inProgress}`);
+        }, 0);
         return;
       }
 
-      setStatus("Sign-in required. Redirecting to Microsoft...");
-      addLog("No MSAL account yet - starting login redirect");
+      setTimeout(() => {
+        setStatus("Sign-in required. Redirecting to Microsoft...");
+        addLog("No MSAL account yet - starting login redirect");
+      }, 0);
 
       if (typeof window !== "undefined") {
-        const attempted =
-          sessionStorage.getItem(CONSENT_LOGIN_ATTEMPT_KEY) === "1";
+        const attempted = sessionStorage.getItem(CONSENT_LOGIN_ATTEMPT_KEY) === "1";
         if (!attempted) {
           sessionStorage.setItem(CONSENT_LOGIN_ATTEMPT_KEY, "1");
           instance.loginRedirect({
@@ -90,107 +248,91 @@ export default function MsConsentCallback() {
         }
       }
 
-      setError(
-        "Sign-in required to complete consent. Please refresh and try again.",
-      );
+      setTimeout(() => {
+        setError("Sign-in required to complete consent. Please refresh and try again.");
+      }, 0);
       return;
     }
 
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem(CONSENT_LOGIN_ATTEMPT_KEY);
-    }
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem(CONSENT_LOGIN_ATTEMPT_KEY);
+  }
 
-    const run = async () => {
-      try {
-        if (msError) {
-          addLog(`Microsoft returned error: ${msError}`);
-          setError(`Microsoft error: ${msError}`);
-          setTimeout(
-            () => router.replace("/consent-callback?consent=failed"),
-            3000,
-          );
-          return;
-        }
-
-        if (!tenant) {
-          addLog("Missing tenant parameter in query string");
-          setError("Missing tenant parameter.");
-          setTimeout(
-            () => router.replace("/consent-callback?consent=failed"),
-            3000,
-          );
-          return;
-        }
-
-        setStatus("Acquiring access token...");
-        addLog("Calling acquireTokenSilent...");
-
-        const tokenRes = await instance.acquireTokenSilent({
-          ...apiRequest,
-          account: accounts[0],
-        });
-        const accessToken = tokenRes?.accessToken ?? null;
-        addLog(
-          `Token acquired — scopes: ${tokenRes?.scopes?.join(", ") ?? "unknown"}`,
-        );
-
-        setStatus("Sending consent confirmation to server...");
-        addLog(`Calling backend consent-callback for tenant=${tenant}`);
-
-        const params = new URLSearchParams();
-        params.set("tenant", tenant);
-        if (adminConsent) params.set("admin_consent", adminConsent);
-
-        const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-callback?${params.toString()}`;
-        addLog(`POST → ${url}`);
-
-        const res = await fetch(url, {
-          headers: {
-            ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-          },
-        });
-
-        addLog(`Backend responded with HTTP ${res.status}`);
-
-        if (!res.ok) {
-          const text = await res.text();
-          addLog(`Backend error body: ${text}`);
-          setError(`Server error: ${res.status} — ${text}`);
-          setTimeout(
-            () => router.replace("/consent-callback?consent=failed"),
-            3000,
-          );
-          return;
-        }
-
-        setStatus("Processing server response...");
-        const data = await res.json();
-        addLog(`Backend response: ${JSON.stringify(data)}`);
-
-        if (data?.redirectUrl) {
-          addLog(`Redirecting to: ${data.redirectUrl}`);
-          setStatus("Redirecting...");
-          router.replace(data.redirectUrl);
-        } else {
-          addLog("No redirectUrl in response — unexpected payload");
-          setError("Unexpected server response.");
-          setTimeout(
-            () => router.replace("/consent-callback?consent=failed"),
-            3000,
-          );
-        }
-      } catch (err) {
-        addLog(`Exception caught: ${err.message}`);
-        setError(`Error: ${err.message}`);
-        setTimeout(
-          () => router.replace("/consent-callback?consent=failed"),
-          3000,
-        );
+  const run = async () => {
+    // inside async, setState is fine as-is — no setTimeout needed
+    try {
+      if (msError) {
+        addLog(`Microsoft returned error: ${msError}`);
+        setError(`Microsoft error: ${msError}`);
+        setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+        return;
       }
-    };
 
-    run();
-  }, [router.isReady, router.query, accounts, instance, inProgress]);
+      if (!tenant) {
+        addLog("Missing tenant parameter in query string");
+        setError("Missing tenant parameter.");
+        setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+        return;
+      }
+
+      setStatus("Acquiring access token...");
+      addLog("Calling acquireTokenSilent...");
+
+      const tokenRes = await instance.acquireTokenSilent({
+        ...apiRequest,
+        account: accounts[0],
+      });
+      const accessToken = tokenRes?.accessToken ?? null;
+      addLog(`Token acquired — scopes: ${tokenRes?.scopes?.join(", ") ?? "unknown"}`);
+
+      setStatus("Sending consent confirmation to server...");
+      addLog(`Calling backend consent-callback for tenant=${tenant}`);
+
+      const params = new URLSearchParams();
+      params.set("tenant", tenant);
+      if (adminConsent) params.set("admin_consent", adminConsent);
+
+      const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-callback?${params.toString()}`;
+      addLog(`POST → ${url}`);
+
+      const res = await fetch(url, {
+        headers: {
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+      });
+
+      addLog(`Backend responded with HTTP ${res.status}`);
+
+      if (!res.ok) {
+        const text = await res.text();
+        addLog(`Backend error body: ${text}`);
+        setError(`Server error: ${res.status} — ${text}`);
+        setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+        return;
+      }
+
+      setStatus("Processing server response...");
+      const data = await res.json();
+      addLog(`Backend response: ${JSON.stringify(data)}`);
+
+      if (data?.redirectUrl) {
+        addLog(`Redirecting to: ${data.redirectUrl}`);
+        setStatus("Redirecting...");
+        router.replace(data.redirectUrl);
+      } else {
+        addLog("No redirectUrl in response — unexpected payload");
+        setError("Unexpected server response.");
+        setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+      }
+    } catch (err) {
+      addLog(`Exception caught: ${err.message}`);
+      setError(`Error: ${err.message}`);
+      setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+    }
+  };
+
+  run();
+}, [router.isReady, router.query, accounts, instance, inProgress, router, addLog]);
 
   return (
     <>

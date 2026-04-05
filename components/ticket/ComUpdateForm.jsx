@@ -171,7 +171,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
     return () => socket.off("ticket:updated", handleTicketUpdated);
   }, [handleTicketUpdated]);
 
-  if (!ticket) return null;
+  
 
   const isToday = (date) => {
     const today = new Date();
@@ -302,6 +302,8 @@ const handleReactivate = async () => {
         socket.off("attachment:synced", handleAttachmentSynced);
     };
 }, [ticket?.v_ticketuuid]);
+
+if (!ticket) return null;
 
   const formatTime = (t) => {
     if (!t) return '—';

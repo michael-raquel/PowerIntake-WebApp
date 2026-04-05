@@ -57,7 +57,7 @@ export default function SettingsPage() {
       setSettingsLoaded(true);
       updateSpartaAssist(newSettings.spartaassist);
     }
-  }, [userSettings, entrauserid, settingsLoaded]);
+  }, [userSettings, entrauserid, settingsLoaded, updateSpartaAssist]);
 
   useEffect(() => {
     if (settingsLoaded && localSettings.darkmode !== isDarkMode) {

@@ -23,15 +23,15 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   }, [isAuthenticated, instance]);
 
   // ── Consent gate ────────────────────────────────────────
-  useEffect(() => {
-    if (!isAuthenticated) return;
-    const isVerified = sessionStorage.getItem("consent_verified") === "1";
-    if (isVerified) {
-      setVerified(true);
-    } else {
-      router.replace("/checking");
-    }
-  }, [isAuthenticated, router]);
+ useEffect(() => {
+  if (!isAuthenticated) return;
+  const isVerified = sessionStorage.getItem("consent_verified") === "1";
+  if (isVerified) {
+    setTimeout(() => setVerified(true), 0);
+  } else {
+    router.replace("/checking");
+  }
+}, [isAuthenticated, router]);
 
   // ── Role check ──────────────────────────────────────────
   const hasRequiredRole = useMemo(() => {
