@@ -1,3 +1,10 @@
+## [1.6.1-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.1-dev.2...v1.6.1-dev.3) (2026-04-06)
+
+
+### Bug Fixes
+
+* ST2205 Totals of My Clients on Manage page is not accurate. ([5e37f5f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5e37f5fe831dedbc9590b5a35ed1ec8dbafc1150))
+
 ## [1.6.1-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.1-dev.1...v1.6.1-dev.2) (2026-04-06)
 
 
