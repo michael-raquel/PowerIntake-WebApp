@@ -1,3 +1,10 @@
+## [1.6.4-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.3...v1.6.4-dev.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* add isapproved ([062af64](https://github.com/michael-raquel/PowerIntake-WebApp/commit/062af64fce5c7f5f87e90161beb63e781e9e0116))
+
 ## [1.6.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.2...v1.6.3) (2026-04-06)
 
 
