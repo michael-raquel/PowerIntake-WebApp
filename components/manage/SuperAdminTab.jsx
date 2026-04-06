@@ -554,7 +554,7 @@ export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {}
         </div>
       )} */}
 
-    <div className="block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
+      <div className="flex-1 min-h-0 overflow-y-auto block md:hidden divide-y divide-gray-100 dark:divide-gray-800">
           {loading ? (
             <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
               Loading...

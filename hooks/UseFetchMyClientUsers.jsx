@@ -40,7 +40,7 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
 
   const fetchTotals = useCallback(async (filters, totalCount) => {
     if (!totalCount) {
-      setTotals({ totalTickets: 0, openTickets: 0, completion: 0 });
+      setTotals({ totalTickets: 0, openTickets: 0, completionRate: 0, newTickets: 0, completedTickets: 0 });
       return;
     }
 
@@ -75,15 +75,15 @@ export default function useFetchMyClients(initialPage = 1, initialLimit = null) 
       (sum, row) => sum + Number(row?.v_openticket ?? 0),
       0
     );
-    const completionRate = totalTickets > 0 ? Math.round((openTickets / totalTickets) * 100) : 0;
     const newTickets = rows.reduce(
       (sum, row) => sum + Number(row?.v_newticket ?? 0),
       0
     );
-    const completedTickets = rows.reduce(   
-    (sum, row) => sum + Number(row?.v_completed ?? 0),
+    const completedTickets = rows.reduce(
+      (sum, row) => sum + Number(row?.v_completed ?? 0),
       0
     );
+    const completionRate = totalTickets > 0 ? (completedTickets / totalTickets) * 100 : 0;
 
     setTotals({ totalTickets, openTickets, completionRate, newTickets, completedTickets });
   }, [getAccessToken]);

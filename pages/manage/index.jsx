@@ -46,8 +46,8 @@ export default function Manage() {
   // Mobile 
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col p-4 pb-0">
-        <div className="flex-1 flex flex-col gap-4">
+      <div className="h-[100dvh] flex flex-col p-4 pb-0 overflow-hidden">
+        <div className="flex-1 min-h-0 flex flex-col gap-4">
           <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
