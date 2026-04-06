@@ -1,3 +1,11 @@
+## [1.6.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.1...v1.6.2) (2026-04-06)
+
+
+### Bug Fixes
+
+* removed ui elements in the user information ([4cce339](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4cce339a12449c3c9cd6a1b4c743ebb5e98cfddd))
+* ST2205 Totals of My Clients on Manage page is not accurate. ([5e37f5f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/5e37f5fe831dedbc9590b5a35ed1ec8dbafc1150))
+
 ## [1.6.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0...v1.6.1) (2026-04-06)
 
 
