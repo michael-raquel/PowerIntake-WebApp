@@ -1,3 +1,10 @@
+## [1.6.1-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.1-dev.1...v1.6.1-dev.2) (2026-04-06)
+
+
+### Bug Fixes
+
+* removed ui elements in the user information ([4cce339](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4cce339a12449c3c9cd6a1b4c743ebb5e98cfddd))
+
 ## [1.6.1-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0...v1.6.1-dev.1) (2026-04-06)
 
 
