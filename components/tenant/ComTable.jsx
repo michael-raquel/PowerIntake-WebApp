@@ -29,16 +29,24 @@ const normalizeBoolean = (value) => {
   }
   return null;
 };
-
 const toStatusLabel = (value) => {
   const bool = normalizeBoolean(value);
-  return bool === null ? "unknown" : String(bool);
+  if (bool === null) return "unknown";
+  return bool ? "Active" : "Inactive";
 };
 
 const toConsentLabel = (value) => {
   const bool = normalizeBoolean(value);
-  return bool === null ? "unknown" : String(bool);
+  if (bool === null) return "unknown";
+  return bool ? "Consented" : "Not Consented";
 };
+const toApprovalLabel = (value) => {
+  const bool = normalizeBoolean(value);
+  if (bool === null) return "unknown";
+  return bool ? "Approved" : "Pending";
+};
+
+
 
 const formatDateTime = (value) => {
   if (!value) return "-";
@@ -172,6 +180,14 @@ const COLUMNS = [
     sortValue: (row) => row.consentLabel,
   },
   {
+    key: "isapproved",
+    label: "Is Approved",
+    align: "center",
+    minWidth: 120,
+    defaultWidth: 140,
+    sortValue: (row) => row.approvalLabel,
+  },
+  {
     key: "isactive",
     label: "Is Active",
     align: "center",
@@ -256,6 +272,9 @@ export default function ComTable({
         consentLabel: toConsentLabel(
           readField(tenant, ["v_isconsented", "isconsented"], null),
         ),
+        approvalLabel: toApprovalLabel(
+          readField(tenant, ["v_isapproved", "isapproved"], null),
+        ),
         createdAt: readField(tenant, ["v_createdat", "createdat"], null),
       })),
     [tenants],
@@ -280,10 +299,14 @@ export default function ComTable({
     const consentOptions = [
       ...new Set(normalizedTenants.map((row) => row.consentLabel)),
     ].sort();
+    const approvalOptions = [
+      ...new Set(normalizedTenants.map((row) => row.approvalLabel)),
+    ].sort();
 
     onFilterOptionsChange?.({
       Status: statusOptions,
       Consent: consentOptions,
+      Approval: approvalOptions, // ✅ added
     });
   }, [normalizedTenants, onFilterOptionsChange]);
 
@@ -309,7 +332,8 @@ export default function ComTable({
 
       if (!matchesMultiFilter(filters.Status, row.statusLabel)) return false;
       if (!matchesMultiFilter(filters.Consent, row.consentLabel)) return false;
-
+      if (!matchesMultiFilter(filters.Approval, row.approvalLabel))
+        return false;
       return true;
     });
   }, [normalizedTenants, searchValue, filters]);
@@ -410,6 +434,7 @@ export default function ComTable({
     if (key === "usergroupid") return row.usergroupid;
     if (key === "isconsented") return row.consentLabel;
     if (key === "isactive") return row.statusLabel;
+    if (key === "isapproved") return row.approvalLabel;
     if (key === "createdat") return formatDateTime(row.createdAt);
     return "-";
   };
@@ -577,7 +602,8 @@ export default function ComTable({
                           className={`px-4 py-3 whitespace-nowrap border-r border-gray-200 dark:border-gray-800 last:border-r-0 overflow-hidden truncate ${alignmentClass} ${textClass}`}
                         >
                           {column.key === "isconsented" ||
-                          column.key === "isactive" ? (
+                          column.key === "isactive" ||
+                          column.key === "isapproved" ? (
                             <span
                               className={`inline-flex items-center px-1.5 py-0.5 text-xs rounded-full ${getBooleanPillClass(
                                 value,
