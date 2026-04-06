@@ -1,9 +1,29 @@
-# [1.6.0-dev.17](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0-dev.16...v1.6.0-dev.17) (2026-04-06)
+# [1.6.0](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.4...v1.6.0) (2026-04-05)
 
 
 ### Bug Fixes
 
-* filter completed tickets ([19ab7ff](https://github.com/michael-raquel/PowerIntake-WebApp/commit/19ab7ff0b9e4a48da1dea88f97ccda3f2323abda))
+* add tenant PUT ([20b6be3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/20b6be3e1bb32b044b8e0d3718efd1dee96adc3f))
+* Admin can now view manage page ([6254014](https://github.com/michael-raquel/PowerIntake-WebApp/commit/625401477dd7e21942f6569448c169b4636dcc05))
+* bugs of update tenant ([4a5ec05](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4a5ec055a7c9b6b20edcc4ebab2ea3efd8077344))
+* comcard adjust ([ae9881e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ae9881e67bccdc6e804d8a8e4167fd08da7f18e6))
+* consent to add bearer ([f65a69e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f65a69ea10cc7850cbe153c39c517359c65afa8d))
+* refresh to index ([9b8e62a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9b8e62a18e48e2d66b294a0582d050d6321a192d))
+* ST-reactivation of a ticket now reflect on the ui the new status automatically ([e7cf9c7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e7cf9c7c2dadb4265f2d5518217d7f11c9aa5345))
+* ST-ticket change the ticket status value to v_status ([38fe769](https://github.com/michael-raquel/PowerIntake-WebApp/commit/38fe7697cfc1a89fb7e4ad1f57e09f2188ad3c97))
+* ST-ticket other user can reactivate ([f76b3d3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f76b3d38a00cdf27e731a0b92d1f724736ade3ac))
+* ST-ticket reactivating a ticket will now reflected on ui immediately ([72a63bc](https://github.com/michael-raquel/PowerIntake-WebApp/commit/72a63bc357d2eaf5a3790fad29664bc895f30e4a))
+* ST-ticket resolve and cancelled ticket will hide the resolve button ([2905691](https://github.com/michael-raquel/PowerIntake-WebApp/commit/29056918dc28650f26a48d063c23a4ac81313958))
+* ST-ticket status has been removed on the UI ([114bdd0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/114bdd087552d1ab17b9405fa99320d20705729a))
+* ticket filter ([d02a65b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d02a65b485c96cb68d7f2c1f9654c40e7705be22))
+* update with console logs for the consent call back ([17dbd70](https://github.com/michael-raquel/PowerIntake-WebApp/commit/17dbd7093767a7cd341b381e8f5e00c6ba819241))
+* updated filter removed the status filter ([ad480b4](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ad480b438fc99c10c6c01b0e20720e902e2f00a8))
+
+
+### Features
+
+* Admin Manage Page Missing ([32b6f48](https://github.com/michael-raquel/PowerIntake-WebApp/commit/32b6f4862d42c0497a814e825a3981e03e550b35))
+* Switch to Omnichannel live chat script ([af968a7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/af968a7cbcf2a5b8f0dca97492476d7bea8b09c0))
 
 ## [1.5.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.3...v1.5.4) (2026-04-03)
 
