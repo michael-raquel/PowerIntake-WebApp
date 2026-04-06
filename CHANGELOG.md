@@ -1,3 +1,10 @@
+## [1.6.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.0...v1.6.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* filter completed tickets ([19ab7ff](https://github.com/michael-raquel/PowerIntake-WebApp/commit/19ab7ff0b9e4a48da1dea88f97ccda3f2323abda))
+
 # [1.6.0](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.5.4...v1.6.0) (2026-04-05)
 
 
