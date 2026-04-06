@@ -140,7 +140,7 @@ export default function ComUserInformation({ ticket }) {
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800 transition-all group">
+      {/* <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800 transition-all group">
         <div className="flex items-start gap-3">
           <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 text-xs group-hover:scale-110 transition-transform shrink-0">
             🌐
@@ -152,7 +152,7 @@ export default function ComUserInformation({ ticket }) {
             </p>
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }

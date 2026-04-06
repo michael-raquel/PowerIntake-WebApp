@@ -136,29 +136,50 @@ export function AuthProvider({ children }) {
     acquire();
   }, [account, instance]);
 
-  // ── Graph token — only for wids / Global Admin check ────
-  useEffect(() => {
-    if (!account) return;
+ // ── Graph token — only for wids / Global Admin check ────
+useEffect(() => {
+  if (!account) return;
 
-    const checkGlobalAdmin = async () => {
-      try {
-        const graphRes = await instance.acquireTokenSilent({
-          scopes: ["https://graph.microsoft.com/User.Read"],
-          account,
-        });
+  const checkGlobalAdmin = async () => {
+    try {
+      const graphRes = await instance.acquireTokenSilent({
+        scopes: ["https://graph.microsoft.com/User.Read"],
+        account,
+      });
 
-        const claims = decodeJwt(graphRes.accessToken);
-        const wids   = claims?.wids ?? [];
+      const claims = decodeJwt(graphRes.accessToken);
+      const wids   = claims?.wids ?? [];
 
-        setIsGlobalAdmin(wids.includes(GLOBAL_ADMIN_WID));
-      } catch (err) {
-        console.warn("[AUTH] Could not get Graph token:", err.errorCode ?? err.message);
+      // wids is populated only when the enterprise app (SP) exists in the tenant.
+      // If it's missing (e.g. SP was deleted), fall back to a direct Graph call.
+      if (wids.includes(GLOBAL_ADMIN_WID)) {
+        setIsGlobalAdmin(true);
+        return;
+      }
+
+      // Fallback: query directory roles directly via Graph
+      const rolesRes = await fetch(
+        "https://graph.microsoft.com/v1.0/me/transitiveMemberOf/microsoft.graph.directoryRole?$select=roleTemplateId",
+        { headers: { Authorization: `Bearer ${graphRes.accessToken}` } },
+      );
+
+      if (rolesRes.ok) {
+        const rolesData = await rolesRes.json();
+        const isAdmin = (rolesData.value ?? []).some(
+          (r) => r.roleTemplateId === GLOBAL_ADMIN_WID,
+        );
+        setIsGlobalAdmin(isAdmin);
+      } else {
         setIsGlobalAdmin(false);
       }
-    };
+    } catch (err) {
+      console.warn("[AUTH] Could not get Graph token:", err.errorCode ?? err.message);
+      setIsGlobalAdmin(false);
+    }
+  };
 
-    checkGlobalAdmin();
-  }, [account, instance]);
+  checkGlobalAdmin();
+}, [account, instance]);
 
   // ── Login sync ───────────────────────────────────────────
   useEffect(() => {
