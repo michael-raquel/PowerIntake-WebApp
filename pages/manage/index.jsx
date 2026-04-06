@@ -27,8 +27,9 @@ export default function Manage() {
   const tabs = [
     ...(isSuperAdmin ? [{ id: "clients", label: "My Clients" }] : []),
     ...(isSuperAdmin ? [{ id: "admin", label: "Super Admin" }] : []),
-    ...(isManager ? [{ id: "team", label: "My Team" }] : []),
     { id: "company", label: "My Company" },
+    ...(isManager ? [{ id: "team", label: "My Team" }] : []),
+
   ];
 
   const validTab = tabs.find((t) => t.id === activeTab)
