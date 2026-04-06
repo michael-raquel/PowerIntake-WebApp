@@ -8,6 +8,7 @@ export function useFetchTenant({
   dynamicsaccountid = null,
   isconsented = null,
   isactive = null,
+  isapproved = null, // ✅ added
   refreshKey = 0,
   enabled = true,
 } = {}) {
@@ -52,6 +53,9 @@ export function useFetchTenant({
         if (isactive !== null)
           params.append("isactive", String(isactive));
 
+        if (isapproved !== null) // ✅ added
+          params.append("isapproved", String(isapproved));
+
         const query = params.toString();
 
         const url = query
@@ -86,6 +90,7 @@ export function useFetchTenant({
     dynamicsaccountid,
     isconsented,
     isactive,
+    isapproved, // ✅ added
     refreshKey,
     enabled,
     getAccessToken,

@@ -46,6 +46,7 @@ export function useUpdateTenant({ onSuccess } = {}) {
       usergroupid,
       isactive,
       isconsented,
+      isapproved, // ✅ added
     } = {}) => {
       const normalizedTenantUuid = normalizeText(tenantuuid);
       if (!normalizedTenantUuid) {
@@ -67,6 +68,7 @@ export function useUpdateTenant({ onSuccess } = {}) {
         usergroupid: normalizeText(usergroupid),
         isactive: normalizeBoolean(isactive),
         isconsented: normalizeBoolean(isconsented),
+        isapproved: normalizeBoolean(isapproved), // ✅ added
       };
 
       try {
@@ -83,7 +85,7 @@ export function useUpdateTenant({ onSuccess } = {}) {
                 : {}),
             },
             body: JSON.stringify(body),
-          },
+          }
         );
 
         const data = await res.json().catch(() => ({}));
@@ -99,7 +101,7 @@ export function useUpdateTenant({ onSuccess } = {}) {
         setLoading(false);
       }
     },
-    [getAccessToken, onSuccess],
+    [getAccessToken, onSuccess]
   );
 
   return { updateTenant, loading, error };

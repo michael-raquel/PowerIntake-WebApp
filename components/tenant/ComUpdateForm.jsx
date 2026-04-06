@@ -52,11 +52,16 @@ const buildFormData = (tenant) => ({
   ),
   admingroupid: toText(readField(tenant, ["admingroupid", "v_admingroupid"])),
   usergroupid: toText(readField(tenant, ["usergroupid", "v_usergroupid"])),
+
   isactive: normalizeBoolean(
     readField(tenant, ["isactive", "v_isactive"], false),
   ),
   isconsented: normalizeBoolean(
     readField(tenant, ["isconsented", "v_isconsented"], false),
+  ),
+  isapproved: normalizeBoolean(
+    // ✅ ADD THIS
+    readField(tenant, ["isapproved", "v_isapproved"], false),
   ),
 });
 
@@ -102,7 +107,8 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
 
     return (
       Boolean(formData.isactive) !== Boolean(initialForm.isactive) ||
-      Boolean(formData.isconsented) !== Boolean(initialForm.isconsented)
+      Boolean(formData.isconsented) !== Boolean(initialForm.isconsented) ||
+      Boolean(formData.isapproved) !== Boolean(initialForm.isapproved) // ✅ ADD
     );
   }, [formData, initialForm]);
 
@@ -178,6 +184,7 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
         usergroupid: formData.usergroupid,
         isactive: formData.isactive,
         isconsented: formData.isconsented,
+        isapproved: formData.isapproved, // ✅ ADD
       });
 
       toast.success("Tenant updated successfully.");
@@ -354,7 +361,7 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
               <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                 Status Flags
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5">
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -385,6 +392,24 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
                     checked={Boolean(formData.isconsented)}
                     onCheckedChange={(value) =>
                       handleToggle("isconsented", value)
+                    }
+                    disabled={isBusy}
+                    className="data-[state=checked]:bg-purple-600"
+                  />
+                </div>
+                <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      Approved
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      Marks tenant approval status
+                    </p>
+                  </div>
+                  <Switch
+                    checked={Boolean(formData.isapproved)}
+                    onCheckedChange={(value) =>
+                      handleToggle("isapproved", value)
                     }
                     disabled={isBusy}
                     className="data-[state=checked]:bg-purple-600"
