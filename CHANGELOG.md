@@ -1,3 +1,11 @@
+## [1.6.3-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.2...v1.6.3-dev.1) (2026-04-06)
+
+
+### Bug Fixes
+
+* added sticky functionality in the mobile mode view of ticket ([8c69d29](https://github.com/michael-raquel/PowerIntake-WebApp/commit/8c69d29a325b8513ae38e3518798211e5c9eb7a4))
+* ST-attachment will now has File Uploaded sent on notes ([2e7d418](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2e7d418744580d02675de9f5fce4b178f5304614))
+
 ## [1.6.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.1...v1.6.2) (2026-04-06)
 
 
