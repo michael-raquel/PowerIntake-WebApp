@@ -206,7 +206,7 @@ export default function ComTableMyTickets({
           matchesFilter(filters.Category, t.v_ticketcategory, 'Category') &&
           matchesFilter(filters['Ticket Status'], t.v_status,         'Ticket Status') &&
           (!hideCompleted ||
-            (t.v_status !== 'Work Completed' && t.v_status !== 'Complete'))
+            (t.v_ticketstatus !== 'Cancelled' && t.v_ticketstatus !== 'Resolved'))
         );
       }),
     [myTickets, searchValue, filters, hideCompleted]
