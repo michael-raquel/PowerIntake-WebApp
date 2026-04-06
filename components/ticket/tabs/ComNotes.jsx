@@ -109,11 +109,18 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true, refreshKe
   };
 
   const getNoteContent = (note) => {
-    if (!note.v_note && !note.v_createdby) {
-      return '📎 File uploaded';
+    if (note.v_note === 'File Uploaded') {
+      return '📎 File Uploaded';
     }
     return note.v_note;
   };
+
+  // const getNoteContent2 = (note) => {
+  //   if (note.v_note === 'File uploaded' && !note.v_createdby) {
+  //     return '📎 File uploaded';
+  //   }
+  //   return note.v_note;
+  // };
 
   const formatMessageTime = (timestamp) => {
     const date    = new Date(timestamp);

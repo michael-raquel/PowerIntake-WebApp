@@ -254,7 +254,7 @@ export default function ComTableTeam({
     <>
       {/* ── Mobile cards ─────────────────────────────────────────────────────── */}
       <div className="md:hidden">
-        <div className="flex justify-between items-center px-0 py-3 border-b border-gray-200 dark:border-gray-800">
+        <div className="sticky top-0 z-10 flex justify-between items-center px-0 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {filteredTickets.length} Total Records
           </span>
