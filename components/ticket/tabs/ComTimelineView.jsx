@@ -130,23 +130,35 @@ export default function ComTimelineView({ ticket }) {
                   </div>
                 </div>
 
-               {person && (
-                  <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                      {isNew ? (
-                          <User className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-                      ) : isReactivated ? (
-                          <RefreshCw className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
-                      ) : (
-                          <UserCog className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
-                      )}
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {personLabel}:
-                      </span>
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                          {person}
-                      </span>
-                  </div>
-              )}
+             {s.v_remarks?.trim() && (
+  <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800/40">
+    <div className="flex items-center gap-1.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        Remarks
+      </p>
+    </div>
+    <p className="mt-1 text-xs italic leading-relaxed text-gray-600 dark:text-gray-300 break-words">
+      {s.v_remarks}
+    </p>
+  </div>
+)}
+{person && (
+  <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+      {isNew ? (
+          <User className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+      ) : isReactivated ? (
+          <RefreshCw className="w-3.5 h-3.5 text-gray-500 dark:text-gray-400" />
+      ) : (
+          <UserCog className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+      )}
+      <span className="text-xs text-gray-500 dark:text-gray-400">
+          {personLabel}:
+      </span>
+      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+          {person}
+      </span>
+  </div>
+)}
               </div>
             </div>
           </div>
