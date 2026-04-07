@@ -91,6 +91,13 @@ const calcEndTime = (date, startTime) => {
   return toHHMM(end);
 };
 
+const stripScheduleFromDescription = (description) => {
+  if (!description) return "";
+  const marker = "\n\nAvailable Date and Time for Support Call:";
+  const index = description.indexOf(marker);
+  return index !== -1 ? description.slice(0, index) : description;
+};
+
 export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const { account } = useAuth();
   const { updateTicket, loading: updateLoading } = useUpdateTicket({ account });
@@ -106,7 +113,10 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
   const [panelOpen, setPanelOpen] = useState(false);
   const [openPopovers, setOpenPopovers] = useState({});
   const [title, setTitle] = useState(ticket?.v_title || '');
-  const [description, setDescription] = useState(ticket?.v_description || '');
+  // const [description, setDescription] = useState(ticket?.v_description || '');
+  const [description, setDescription] = useState(
+    stripScheduleFromDescription(ticket?.v_description || '')
+  );
   const [attachments, setAttachments] = useState(
     Array.isArray(ticket?.v_attachments) ? ticket.v_attachments.map(a => ({ name: a.v_attachment, createdAt: a.v_createdat })) : []
   );
@@ -159,7 +169,11 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
 
     setLiveTicket(updated);
     setTitle(prev => prev === (ticket?.v_title || '') ? (updated.v_title || '') : prev);
-    setDescription(prev => prev === (ticket?.v_description || '') ? (updated.v_description || '') : prev);
+    setDescription(prev =>
+      prev === stripScheduleFromDescription(ticket?.v_description || '')
+        ? stripScheduleFromDescription(updated.v_description || '')
+        : prev
+    );
 
     if (liveTicket?.v_status !== updated.v_status) {
       toast.info("Ticket Updated", { description: `Status changed to ${updated.v_status}` });
