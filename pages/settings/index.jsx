@@ -99,18 +99,18 @@ export default function SettingsPage() {
     try {
       const resetSettings = {
         usersettingsuuid: localSettings.usersettingsuuid,
-        outlook: true,
-        teams: true,
-        powersuiteai: true,
-        spartaassist: true,
-        darkmode: true,
+        outlook: false,
+        teams: false,
+        powersuiteai: false,
+        spartaassist: false,
+        darkmode: false,
         modifiedby: accounts?.[0]?.username || null,
       };
       setLocalSettings(resetSettings);
       setInitialSettings(resetSettings);
-      updateSpartaAssist(true);
+      updateSpartaAssist(false);
       await updateUserSettings(resetSettings);
-      if (!isDarkMode) await toggleTheme();
+      if (isDarkMode) await toggleTheme();
     } catch {
     } finally {
       setIsSaving(false);
