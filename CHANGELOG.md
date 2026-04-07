@@ -34,6 +34,7 @@
 * Rows per page filter does not work on My Company on Manage Page ([f8e9fc0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f8e9fc03f09745a621fd82f98a23ebdc98468349))
 
 ## [1.6.4-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.3...v1.6.4-dev.1) (2026-04-06)
+## [1.6.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.3...v1.6.4) (2026-04-06)
 
 
 ### Bug Fixes
