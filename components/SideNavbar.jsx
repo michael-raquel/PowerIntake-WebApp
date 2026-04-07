@@ -70,7 +70,7 @@ export default function SideNavbar() {
     ];
     if (isPrivileged)
       items.push({ icon: Users, label: "Manage", path: "/manage" });
-    if (currentRole === "super-admin")
+    if (currentRole === "super-admin" || currentRole === "admin")
       items.push({ icon: Building2, label: "Tenant", path: "/tenant" });
     items.push({ icon: Settings, label: "Settings", path: "/settings" });
     return items;

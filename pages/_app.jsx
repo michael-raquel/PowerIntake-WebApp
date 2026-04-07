@@ -38,7 +38,7 @@ const noSidebarPages = [
 
 const routeRoleMap = {
   "/manage": ["SuperAdmin", "SystemAdmin", "Admin", "Manager"],
-  "/tenant": ["SuperAdmin"],
+  "/tenant": ["SuperAdmin", "Admin"],
 };
 
 function AppContent({ Component, pageProps }) {
