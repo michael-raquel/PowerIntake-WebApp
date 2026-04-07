@@ -1,3 +1,10 @@
+## [1.6.4-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.1...v1.6.4-dev.2) (2026-04-07)
+
+
+### Bug Fixes
+
+* Rows per page filter does not work on My Company on Manage Page ([f8e9fc0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f8e9fc03f09745a621fd82f98a23ebdc98468349))
+
 ## [1.6.4-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.3...v1.6.4-dev.1) (2026-04-06)
 
 
