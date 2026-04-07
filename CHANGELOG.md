@@ -1,3 +1,10 @@
+## [1.6.4-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.3...v1.6.4-dev.4) (2026-04-07)
+
+
+### Bug Fixes
+
+* st-2201 No Historical Data for Ticket Status Table (Timeline) for initial Sync of Tickets ([41c82e2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/41c82e255ca282da18cffcd4ef04ec116854e20f))
+
 ## [1.6.4-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.2...v1.6.4-dev.3) (2026-04-07)
 
 
