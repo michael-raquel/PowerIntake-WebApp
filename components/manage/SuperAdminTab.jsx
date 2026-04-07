@@ -216,6 +216,7 @@ export default function SuperAdminTab({ filters = {}, onFiltersChange = () => {}
           entrauserid: userSettings[0]?.v_entrauserid,
           ticketrecordcount: userSettings[0]?.v_ticketrecordcount ?? null,
           managerecordcount: newValue,
+          tenantrecordcount: userSettings[0]?.v_tenantrecordcount ?? userSettings[0]?.tenantrecordcount ?? null,
           modifiedby: accounts?.[0]?.username ?? null,
         });
       } catch (err) {

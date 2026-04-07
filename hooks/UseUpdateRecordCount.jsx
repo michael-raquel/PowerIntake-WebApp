@@ -23,6 +23,7 @@ export function useUpdateRecordCount() {
 			entrauserid,
 			ticketrecordcount,
 			managerecordcount,
+			tenantrecordcount,
 			modifiedby,
 		}) => {
 			if (!entrauserid) {
@@ -47,6 +48,7 @@ export function useUpdateRecordCount() {
 							entrauserid,
 							ticketrecordcount: ticketrecordcount ?? null,
 							managerecordcount: managerecordcount ?? null,
+							tenantrecordcount: tenantrecordcount ?? null,
 							modifiedby: modifiedby ?? null,
 						}),
 					}

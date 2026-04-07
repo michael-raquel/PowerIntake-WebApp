@@ -178,6 +178,7 @@ export default function TicketPage() {
           entrauserid: userSettings[0]?.v_entrauserid,
           ticketrecordcount: newValue,
           managerecordcount: userSettings[0]?.v_managerecordcount ?? null,
+          tenantrecordcount: userSettings[0]?.v_tenantrecordcount ?? userSettings[0]?.tenantrecordcount ?? null,
           modifiedby: tokenInfo?.account?.username ?? null,
         });
       } catch (err) {
