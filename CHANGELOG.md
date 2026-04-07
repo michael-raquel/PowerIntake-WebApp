@@ -1,3 +1,10 @@
+## [1.6.4-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.5...v1.6.4-dev.6) (2026-04-07)
+
+
+### Bug Fixes
+
+* added a tenant record count ([6ee3539](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6ee3539a7c279d30b1a03d6ccfc6e27960fe3af4))
+
 ## [1.6.4-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.4...v1.6.4-dev.5) (2026-04-07)
 
 
