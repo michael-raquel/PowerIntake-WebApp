@@ -1,3 +1,10 @@
+## [1.6.4-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.4...v1.6.4-dev.5) (2026-04-07)
+
+
+### Bug Fixes
+
+* ST-ticket remove support call from description ([713796a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/713796aea54243a3712127b4d477fc2ba89be695))
+
 ## [1.6.4-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.3...v1.6.4-dev.4) (2026-04-07)
 
 
