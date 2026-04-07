@@ -3,6 +3,7 @@ import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 import { useAuth } from "@/context/AuthContext";
 import { useFetchAppRole } from "@/hooks/UseFetchAppRole";
+import { useFetchTenant } from "@/hooks/UseFetchTenant";
 
 const DEFAULT_CLIENT_ID = "6ccf8b01-7af5-497b-9e23-45a92d68a226";
 
@@ -12,25 +13,70 @@ export default function useDeleteDemoteAdmin({
     roleDisplayName = "Admin",
     unassignEndpoint = "/groups/unassign",
     method = "DELETE",
+    useTenantGroups,
 } = {}) {
     const { instance, accounts } = useMsal();
     const { account } = useAuth();
     const userOid = account?.idTokenClaims?.oid ?? null;
+
+    const normalizeRoleKey = useCallback((value) =>
+        String(value || "").replace(/\s+/g, "").toLowerCase(),
+    []);
+
+    const shouldUseTenantGroups = useMemo(() => {
+        if (typeof useTenantGroups === "boolean") return useTenantGroups;
+        return normalizeRoleKey(roleValue) === "admin" || normalizeRoleKey(roleDisplayName) === "admin";
+    }, [normalizeRoleKey, roleValue, roleDisplayName, useTenantGroups]);
+
+    const entraTenantId = useMemo(() => {
+        const idTokenTid = account?.idTokenClaims?.tid ?? accounts?.[0]?.idTokenClaims?.tid;
+        if (idTokenTid) return String(idTokenTid);
+        return account?.tenantId ?? accounts?.[0]?.tenantId ?? null;
+    }, [account, accounts]);
+
+    const {
+        tenants,
+        loading: tenantLoading,
+        error: tenantError,
+    } = useFetchTenant({
+        entratenantid: shouldUseTenantGroups ? entraTenantId : null,
+        enabled: shouldUseTenantGroups && Boolean(entraTenantId),
+    });
 
     const {
         data: appRoleData,
         loading: appRoleLoading,
         error: appRoleError,
         refetch: refetchAppRoles,
-    } = useFetchAppRole({ clientId, endpoint: "/groups/app-roles-with-groups" });
+    } = useFetchAppRole({
+        clientId: shouldUseTenantGroups ? null : clientId,
+        endpoint: "/groups/app-roles-with-groups",
+    });
 
-    const groupId = useMemo(() => {
+    const tenantRecord = useMemo(() => {
+        if (!tenants) return null;
+        return Array.isArray(tenants) ? tenants[0] : tenants;
+    }, [tenants]);
+
+    const adminGroupId = useMemo(() => (
+        tenantRecord?.admingroupid ?? tenantRecord?.v_admingroupid ?? null
+    ), [tenantRecord]);
+
+    const userGroupId = useMemo(() => (
+        tenantRecord?.usergroupid ?? tenantRecord?.v_usergroupid ?? null
+    ), [tenantRecord]);
+
+    const appRoleGroupId = useMemo(() => {
         const roles = appRoleData?.appRoles ?? [];
         const match = roles.find(
             (role) => role.value === roleValue || role.displayName === roleDisplayName
         );
         return match?.groups?.[0]?.groupId ?? null;
     }, [appRoleData, roleValue, roleDisplayName]);
+
+    const groupId = shouldUseTenantGroups ? adminGroupId : appRoleGroupId;
+    const groupIdLoading = shouldUseTenantGroups ? tenantLoading : appRoleLoading;
+    const groupIdError = shouldUseTenantGroups ? tenantError : appRoleError;
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -96,9 +142,12 @@ export default function useDeleteDemoteAdmin({
         success,
         userOid,
         groupId,
+        adminGroupId,
+        userGroupId,
         appRoleData,
-        appRoleLoading,
-        appRoleError,
+        appRoleLoading: groupIdLoading,
+        appRoleError: groupIdError,
         refetchAppRoles,
+        tenantId: entraTenantId,
     };
 }
