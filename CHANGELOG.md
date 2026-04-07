@@ -1,3 +1,14 @@
+## [1.6.5-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4...v1.6.5-dev.1) (2026-04-07)
+
+
+### Bug Fixes
+
+* added a tenant record count ([6ee3539](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6ee3539a7c279d30b1a03d6ccfc6e27960fe3af4))
+* Rows per page filter does not work on My Company on Manage Page ([f8e9fc0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f8e9fc03f09745a621fd82f98a23ebdc98468349))
+* st-2201 No Historical Data for Ticket Status Table (Timeline) for initial Sync of Tickets ([41c82e2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/41c82e255ca282da18cffcd4ef04ec116854e20f))
+* ST-ticket remove support call from description ([713796a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/713796aea54243a3712127b4d477fc2ba89be695))
+* updated the settings ([e1abac3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e1abac3dd7f4433eeeac438df969fadee23bbcdf))
+
 ## [1.6.4-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.5...v1.6.4-dev.6) (2026-04-07)
 
 
