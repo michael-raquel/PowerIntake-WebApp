@@ -321,30 +321,36 @@ if (!ticket) return null;
         className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-[95vw] lg:max-w-[75vw] xl:max-w-[65vw] 2xl:max-w-[55vw] flex flex-col overflow-hidden relative"
         style={{ height: 'min(95dvh, 95vh)', maxHeight: 'min(95dvh, 95vh)' }}>
 
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-800 shrink-0">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <span className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400">Ticket</span>
-            <span className="text-xs lg:text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-md">#{liveTicket.v_ticketnumber}</span>
-            <span className={cn('text-xs lg:text-sm font-medium px-2.5 py-1 rounded-md border', STATUS_COLORS[liveTicket.v_status])}>{liveTicket.v_status}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            {canReactivate && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReactivate}
-                disabled={reactivateLoading && liveTicket.v_ticketstatus !== 'Cancelled' && liveTicket.v_ticketstatus !== 'Resolved'}
-                className="gap-2 border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-950/30"
-              >
-                <RefreshCw className={cn("w-3.5 h-3.5", reactivateLoading && "animate-spin")} />
-                {reactivateLoading ? 'Reactivating...' : 'Reactivate'}
-              </Button>
-            )}
-            <Button variant="ghost" size="icon" onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
-              <X className="w-4 h-4 lg:w-5 lg:h-5" />
-            </Button>
-          </div>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-gray-800 shrink-0 gap-2 sm:gap-0">
+  <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+  <span className="text-xs lg:text-sm font-medium text-gray-500 dark:text-gray-400 shrink-0">Ticket</span>
+  <span className="text-xs lg:text-sm font-semibold text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-2.5 py-1 rounded-md shrink-0">#{liveTicket.v_ticketnumber}</span>
+  <span className={cn('text-xs lg:text-sm font-medium px-2.5 py-1 rounded-md border truncate min-w-0', STATUS_COLORS[liveTicket.v_status])}>{liveTicket.v_status}</span>
+</div>
+    <Button variant="ghost" size="icon" onClick={onClose} className="sm:hidden text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+      <X className="w-4 h-4" />
+    </Button>
+  </div>
+
+  <div className="flex items-center justify-start sm:justify-end gap-2">
+    {canReactivate && (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleReactivate}
+        disabled={reactivateLoading && liveTicket.v_ticketstatus !== 'Cancelled' && liveTicket.v_ticketstatus !== 'Resolved'}
+        className="gap-2 border-amber-500 text-amber-600 hover:bg-amber-50 dark:border-amber-400 dark:text-amber-400 dark:hover:bg-amber-950/30"
+      >
+        <RefreshCw className={cn("w-3.5 h-3.5", reactivateLoading && "animate-spin")} />
+        {reactivateLoading ? 'Reactivating...' : 'Reactivate'}
+      </Button>
+    )}
+    <Button variant="ghost" size="icon" onClick={onClose} className="hidden sm:flex text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800">
+      <X className="w-4 h-4 lg:w-5 lg:h-5" />
+    </Button>
+  </div>
+</div>
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-6 lg:space-y-8">
