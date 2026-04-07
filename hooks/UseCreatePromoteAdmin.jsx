@@ -2,34 +2,42 @@ import { useState, useMemo, useCallback } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest } from "@/lib/msalConfig";
 import { useAuth } from "@/context/AuthContext";
-import { useFetchAppRole } from "@/hooks/UseFetchAppRole";
-
-const DEFAULT_CLIENT_ID = "6ccf8b01-7af5-497b-9e23-45a92d68a226";
+import { useFetchTenant } from "@/hooks/UseFetchTenant";
 
 export default function useCreatePromoteAdmin({
-	clientId = DEFAULT_CLIENT_ID,
-	roleValue = "Admin",
-	roleDisplayName = "Admin",
 	assignEndpoint = "/groups/assign",
 } = {}) {
 	const { instance, accounts } = useMsal();
 	const { account } = useAuth();
 	const userOid = account?.idTokenClaims?.oid ?? null;
 
-	const {
-		data: appRoleData,
-		loading: appRoleLoading,
-		error: appRoleError,
-		refetch: refetchAppRoles,
-	} = useFetchAppRole({ clientId, endpoint: "/groups/app-roles-with-groups" });
+	const entraTenantId = useMemo(() => {
+		const idTokenTid = account?.idTokenClaims?.tid ?? accounts?.[0]?.idTokenClaims?.tid;
+		if (idTokenTid) return String(idTokenTid);
+		return account?.tenantId ?? accounts?.[0]?.tenantId ?? null;
+	}, [account, accounts]);
 
-	const groupId = useMemo(() => {
-		const roles = appRoleData?.appRoles ?? [];
-		const match = roles.find(
-			(role) => role.value === roleValue || role.displayName === roleDisplayName
-		);
-		return match?.groups?.[0]?.groupId ?? null;
-	}, [appRoleData, roleValue, roleDisplayName]);
+	const {
+		tenants,
+		loading: tenantLoading,
+		error: tenantError,
+	} = useFetchTenant({
+		entratenantid: entraTenantId,
+		enabled: Boolean(entraTenantId),
+	});
+
+	const tenantRecord = useMemo(() => {
+		if (!tenants) return null;
+		return Array.isArray(tenants) ? tenants[0] : tenants;
+	}, [tenants]);
+
+	const adminGroupId = useMemo(() => (
+		tenantRecord?.admingroupid ?? tenantRecord?.v_admingroupid ?? null
+	), [tenantRecord]);
+
+	const userGroupId = useMemo(() => (
+		tenantRecord?.usergroupid ?? tenantRecord?.v_usergroupid ?? null
+	), [tenantRecord]);
 
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState(null);
@@ -54,7 +62,7 @@ export default function useCreatePromoteAdmin({
 		try {
 			const resolvedUserOid = targetUserOid || userOid;
 			if (!resolvedUserOid) throw new Error("User OID not available");
-			if (!groupId) throw new Error("Admin groupId not found");
+			if (!adminGroupId) throw new Error("Admin groupId not found for tenant");
 
 			const accessToken = await getAccessToken();
 			const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}${assignEndpoint}`;
@@ -64,7 +72,7 @@ export default function useCreatePromoteAdmin({
 					"Content-Type": "application/json",
 					...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
 				},
-				body: JSON.stringify({ userOid: resolvedUserOid, groupId }),
+				body: JSON.stringify({ userOid: resolvedUserOid, groupId: adminGroupId }),
 			});
 
 			const data = await res.json().catch(() => ({}));
@@ -80,7 +88,7 @@ export default function useCreatePromoteAdmin({
 		} finally {
 			setLoading(false);
 		}
-	}, [assignEndpoint, getAccessToken, groupId, userOid]);
+	}, [assignEndpoint, getAccessToken, adminGroupId, userOid]);
 
 	return {
 		promoteAdmin,
@@ -88,10 +96,10 @@ export default function useCreatePromoteAdmin({
 		error,
 		success,
 		userOid,
-		groupId,
-		appRoleData,
-		appRoleLoading,
-		appRoleError,
-		refetchAppRoles,
+		groupId: adminGroupId,
+		userGroupId,
+		tenantId: entraTenantId,
+		fetchingGroupId: tenantLoading,
+		tenantError,
 	};
 }

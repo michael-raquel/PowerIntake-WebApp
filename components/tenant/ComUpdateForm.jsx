@@ -26,14 +26,12 @@ const normalizeBoolean = (value, fallback = false) => {
   if (typeof value === "number") return value !== 0;
   if (typeof value === "string") {
     const lowered = value.trim().toLowerCase();
-    if (["true", "1", "yes", "y", "active", "consented"].includes(lowered)) {
+    if (["true", "1", "yes", "y", "active", "consented"].includes(lowered))
       return true;
-    }
     if (
       ["false", "0", "no", "n", "inactive", "not consented"].includes(lowered)
-    ) {
+    )
       return false;
-    }
   }
   return fallback;
 };
@@ -52,7 +50,6 @@ const buildFormData = (tenant) => ({
   ),
   admingroupid: toText(readField(tenant, ["admingroupid", "v_admingroupid"])),
   usergroupid: toText(readField(tenant, ["usergroupid", "v_usergroupid"])),
-
   isactive: normalizeBoolean(
     readField(tenant, ["isactive", "v_isactive"], false),
   ),
@@ -60,16 +57,39 @@ const buildFormData = (tenant) => ({
     readField(tenant, ["isconsented", "v_isconsented"], false),
   ),
   isapproved: normalizeBoolean(
-    // ✅ ADD THIS
     readField(tenant, ["isapproved", "v_isapproved"], false),
   ),
 });
 
 const trimOrEmpty = (value) => String(value || "").trim();
+const displayValue = (value) => {
+  const text = trimOrEmpty(value);
+  return text || "-";
+};
+
+function InfoField({ label, value }) {
+  return (
+    <div className="space-y-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/40 px-3 py-2.5">
+      <p className="text-[11px] uppercase tracking-wide text-gray-500 dark:text-gray-400">
+        {label}
+      </p>
+      <p className="text-sm font-medium text-gray-900 dark:text-white break-all">
+        {displayValue(value)}
+      </p>
+    </div>
+  );
+}
+
 const OUTLINE_BUTTON_CLASS =
   "bg-white text-gray-900 border-gray-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800 appearance-none";
 
-export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
+export default function ComUpdateForm({
+  tenant,
+  onClose,
+  onUpdated,
+  inline = false,
+  mode = "super-admin",
+}) {
   const [formData, setFormData] = useState(() => buildFormData(tenant));
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -87,42 +107,45 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
     setErrors({});
   }, [initialForm]);
 
+  const isAdminMode = mode === "admin";
   const isBusy = submitting || loading;
 
   const hasChanges = useMemo(() => {
-    const fields = [
-      "entratenantid",
-      "tenantname",
-      "tenantemail",
-      "dynamicsaccountid",
-      "admingroupid",
-      "usergroupid",
-    ];
+    const fields = isAdminMode
+      ? ["tenantemail", "admingroupid", "usergroupid"]
+      : [
+          "entratenantid",
+          "tenantname",
+          "tenantemail",
+          "dynamicsaccountid",
+          "admingroupid",
+          "usergroupid",
+        ];
 
     for (const field of fields) {
-      if (trimOrEmpty(formData[field]) !== trimOrEmpty(initialForm[field])) {
+      if (trimOrEmpty(formData[field]) !== trimOrEmpty(initialForm[field]))
         return true;
-      }
     }
+
+    if (isAdminMode) return false;
 
     return (
       Boolean(formData.isactive) !== Boolean(initialForm.isactive) ||
       Boolean(formData.isconsented) !== Boolean(initialForm.isconsented) ||
-      Boolean(formData.isapproved) !== Boolean(initialForm.isapproved) // ✅ ADD
+      Boolean(formData.isapproved) !== Boolean(initialForm.isapproved)
     );
-  }, [formData, initialForm]);
+  }, [formData, initialForm, isAdminMode]);
 
   const validationErrors = useMemo(() => {
     const next = {};
-
-    if (!trimOrEmpty(formData.tenantname)) {
-      next.tenantname = "Tenant name is required.";
-    }
-
-    if (!trimOrEmpty(formData.entratenantid)) {
-      next.entratenantid = "Entra tenant ID is required.";
-    } else if (!UUID_REGEX.test(trimOrEmpty(formData.entratenantid))) {
-      next.entratenantid = "Entra tenant ID must be a valid UUID.";
+    if (!isAdminMode) {
+      if (!trimOrEmpty(formData.tenantname))
+        next.tenantname = "Tenant name is required.";
+      if (!trimOrEmpty(formData.entratenantid)) {
+        next.entratenantid = "Entra tenant ID is required.";
+      } else if (!UUID_REGEX.test(trimOrEmpty(formData.entratenantid))) {
+        next.entratenantid = "Entra tenant ID must be a valid UUID.";
+      }
     }
 
     if (
@@ -131,17 +154,13 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
     ) {
       next.tenantemail = "Enter a valid tenant email address.";
     }
-
     return next;
-  }, [formData]);
+  }, [formData, isAdminMode]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
-    }
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
   const handleToggle = (key, value) => {
@@ -156,17 +175,14 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setErrors(validationErrors);
-
     if (!tenantUuid) {
       toast.error("Missing tenant UUID.");
       return;
     }
-
     if (Object.keys(validationErrors).length > 0) {
       toast.error("Please correct the highlighted fields.");
       return;
     }
-
     if (!hasChanges) {
       toast.message("No changes to update.");
       return;
@@ -184,12 +200,11 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
         usergroupid: formData.usergroupid,
         isactive: formData.isactive,
         isconsented: formData.isconsented,
-        isapproved: formData.isapproved, // ✅ ADD
+        isapproved: formData.isapproved,
       });
-
       toast.success("Tenant updated successfully.");
       onUpdated?.(result?.tenantuuid || tenantUuid);
-      onClose?.();
+      if (!inline) onClose?.();
     } catch (err) {
       toast.error(err?.message || "Failed to update tenant.");
     } finally {
@@ -199,44 +214,89 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
 
   if (!tenant) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-2xl">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-violet-600 dark:text-violet-300" />
+  const innerForm = (
+    <>
+      <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/40 flex gap-2">
+        <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <p className="text-xs text-amber-800 dark:text-amber-300">
+          {isAdminMode
+            ? "You can edit Tenant Email, Admin Group ID, and User Group ID."
+            : "Required fields: Entra Tenant ID and Tenant Name."}
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {isAdminMode ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InfoField
+                label="Entra Tenant ID"
+                value={formData.entratenantid}
+              />
+              <InfoField label="Tenant Name" value={formData.tenantname} />
+              <InfoField
+                label="Dynamics Account ID"
+                value={formData.dynamicsaccountid}
+              />
             </div>
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                Update Tenant
-              </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Review and save tenant changes
-              </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="tenantemail" className="text-xs mb-1 block">
+                  Tenant Email
+                </Label>
+                <Input
+                  id="tenantemail"
+                  name="tenantemail"
+                  value={formData.tenantemail}
+                  onChange={handleChange}
+                  type="email"
+                  placeholder="admin@tenant.com"
+                  disabled={isBusy}
+                  className={
+                    errors.tenantemail
+                      ? "border-red-500 focus-visible:ring-red-500"
+                      : ""
+                  }
+                />
+                {errors.tenantemail && (
+                  <p className="text-xs text-red-500 dark:text-red-400">
+                    {errors.tenantemail}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="admingroupid" className="text-xs mb-1 block">
+                  Admin Group ID
+                </Label>
+                <Input
+                  id="admingroupid"
+                  name="admingroupid"
+                  value={formData.admingroupid}
+                  onChange={handleChange}
+                  placeholder="group-id-value"
+                  disabled={isBusy}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="usergroupid" className="text-xs mb-1 block">
+                  User Group ID
+                </Label>
+                <Input
+                  id="usergroupid"
+                  name="usergroupid"
+                  value={formData.usergroupid}
+                  onChange={handleChange}
+                  placeholder="user-group-id-value"
+                  disabled={isBusy}
+                />
+              </div>
             </div>
-          </div>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            disabled={isBusy}
-            className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-
-        <div className="p-5 sm:p-6 space-y-6">
-          <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg border border-amber-200 dark:border-amber-900/40 flex gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-            <p className="text-xs text-amber-800 dark:text-amber-300">
-              Required fields: Entra Tenant ID and Tenant Name.
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
+          </>
+        ) : (
+          <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="entratenantid" className="text-xs mb-1 block">
@@ -362,101 +422,140 @@ export default function ComUpdateForm({ tenant, onClose, onUpdated }) {
                 Status Flags
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      Active
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Controls tenant active state
-                    </p>
+                {[
+                  {
+                    key: "isactive",
+                    label: "Active",
+                    desc: "Controls tenant active state",
+                  },
+                  {
+                    key: "isconsented",
+                    label: "Consented",
+                    desc: "Marks tenant consent status",
+                  },
+                  {
+                    key: "isapproved",
+                    label: "Approved",
+                    desc: "Marks tenant approval status",
+                  },
+                ].map(({ key, label, desc }) => (
+                  <div
+                    key={key}
+                    className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {label}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {desc}
+                      </p>
+                    </div>
+                    <Switch
+                      checked={Boolean(formData[key])}
+                      onCheckedChange={(value) => handleToggle(key, value)}
+                      disabled={isBusy}
+                      className="data-[state=checked]:bg-purple-600"
+                    />
                   </div>
-                  <Switch
-                    checked={Boolean(formData.isactive)}
-                    onCheckedChange={(value) => handleToggle("isactive", value)}
-                    disabled={isBusy}
-                    className="data-[state=checked]:bg-purple-600"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      Consented
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Marks tenant consent status
-                    </p>
-                  </div>
-                  <Switch
-                    checked={Boolean(formData.isconsented)}
-                    onCheckedChange={(value) =>
-                      handleToggle("isconsented", value)
-                    }
-                    disabled={isBusy}
-                    className="data-[state=checked]:bg-purple-600"
-                  />
-                </div>
-                <div className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2.5">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      Approved
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Marks tenant approval status
-                    </p>
-                  </div>
-                  <Switch
-                    checked={Boolean(formData.isapproved)}
-                    onCheckedChange={(value) =>
-                      handleToggle("isapproved", value)
-                    }
-                    disabled={isBusy}
-                    className="data-[state=checked]:bg-purple-600"
-                  />
-                </div>
+                ))}
               </div>
             </div>
+          </>
+        )}
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleReset}
-                disabled={isBusy || !hasChanges}
-                className={OUTLINE_BUTTON_CLASS}
-              >
-                Reset
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                disabled={isBusy}
-                className={OUTLINE_BUTTON_CLASS}
-              >
-                Cancel
-              </Button>
-
-              <Button
-                type="submit"
-                disabled={isBusy || !hasChanges}
-                className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-2 lg:py-2.5"
-              >
-                {isBusy ? (
-                  <span className="flex items-center gap-2">
-                    <RefreshCw className="w-4 h-4 animate-spin" /> Updating...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <Save className="w-4 h-4" /> Update Tenant
-                  </span>
-                )}
-              </Button>
-            </div>
-          </form>
+        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleReset}
+            disabled={isBusy || !hasChanges}
+            className={OUTLINE_BUTTON_CLASS}
+          >
+            Reset
+          </Button>
+          {!inline && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isBusy}
+              className={OUTLINE_BUTTON_CLASS}
+            >
+              Cancel
+            </Button>
+          )}
+          <Button
+            type="submit"
+            disabled={isBusy || !hasChanges}
+            className="w-full sm:w-auto bg-purple-600 hover:bg-purple-700 text-white px-8 py-2 lg:py-2.5"
+          >
+            {isBusy ? (
+              <span className="flex items-center gap-2">
+                <RefreshCw className="w-4 h-4 animate-spin" /> Updating...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Save className="w-4 h-4" /> Update Tenant
+              </span>
+            )}
+          </Button>
         </div>
+      </form>
+    </>
+  );
+
+  // ── Inline mode (AdminView) ──────────────────────────────
+  if (inline) {
+    return (
+      <>
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+            <Building2 className="w-5 h-5 text-violet-600 dark:text-violet-300" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Update Tenant
+            </h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Review and save tenant changes
+            </p>
+          </div>
+        </div>
+        <div className="p-5 sm:p-6 space-y-6">{innerForm}</div>
+      </>
+    );
+  }
+
+  // ── Modal mode (SuperAdminView) ──────────────────────────
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-4xl max-h-[95vh] overflow-y-auto rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-gray-800 sticky top-0 bg-white dark:bg-gray-900 z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-violet-100 dark:bg-violet-900/40 flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-violet-600 dark:text-violet-300" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Update Tenant
+              </h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Review and save tenant changes
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            disabled={isBusy}
+            className="text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <X className="w-5 h-5" />
+          </Button>
+        </div>
+        <div className="p-5 sm:p-6 space-y-6">{innerForm}</div>
       </div>
     </div>
   );

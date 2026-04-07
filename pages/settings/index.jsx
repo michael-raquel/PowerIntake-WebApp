@@ -99,18 +99,18 @@ export default function SettingsPage() {
     try {
       const resetSettings = {
         usersettingsuuid: localSettings.usersettingsuuid,
-        outlook: true,
-        teams: true,
-        powersuiteai: true,
-        spartaassist: true,
-        darkmode: true,
+        outlook: false,
+        teams: false,
+        powersuiteai: false,
+        spartaassist: false,
+        darkmode: false,
         modifiedby: accounts?.[0]?.username || null,
       };
       setLocalSettings(resetSettings);
       setInitialSettings(resetSettings);
-      updateSpartaAssist(true);
+      updateSpartaAssist(false);
       await updateUserSettings(resetSettings);
-      if (!isDarkMode) await toggleTheme();
+      if (isDarkMode) await toggleTheme();
     } catch {
     } finally {
       setIsSaving(false);
@@ -172,6 +172,7 @@ export default function SettingsPage() {
               <Button
                 onClick={handleReset}
                 variant="outline"
+                className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800 appearance-none"
                 disabled={!isReady || isSaving || submitting}
               >
                 Reset

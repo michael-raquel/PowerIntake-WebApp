@@ -62,19 +62,20 @@ export default function Document() {
         />
 
         {/* ── Favicon ── */}
+        <link rel="icon" href="/icons/favicon.ico" sizes="any" />
         <link
           rel="icon"
           type="image/png"
           sizes="32x32"
-          href="/icons/icon-96x96.png"
+          href="/icons/favicon-32x32.png"
         />
         <link
           rel="icon"
           type="image/png"
           sizes="16x16"
-          href="/icons/icon-72x72.png"
+          href="/icons/favicon-16x16.png"
         />
-        <link rel="shortcut icon" href="/favicon.ico" />
+        <link rel="shortcut icon" href="/icons/favicon.ico" />
       </Head>
       <body className="antialiased">
         <Main />

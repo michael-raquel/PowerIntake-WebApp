@@ -47,33 +47,29 @@ const compareSortValues = (aValue, bValue) => {
 export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} }) {
   const { accounts } = useMsal();
   const router = useRouter();
-  const [selectedRowsPerPage, setSelectedRowsPerPage] = useState(null);
+  const [userRowsPerPage, setUserRowsPerPage] = useState(null);
   const [localPage, setLocalPage] = useState(1);
   const [roleOverrides, setRoleOverrides] = useState({});
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [columnWidths, setColumnWidths] = useState({});
   const resizeStateRef = useRef(null);
-  const hasUserSelectionRef = useRef(false);
-  const lastSettingsValueRef = useRef(null);
 
   const { userSettings } = useFetchUserSettings({ entrauserid: accounts?.[0]?.localAccountId });
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
 
-  useEffect(() => {
+  const settingsRowsPerPage = useMemo(() => {
     if (userSettings && userSettings.length > 0) {
       const setting = userSettings[0];
       const recordCount = Number(setting?.v_managerecordcount);
       if (recordCount > 0) {
-        const settingsChanged = recordCount !== lastSettingsValueRef.current;
-        lastSettingsValueRef.current = recordCount;
-        if ((settingsChanged || !hasUserSelectionRef.current) && recordCount !== selectedRowsPerPage) {
-          setSelectedRowsPerPage(recordCount);
-        }
+        return recordCount;
       }
     }
-  }, [userSettings, selectedRowsPerPage]);
+    return null;
+  }, [userSettings]);
 
-  const effectiveLimit = selectedRowsPerPage ?? DEFAULT_ROWS;
+  const selectedRowsPerPage = userRowsPerPage ?? settingsRowsPerPage ?? DEFAULT_ROWS;
+  const effectiveLimit = selectedRowsPerPage;
 
   const {
     data,
@@ -114,9 +110,8 @@ export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} 
 
   const handleRecordsPerPageChange = async (value) => {
     const newValue = Number(value);
-    hasUserSelectionRef.current = true;
-    lastSettingsValueRef.current = newValue;
-    setSelectedRowsPerPage(newValue);
+    setLocalPage(1);
+    setUserRowsPerPage(newValue);
 
     if (userSettings && userSettings.length > 0) {
       try {
@@ -124,6 +119,7 @@ export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} 
           entrauserid: userSettings[0]?.v_entrauserid,
           ticketrecordcount: userSettings[0]?.v_ticketrecordcount ?? null,
           managerecordcount: newValue,
+          tenantrecordcount: userSettings[0]?.v_tenantrecordcount ?? userSettings[0]?.tenantrecordcount ?? null,
           modifiedby: accounts?.[0]?.username ?? null,
         });
       } catch (err) {
