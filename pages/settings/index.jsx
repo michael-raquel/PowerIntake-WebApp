@@ -172,6 +172,7 @@ export default function SettingsPage() {
               <Button
                 onClick={handleReset}
                 variant="outline"
+                className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800 appearance-none"
                 disabled={!isReady || isSaving || submitting}
               >
                 Reset
