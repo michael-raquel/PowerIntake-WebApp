@@ -1,3 +1,10 @@
+## [1.6.4-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.2...v1.6.4-dev.3) (2026-04-07)
+
+
+### Bug Fixes
+
+* updated the settings ([e1abac3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e1abac3dd7f4433eeeac438df969fadee23bbcdf))
+
 ## [1.6.4-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4-dev.1...v1.6.4-dev.2) (2026-04-07)
 
 
