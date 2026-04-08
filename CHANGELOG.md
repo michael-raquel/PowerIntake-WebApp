@@ -1,3 +1,10 @@
+## [1.6.5-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.1...v1.6.5-dev.2) (2026-04-08)
+
+
+### Bug Fixes
+
+* added a profile picture and replaced email with role ([a3e2f2e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a3e2f2e10342521c1352a611672442e65ce46a6b))
+
 ## [1.6.5-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4...v1.6.5-dev.1) (2026-04-07)
 
 
