@@ -1,4 +1,27 @@
+import { useMemo } from "react";
+import Image from "next/image";
+import { useFetchProfilePic } from "@/hooks/UseFetchProfilePic";
+
 export default function ComUserInformation({ ticket }) {
+  const ticketuuid = ticket?.v_ticketuuid || ticket?.ticketuuid || "";
+  const { photoUrl } = useFetchProfilePic({
+    ticketuuid,
+    enabled: Boolean(ticketuuid),
+  });
+
+  const userInitials = useMemo(() => {
+    const name = (ticket?.v_username || ticket?.v_useremail || "").trim();
+    if (!name) return "U";
+    const parts = name.split(" ").filter(Boolean);
+    const letters = parts.length ? parts : [name];
+
+    return letters
+      .map((part) => part[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  }, [ticket?.v_username, ticket?.v_useremail]);
+
   return (
     <div className="space-y-4">
       <div className="bg-gradient-to-br from-white to-gray-50/50 dark:from-gray-800/50 dark:to-gray-900/50 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800 transition-all group">
@@ -23,12 +46,28 @@ export default function ComUserInformation({ ticket }) {
             👤
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Full Name</p>
+            <div className="flex items-center gap-3">
+              <div className="relative h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center text-xs font-semibold overflow-hidden flex-shrink-0">
+                {photoUrl ? (
+                  <Image
+                    src={photoUrl}
+                    alt="User photo"
+                    fill
+                    sizes="36px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  userInitials
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Full Name</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white mt-1 break-words">
+                  {ticket?.v_username || "—"}
+                </p>
+              </div>
             </div>
-            <p className="text-sm font-semibold text-gray-900 dark:text-white mt-1 break-words">
-              {ticket?.v_username || '—'}
-            </p>
           </div>
         </div>
       </div>
