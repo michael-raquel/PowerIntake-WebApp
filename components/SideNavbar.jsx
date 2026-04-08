@@ -26,7 +26,7 @@ export default function SideNavbar() {
   const [showLogout, setShowLogout] = useState(false);
 
   const { instance } = useMsal();
-  const { tokenInfo } = useAuth();
+  const { tokenInfo, profilePhotoUrl } = useAuth();
   const { isDarkMode, toggleTheme } = useAppTheme();
   const router = useRouter();
 
@@ -57,6 +57,13 @@ export default function SideNavbar() {
     if (roles.includes("Manager")) return "manager";
     return "user";
   }, [account]);
+
+  const roleLabel = useMemo(() => {
+    return currentRole
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }, [currentRole]);
 
   const isPrivileged = ["manager", "system-admin", "super-admin", "admin"].includes(
     currentRole,
@@ -141,9 +148,20 @@ export default function SideNavbar() {
             <div className="relative">
               <button
                 onClick={() => setShowLogout((p) => !p)}
-                className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center text-sm font-semibold"
+                className="relative w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center text-sm font-semibold overflow-hidden"
               >
-                {initials}
+                {profilePhotoUrl ? (
+                  <Image
+                    src={profilePhotoUrl}
+                    alt="Profile photo"
+                    fill
+                    sizes="32px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  initials
+                )}
               </button>
 
               {showLogout && (
@@ -161,7 +179,7 @@ export default function SideNavbar() {
                         {account?.name}
                       </p>
                       <p className="text-xs text-gray-400 truncate mt-0.5">
-                        {account?.username}
+                        {roleLabel}
                       </p>
                     </div>
                     <button
@@ -336,8 +354,19 @@ export default function SideNavbar() {
                 isCollapsed ? "justify-center" : ""
               }`}
             >
-              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                {initials}
+              <div className="relative w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-white flex items-center justify-center text-sm font-semibold flex-shrink-0 overflow-hidden">
+                {profilePhotoUrl ? (
+                  <Image
+                    src={profilePhotoUrl}
+                    alt="Profile photo"
+                    fill
+                    sizes="32px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  initials
+                )}
               </div>
               {!isCollapsed && (
                 <div className="flex-1 text-left min-w-0">
@@ -345,7 +374,7 @@ export default function SideNavbar() {
                     {account?.name}
                   </p>
                   <p className="text-xs text-gray-400 truncate">
-                    {account?.username}
+                    {roleLabel}
                   </p>
                 </div>
               )}

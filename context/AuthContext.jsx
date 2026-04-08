@@ -25,6 +25,7 @@ export function AuthProvider({ children }) {
   const [tokenInfo, setTokenInfo]         = useState(null);
   const [userInfo, setUserInfo]           = useState(null);
   const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
 
   const logoutIntervalRef = useRef(null);
   const logoutToastIdRef = useRef(null);
@@ -62,6 +63,45 @@ export function AuthProvider({ children }) {
       });
     }, 1000);
   }, [instance]);
+
+  //Profile Photo
+  const fetchProfilePhoto = useCallback(async () => {
+    if (!account) return null;
+
+    try {
+      const graphRes = await instance.acquireTokenSilent({
+        scopes: ["User.Read"],
+        account,
+      });
+
+      const photoRes = await fetch("https://graph.microsoft.com/v1.0/me/photo/$value", {
+        headers: { Authorization: `Bearer ${graphRes.accessToken}` },
+      });
+
+      if (photoRes.status === 404) return null;
+      if (!photoRes.ok) throw new Error("Graph photo request failed");
+
+      const blob = await photoRes.blob();
+      const url = URL.createObjectURL(blob);
+
+      if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl);
+      setProfilePhotoUrl(url);
+      return url;
+    } catch (err) {
+      console.warn("[AUTH] Failed to fetch profile photo:", err?.message ?? err);
+      return null;
+    }
+  }, [account, instance, profilePhotoUrl]);
+
+  useEffect(() => {
+    fetchProfilePhoto();
+  }, [fetchProfilePhoto]);
+
+  useEffect(() => {
+    return () => {
+      if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl);
+    };
+  }, [profilePhotoUrl]);
   
   // ── Your API token ──────────────────────────────────────
   useEffect(() => {
@@ -301,6 +341,8 @@ useEffect(() => {
       tokenInfo,
       userInfo,
       isGlobalAdmin,
+      profilePhotoUrl,
+      fetchProfilePhoto,
     }}>
       {children}
     </AuthContext.Provider>
