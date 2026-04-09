@@ -1,3 +1,10 @@
+## [1.6.5-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.2...v1.6.5-dev.3) (2026-04-09)
+
+
+### Bug Fixes
+
+* ST-ticket loading and sync label ([852cb73](https://github.com/michael-raquel/PowerIntake-WebApp/commit/852cb73cb95ad88fd4ef029b4c272ff4ec27882a))
+
 ## [1.6.5-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.1...v1.6.5-dev.2) (2026-04-08)
 
 
