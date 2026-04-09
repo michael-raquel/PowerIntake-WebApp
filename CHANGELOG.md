@@ -1,3 +1,12 @@
+## [1.6.5-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.7...v1.6.5-dev.8) (2026-04-09)
+
+
+### Reverts
+
+* Revert "commented the tokens" ([0352b66](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0352b669ec3050c77f335746bb2d3072cf496efe))
+* Revert "fix: added no role user scenario" ([bad08eb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/bad08eb4b5dac0379c438c441dca2d9502b701f6))
+* Revert "Improve AuthGuard login flow and consent checks" ([6c5b81d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6c5b81dd2602ccdd18e55ac3edeab1f6ca82529b))
+
 ## [1.6.5-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.6...v1.6.5-dev.7) (2026-04-09)
 
 
