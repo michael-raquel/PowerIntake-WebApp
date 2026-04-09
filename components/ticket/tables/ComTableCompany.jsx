@@ -128,6 +128,7 @@ export default function ComTableCompany({
     refreshKey,
   });
   const { runSync, loading: syncing } = useAutoSyncDynamics();
+  const [syncStatus, setSyncStatus] = useState(null);
   const prevTicketsRef = useRef();
   const prevFilteredLengthRef = useRef();
 
@@ -238,31 +239,57 @@ export default function ComTableCompany({
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
 
-  if (loading) return <div className="text-center py-6 text-gray-500 dark:text-gray-400">Loading...</div>;
-  if (error)   return <div className="text-center py-6 text-red-500 dark:text-red-400">{error}</div>;
-
-  const syncButton = (
+  
+const syncButton = (
+  <div className="flex items-center gap-2">
+    {syncing && (
+      <span className="text-xs text-blue-500 dark:text-blue-400">Syncing tickets...</span>
+    )}
+    {!syncing && syncStatus === 'success' && (
+      <span className="text-xs text-green-500 dark:text-green-400">Sync successful!</span>
+    )}
+    {!syncing && syncStatus === 'error' && (
+      <span className="text-xs text-red-500 dark:text-red-400">Sync failed.</span>
+    )}
     <button
-      onClick={async () => { await runSync(); onTicketUpdated?.(); }}
+      onClick={async () => {
+        setSyncStatus(null);
+        try {
+          await runSync();
+          onTicketUpdated?.();
+          setSyncStatus('success');
+        } catch {
+          setSyncStatus('error');
+        } finally {
+          setTimeout(() => setSyncStatus(null), 3000);
+        }
+      }}
       disabled={loading || syncing}
       className="p-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
     >
       <RefreshCw className={`w-5 h-5 ${loading || syncing ? 'animate-spin' : ''}`} />
     </button>
-  );
+  </div>
+);
 
-  return (
-    <>
-      {/* ── Mobile cards ─────────────────────────────────────────────────────── */}
-      <div className="md:hidden">
-        <div className="sticky top-0 z-10 flex justify-between items-center px-0 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            {filteredTickets.length} Total Records
-          </span>
-          {syncButton}
-        </div>
-        <div className="space-y-3 p-3">
-          {paginated.map((ticket) => (
+return (
+  <>
+    <div className="md:hidden">
+      <div className="sticky top-0 z-10 flex justify-between items-center px-0 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          {filteredTickets.length} Total Records
+        </span>
+        {syncButton}
+      </div>
+      <div className="space-y-3 p-3">
+        {loading ? (
+          <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">Loading...</p>
+        ) : error ? (
+          <p className="text-sm text-center text-red-500 dark:text-red-400 py-6">{error}</p>
+        ) : !paginated.length ? (
+          <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
+        ) : (
+          paginated.map((ticket) => (
             <ComCard
               key={ticket.v_ticketuuid}
               ticket={ticket}
@@ -271,32 +298,32 @@ export default function ComTableCompany({
               priorityClass={getPriorityClass(ticket.v_priority)}
               isSyncing={pendingSyncUuid === ticket.v_ticketuuid}
             />
-          ))}
+          ))
+        )}
           {!paginated.length && (
-            <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
-          )}
-        </div>
+                  <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
+                )}
       </div>
+    </div>
 
-      {/* ── Desktop: ComTableDesign handles all table chrome ─────────────────── */}
-      <ComTableDesign
-        columns={COLUMNS}
-        data={paginated}
-        loading={loading}
-        emptyText="No tickets found."
-        totalRecords={filteredTickets.length}
-        onRowClick={setSelectedTicket}
-        isSyncing={(row) => pendingSyncUuid === row.v_ticketuuid}
-        actions={syncButton}
+    <ComTableDesign
+      columns={COLUMNS}
+      data={paginated}
+      loading={loading}
+      emptyText={error ?? "No tickets found."}
+      totalRecords={filteredTickets.length}
+      onRowClick={setSelectedTicket}
+      isSyncing={(row) => pendingSyncUuid === row.v_ticketuuid}
+      actions={syncButton}
+    />
+
+    {selectedTicket && (
+      <ComUpdateForm
+        ticket={selectedTicket}
+        onClose={() => setSelectedTicket(null)}
+        onUpdated={onTicketUpdated}
       />
-
-      {selectedTicket && (
-        <ComUpdateForm
-          ticket={selectedTicket}
-          onClose={() => setSelectedTicket(null)}
-          onUpdated={onTicketUpdated}
-        />
-      )}
-    </>
-  );
-}
+    )}
+  </>
+)
+};

@@ -237,9 +237,6 @@ export default function ComTableTeam({
     }
   }, [filteredTickets.length, onTotalRecordsChange]);
 
-  if (loading) return <div className="p-6 text-center text-gray-500 dark:text-gray-400">Loading...</div>;
-  if (error)   return <div className="p-6 text-center text-red-500 dark:text-red-400">{error}</div>;
-
   const syncButton = (
     <button
       onClick={async () => { await runSync(); onTicketUpdated?.(); }}
@@ -260,23 +257,32 @@ export default function ComTableTeam({
           </span>
          {/* {syncButton} */}
         </div>
-        <div className="space-y-3 p-3">
-          {paginated.map((ticket) => (
-            <ComCard
-              key={ticket.v_ticketuuid}
-              ticket={ticket}
-              fields={CARD_FIELDS}
-              onClick={() => setSelectedTicket(ticket)}
-              priorityClass={getPriorityClass(ticket.v_priority)}
-              isSyncing={pendingSyncUuid === ticket.v_ticketuuid}
-            />
-          ))}
-          {!paginated.length && (
+      <div className="space-y-3 p-3">
+       {loading ? (
+            <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">Loading...</p>
+          ) : error ? (
+            <p className="text-sm text-center text-red-500 dark:text-red-400 py-6">{error}</p>
+          ) : !paginated.length ? (
             <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
+          ) : (
+            paginated.map((ticket) => (
+              <ComCard
+                key={ticket.v_ticketuuid}
+                ticket={ticket}
+                fields={CARD_FIELDS}
+                onClick={() => setSelectedTicket(ticket)}
+                priorityClass={getPriorityClass(ticket.v_priority)}
+                isSyncing={pendingSyncUuid === ticket.v_ticketuuid}
+              />
+            ))
           )}
+          {!paginated.length && (
+                    <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
+                  )}
         </div>
       </div>
 
+         
       {/* ── Desktop: ComTableDesign handles all table chrome ─────────────────── */}
       <ComTableDesign
         columns={COLUMNS}
