@@ -18,7 +18,6 @@ import { useCreateTicket } from "@/hooks/useCreateTicket";
 import { toast } from "sonner";
 import useUploadImage from '@/hooks/UseUploadImage';
 import { useSpartaAssistOnce } from "@/hooks/UseSpartaAssist";
-import { Sparkles, X as XIcon } from "lucide-react";
 import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
 import powersuiteaiicon from '../settings/assets/powersuiteai.svg';
 
@@ -28,6 +27,39 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const CALL_DURATION_HOURS = 2;
 const END_TIME_THRESHOLD_MINUTES = 23 * 60 + 30;
 const END_TIME_CAP = '23:59';
+
+const ANIMATED_STYLES = `
+  @keyframes borderCycle {
+    0%   { border-color: #f472b6; }
+    25%  { border-color: #ec4899; }
+    50%  { border-color: #818cf8; }
+    75%  { border-color: #a78bfa; }
+    100% { border-color: #f472b6; }
+  }
+  @keyframes bgCycle {
+    0%   { background-color: #f472b6; }
+    25%  { background-color: #ec4899; }
+    50%  { background-color: #818cf8; }
+    75%  { background-color: #a78bfa; }
+    100% { background-color: #f472b6; }
+  }
+  .animated-border {
+    border-width: 3px;
+    border-style: solid;
+    animation: borderCycle 8s ease-in-out infinite alternate-reverse;
+  }
+  .animate-border {
+    animation: borderCycle 8s ease-in-out infinite alternate-reverse;
+  }
+  .animated-bg {
+    animation: bgCycle 8s ease-in-out infinite alternate-reverse;
+  }
+  .animated-border-bg {
+    border-width: 3px;
+    border-style: solid;
+    animation: borderCycle 8s ease-in-out infinite alternate-reverse, bgCycle 8s ease-in-out infinite alternate-reverse;
+  }
+`;
 
 const getDefaultStartTime = (now = new Date()) => {
   const totalMinutes = now.getHours() * 60 + now.getMinutes() + 30;
@@ -303,6 +335,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black py-6">
+      <style>{ANIMATED_STYLES}</style>
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -364,12 +397,9 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     type="button"
                     variant="outline"
                     size="sm"
-                   className="mt-2 
-                        bg-gradient-to-r 
-                        dark:from-violet-400 dark:via-violet-500 dark:to-blue-500 
-                        from-pink-400 via-pink-500 to-red-500 
+                   className="mt-3 animated-bg
                         text-white py-4 cursor-pointer hover:text-white"
-                   onClick={() => askAssist(`Title: ${formData.title}\n\nDescription: ${formData.description}`)}
+                   onClick={() => askAssist(formData.title, formData.description)}
                     disabled={aiLoading || submitting || formData.description.length > 1000}
                   >
                      <Image 
@@ -384,7 +414,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
               {suggestion && (
                 <>
-                  <div className="mt-3 max-h-[400px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-950/30 rounded-lg border-3  border-red-300 dark:border-indigo-500">
+                  <div className="animated-border mt-3 max-h-[400px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-950/30 rounded-lg border-3  border-red-300 dark:border-indigo-500">
                     <div className="flex justify-between items-center mb-2">
                       <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1">
                         <Image src={powersuiteaiicon} alt="PowerSuite AI" width={16} height={16} />
