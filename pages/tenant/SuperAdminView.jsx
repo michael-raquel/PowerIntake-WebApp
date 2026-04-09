@@ -78,7 +78,7 @@ export default function SuperAdminView() {
     );
   }, [userSettings, userId]);
 
-  const tabs = useMemo(() => [{ id: "all-tenant", label: "All Tenants" }], []);
+  const tabs = useMemo(() => [{ id: "all-tenant", label: "Tenants" }], []);
 
   const safeTab = useMemo(() => {
     const ids = tabs.map((tab) => tab.id);
