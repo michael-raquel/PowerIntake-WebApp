@@ -1,3 +1,10 @@
+## [1.6.5-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.5...v1.6.5-dev.6) (2026-04-09)
+
+
+### Bug Fixes
+
+* added no role user scenario ([0c4b159](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0c4b1595a7eeb273d6a35041bf2a72ee5c88a91b))
+
 ## [1.6.5-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.4...v1.6.5-dev.5) (2026-04-09)
 
 
