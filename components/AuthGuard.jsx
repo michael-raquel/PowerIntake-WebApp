@@ -1,5 +1,6 @@
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
-import { useEffect, useState, useMemo } from "react";
+import { InteractionStatus } from "@azure/msal-browser";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useRouter } from "next/router";
 import { loginRequest } from "@/lib/msalConfig";
 import dynamic from "next/dynamic";
@@ -12,28 +13,28 @@ const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
 
 export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts } = useMsal();
+  const { instance, accounts, inProgress } = useMsal();
   const router = useRouter();
 
   const [verified, setVerified] = useState(null);
+  const loginAttemptedRef = useRef(false);
 
   // ── Auth redirect ───────────────────────────────────────
   useEffect(() => {
-    if (!isAuthenticated) {
-      instance.loginRedirect(loginRequest);
+    if (
+      !isAuthenticated &&
+      inProgress === InteractionStatus.None &&
+      !loginAttemptedRef.current
+    ) {
+      loginAttemptedRef.current = true;
+      instance.loginRedirect(loginRequest).catch((err) => {
+        if (err?.errorCode !== "interaction_in_progress") {
+          console.error("[AUTH] loginRedirect failed:", err);
+          loginAttemptedRef.current = false;
+        }
+      });
     }
-  }, [isAuthenticated, instance]);
-
-  // ── Consent gate ────────────────────────────────────────
- useEffect(() => {
-  if (!isAuthenticated) return;
-  const isVerified = sessionStorage.getItem("consent_verified") === "1";
-  if (isVerified) {
-    setTimeout(() => setVerified(true), 0);
-  } else {
-    router.replace("/checking");
-  }
-}, [isAuthenticated, router]);
+  }, [isAuthenticated, inProgress, instance]);
 
   // ── Role check ──────────────────────────────────────────
   const tokenRoles = useMemo(
@@ -51,11 +52,22 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
     return requiredRoles.some((role) => tokenRoles.includes(role));
   }, [requiredRoles, tokenRoles]);
 
+  // ── Consent gate ────────────────────────────────────────
   useEffect(() => {
-    if (isAuthenticated && verified && !hasKnownRole) {
+    if (!isAuthenticated) return;
+
+    if (!hasKnownRole) {
       router.replace("/no-consent?reason=unknown-user");
+      return;
     }
-  }, [isAuthenticated, verified, hasKnownRole, router]);
+
+    const isVerified = sessionStorage.getItem("consent_verified") === "1";
+    if (isVerified) {
+      setTimeout(() => setVerified(true), 0);
+    } else {
+      router.replace("/checking");
+    }
+  }, [isAuthenticated, hasKnownRole, router]);
 
   useEffect(() => {
     if (
