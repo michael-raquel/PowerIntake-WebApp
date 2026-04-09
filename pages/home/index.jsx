@@ -208,8 +208,8 @@ export default function HomePage() {
   const accessToken = tokenInfo?.accessToken;
   const idToken = tokenInfo?.idToken;
 
-  console.log('[Home] Access Token:', accessToken);
-  console.log('[Home] ID Token:', idToken);
+  // console.log('[Home] Access Token:', accessToken);
+  // console.log('[Home] ID Token:', idToken);
 
   const nextSlide = useCallback(() => setCurrentSlide(p => (p + 1) % images.length), []);
   useEffect(() => { const t = setInterval(nextSlide, 5000); return () => clearInterval(t); }, [nextSlide]);
