@@ -1,3 +1,10 @@
+## [1.6.5-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.3...v1.6.5-dev.4) (2026-04-09)
+
+
+### Bug Fixes
+
+* user now cannot overscroll ([0b8b50d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0b8b50d1f80b0c1f8b71e4f766ca6e57c209d2d6))
+
 ## [1.6.5-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.2...v1.6.5-dev.3) (2026-04-09)
 
 
