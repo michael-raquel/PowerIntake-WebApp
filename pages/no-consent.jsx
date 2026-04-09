@@ -48,17 +48,11 @@ const SCENARIOS = {
     body: "Admin consent was granted, but we couldn't finalize your setup. Please retry or contact support.",
     actions: "retry-contact",
   },
-  // 6️⃣ User is not assigned to the app
-  "unknown-user": {
-    title: "You're Not Registered in Power Intake",
-    body: "You're signed in, but your account isn't assigned to Power Intake. Please contact Sparta Services for access.",
-    actions: "contact",
-  },
   "pending-approval": {
-    title: "Awaiting Approval",
-    body: "Your organization has been registered and is pending approval from Sparta Services.",
-    actions: "contact",
-  },
+  title: "Awaiting Approval",
+  body: "Your organization has been registered and is pending approval from Sparta Services.",
+  actions: "contact",
+},
 };
 
 const DEFAULT_SCENARIO = SCENARIOS["error"];

@@ -1,11 +1,8 @@
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
-import { InteractionStatus } from "@azure/msal-browser";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { loginRequest } from "@/lib/msalConfig";
 import dynamic from "next/dynamic";
-
-const KNOWN_ROLES = ["SuperAdmin", "SystemAdmin", "Admin", "Manager", "User"];
 
 const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
   ssr: false,
@@ -13,73 +10,41 @@ const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
 
 export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts, inProgress } = useMsal();
+  const { instance, accounts } = useMsal();
   const router = useRouter();
 
   const [verified, setVerified] = useState(null);
-  const loginAttemptedRef = useRef(false);
 
   // ── Auth redirect ───────────────────────────────────────
   useEffect(() => {
-    if (
-      !isAuthenticated &&
-      inProgress === InteractionStatus.None &&
-      !loginAttemptedRef.current
-    ) {
-      loginAttemptedRef.current = true;
-      instance.loginRedirect(loginRequest).catch((err) => {
-        if (err?.errorCode !== "interaction_in_progress") {
-          console.error("[AUTH] loginRedirect failed:", err);
-          loginAttemptedRef.current = false;
-        }
-      });
+    if (!isAuthenticated) {
+      instance.loginRedirect(loginRequest);
     }
-  }, [isAuthenticated, inProgress, instance]);
-
-  // ── Role check ──────────────────────────────────────────
-  const tokenRoles = useMemo(
-    () => (accounts[0]?.idTokenClaims?.roles ?? []).map(String),
-    [accounts],
-  );
-
-  const hasKnownRole = useMemo(
-    () => tokenRoles.some((role) => KNOWN_ROLES.includes(role)),
-    [tokenRoles],
-  );
-
-  const hasRequiredRole = useMemo(() => {
-    if (!requiredRoles || requiredRoles.length === 0) return true;
-    return requiredRoles.some((role) => tokenRoles.includes(role));
-  }, [requiredRoles, tokenRoles]);
+  }, [isAuthenticated, instance]);
 
   // ── Consent gate ────────────────────────────────────────
+ useEffect(() => {
+  if (!isAuthenticated) return;
+  const isVerified = sessionStorage.getItem("consent_verified") === "1";
+  if (isVerified) {
+    setTimeout(() => setVerified(true), 0);
+  } else {
+    router.replace("/checking");
+  }
+}, [isAuthenticated, router]);
+
+  // ── Role check ──────────────────────────────────────────
+  const hasRequiredRole = useMemo(() => {
+    if (!requiredRoles || requiredRoles.length === 0) return true;
+    const roles = (accounts[0]?.idTokenClaims?.roles ?? []).map(String);
+    return requiredRoles.some((role) => roles.includes(role));
+  }, [accounts, requiredRoles]);
+
   useEffect(() => {
-    if (!isAuthenticated) return;
-
-    if (!hasKnownRole) {
-      router.replace("/no-consent?reason=unknown-user");
-      return;
-    }
-
-    const isVerified = sessionStorage.getItem("consent_verified") === "1";
-    if (isVerified) {
-      setTimeout(() => setVerified(true), 0);
-    } else {
-      router.replace("/checking");
-    }
-  }, [isAuthenticated, hasKnownRole, router]);
-
-  useEffect(() => {
-    if (
-      isAuthenticated &&
-      verified &&
-      hasKnownRole &&
-      requiredRoles?.length > 0 &&
-      !hasRequiredRole
-    ) {
+    if (isAuthenticated && verified && requiredRoles?.length > 0 && !hasRequiredRole) {
       router.replace("/unauthorized");
     }
-  }, [isAuthenticated, verified, hasKnownRole, requiredRoles, hasRequiredRole, router]);
+  }, [isAuthenticated, verified, requiredRoles, hasRequiredRole, router]);
 
   // ── Loading shell ────────────────────────────────────────
   const loadingScreen = (message) => (
@@ -94,9 +59,7 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
 
   if (!isAuthenticated) return loadingScreen("Redirecting to Microsoft login...");
   if (verified !== true) return loadingScreen(null);
-  if (!hasKnownRole) return loadingScreen("Checking permissions...");
-  if (requiredRoles?.length > 0 && !hasRequiredRole)
-    return loadingScreen("Checking permissions...");
+  if (requiredRoles?.length > 0 && !hasRequiredRole) return loadingScreen("Checking permissions...");
 
   // ── Verified: render full layout ─────────────────────────
   return (
