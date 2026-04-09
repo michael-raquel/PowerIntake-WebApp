@@ -1,3 +1,11 @@
+## [1.6.5-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.6...v1.6.5-dev.7) (2026-04-09)
+
+
+### Reverts
+
+* Revert "commented the tokens" ([58aed97](https://github.com/michael-raquel/PowerIntake-WebApp/commit/58aed970e9c7c844f4c22fde2587ca9970823c5d))
+* Revert "Merge pull request [#142](https://github.com/michael-raquel/PowerIntake-WebApp/issues/142) from michael-raquel/2226-No-Role-User-Scenario" ([f657525](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f657525237fde58741e52f73b9479636d11a29d9))
+
 ## [1.6.5-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.5...v1.6.5-dev.6) (2026-04-09)
 
 
