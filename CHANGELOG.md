@@ -1,3 +1,10 @@
+## [1.6.5-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.4...v1.6.5-dev.5) (2026-04-09)
+
+
+### Bug Fixes
+
+* ST-ticket-ai integration making prompt more helpful ([ce38ae4](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ce38ae4fdfdf9d0b09b677a18d6c420f15b255a7))
+
 ## [1.6.5-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.3...v1.6.5-dev.4) (2026-04-09)
 
 
