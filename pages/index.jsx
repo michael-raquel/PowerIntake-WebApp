@@ -10,7 +10,8 @@ const getUserRole = (account) => {
   if (roles.includes("SuperAdmin")) return "super-admin";
   if (roles.includes("SystemAdmin")) return "system-admin";
   if (roles.includes("Manager")) return "manager";
-  return "user";
+  if (roles.includes("User")) return "user";
+  return "unknown";
 };
 
 export default function Home() {
