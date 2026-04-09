@@ -145,11 +145,7 @@ export default function SettingsPage() {
                 Error: {error}
               </div>
             )}
-            {showLoading && !error && (
-              <div className="text-sm text-gray-600 dark:text-gray-300">
-                Loading settings...
-              </div>
-            )}
+            
             <NotificationsSection
               localSettings={localSettings}
               onToggle={handleToggle}
