@@ -1,3 +1,10 @@
+## [1.6.5-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.8...v1.6.5-dev.9) (2026-04-09)
+
+
+### Bug Fixes
+
+* ST-ticket powersuite AI ([4808a81](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4808a81a3a03d1c596e44dd0713dd519cdb64ab5))
+
 ## [1.6.5-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.7...v1.6.5-dev.8) (2026-04-09)
 
 
