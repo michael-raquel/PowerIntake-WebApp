@@ -55,7 +55,8 @@ export default function SideNavbar() {
     if (roles.includes("SystemAdmin")) return "system-admin";
     if (roles.includes("Admin")) return "admin";
     if (roles.includes("Manager")) return "manager";
-    return "user";
+    if (roles.includes("User")) return "user";
+    return "unknown";
   }, [account]);
 
   const roleLabel = useMemo(() => {
