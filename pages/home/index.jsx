@@ -297,7 +297,15 @@ export default function HomePage() {
           <div className="absolute inset-0 flex transition-transform duration-500 ease-out" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
             {images.map((img, idx) => (
               <div key={idx} className="relative w-full flex-shrink-0 h-full">
-                <Image src={img.src} alt={img.alt} fill className="object-cover object-center" priority={idx === 0} sizes="100vw" />
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  fill
+                  className="object-cover object-center"
+                  priority={idx === 0}
+                  sizes="100vw"
+                  {...(img.src === '/improvingaccessibility.png' ? { loading: 'eager' } : {})}
+                />
               </div>
             ))}
           </div>
@@ -321,7 +329,13 @@ export default function HomePage() {
               <h2 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 dark:text-white">Welcome back, <span className="text-purple-600 dark:text-purple-400">{account?.name || 'User'}</span></h2>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-2xl">A quick and efficient way to request assistance. Get the help you need, when you need it.</p>
             </div>
-            <button onClick={() => router.push('/ticket?create=true')} className="self-start sm:self-center inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white text-xs sm:text-sm font-medium rounded-full shadow-sm hover:shadow-md transition-all whitespace-nowrap">Submit Ticket <span>→</span></button>
+            <button
+              onClick={() => router.push('/ticket?create=true')}
+              className="self-start sm:self-center inline-flex items-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
+            >
+              Submit Ticket
+              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
           </div>
         </div>
 
@@ -337,7 +351,13 @@ export default function HomePage() {
         <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
           <div className="px-5 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 dark:from-purple-950/10 dark:to-indigo-950/10 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
             <div><h2 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white">Recent tickets</h2><p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Your latest 5 active tickets</p></div>
-            <button onClick={() => router.push(`/ticket?tab=${safeActiveTab}`)} className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-purple-600 dark:text-purple-400 bg-white dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-600 hover:shadow-sm transition-all">View all <span>→</span></button>
+            <button
+              onClick={() => router.push(`/ticket?tab=${safeActiveTab}`)}
+              className="inline-flex items-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
+            >
+              View all
+              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
           </div>
           <div className="p-4 sm:p-6 grid gap-3">
             {recentTickets.map(ticket => <TicketCard key={ticket.v_ticketuuid} ticket={ticket} onClick={handleTicketClick} showOwner={safeActiveTab !== 'my-ticket'} />)}
@@ -345,7 +365,13 @@ export default function HomePage() {
               <div className="text-center py-14">
                 <div className="text-4xl mb-3 opacity-20">🎫</div>
                 <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">No active tickets</p>
-                <button onClick={() => router.push('/ticket?create=true')} className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 rounded-full border border-purple-200 dark:border-purple-800 hover:border-purple-300 hover:shadow-sm transition-all">Create your first ticket <span>→</span></button>
+                <button
+                  onClick={() => router.push('/ticket?create=true')}
+                  className="inline-flex items-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
+                >
+                  Create your first ticket
+                  <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                </button>
               </div>
             )}
           </div>
