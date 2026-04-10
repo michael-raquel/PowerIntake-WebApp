@@ -6,7 +6,6 @@ import { InteractionStatus } from "@azure/msal-browser";
 import { apiRequest } from "@/lib/msalConfig";
 
 const CONSENT_STORAGE_KEY = "ms_consent_params";
-const MSAL_ACCOUNT_KEY    = "msal_consent_account";
 
 const readStoredConsent = () => {
   if (typeof window === "undefined") return null;
@@ -50,37 +49,32 @@ export default function MsConsentCallback() {
         setStatus("Completing sign-in...");
 
         // ── Step 1: Resolve account ──────────────────────────────────────────
-        // handleRedirectPromise() will return null here because MsalProvider
-        // already consumed the redirect result during its own initialization
-        // in _app.jsx. Instead we rely on two fallback sources:
-        //   1. The account stored by our _app.jsx event callback (most reliable)
-        //   2. MSAL's own account cache (getAllAccounts)
+        // Calling handleRedirectPromise() ourselves is safe and idempotent.
+        // If MsalProvider already consumed the redirect result, this returns
+        // null — but crucially, awaiting it guarantees MSAL has finished
+        // processing the redirect and getAllAccounts() is now populated.
         let account = null;
 
-        // Source 1 — account captured by the LOGIN_SUCCESS event in _app.jsx
-        const storedAccountRaw = sessionStorage.getItem(MSAL_ACCOUNT_KEY);
-        if (storedAccountRaw) {
-          try {
-            const storedMeta = JSON.parse(storedAccountRaw);
-            // Use the homeAccountId to look up the full account object from
-            // MSAL's cache — we need the full object for acquireTokenSilent
-            const allAccounts = instance.getAllAccounts();
-            account = allAccounts.find(
-              (a) => a.homeAccountId === storedMeta.homeAccountId,
-            ) ?? null;
-            addLog(`Source 1 (event capture) — resolved: ${account?.username ?? "not found in cache"}`);
-          } catch {
-            addLog("Source 1 — failed to parse stored account meta");
+        try {
+          const redirectResult = await instance.handleRedirectPromise();
+          if (redirectResult?.account) {
+            account = redirectResult.account;
+            addLog(`handleRedirectPromise — resolved: ${account.username}`);
+          } else {
+            addLog("handleRedirectPromise — returned null (already consumed by MsalProvider)");
           }
-        } else {
-          addLog("Source 1 — no stored account meta found");
+        } catch (redirectErr) {
+          addLog(`handleRedirectPromise error (non-fatal): ${redirectErr.message}`);
         }
 
-        // Source 2 — fall back to whatever is in the MSAL cache
+        // Fallback — by the time the above await resolves, MSAL's cache is
+        // guaranteed to be populated, so getAllAccounts() is reliable here.
         if (!account) {
           const allAccounts = instance.getAllAccounts();
           account = allAccounts[0] ?? null;
-          addLog(`Source 2 (cache fallback) — resolved: ${account?.username ?? "NONE"} | cached: ${allAccounts.length}`);
+          addLog(
+            `Cache fallback — resolved: ${account?.username ?? "NONE"} | cached: ${allAccounts.length}`
+          );
         }
 
         if (!account) {
@@ -92,9 +86,6 @@ export default function MsConsentCallback() {
 
         instance.setActiveAccount(account);
         addLog(`Active account set — ${account.username}`);
-
-        // Clean up the stored account meta — no longer needed
-        sessionStorage.removeItem(MSAL_ACCOUNT_KEY);
 
         // ── Step 2: Read consent params ──────────────────────────────────────
         const {
@@ -109,7 +100,9 @@ export default function MsConsentCallback() {
 
         writeStoredConsent({ tenant, admin_consent: adminConsent });
 
-        addLog(`Params — tenant=${tenant ?? "none"} | admin_consent=${adminConsent ?? "none"} | msError=${msError ?? "none"}`);
+        addLog(
+          `Params — tenant=${tenant ?? "none"} | admin_consent=${adminConsent ?? "none"} | msError=${msError ?? "none"}`
+        );
 
         // ── Step 3: Guard — Microsoft error ─────────────────────────────────
         if (msError) {
@@ -194,7 +187,7 @@ export default function MsConsentCallback() {
     };
 
     run();
-  }, [router.isReady, router.query, inProgress]);
+  }, [router.isReady, router.query, inProgress, addLog]);
 
   return (
     <>
