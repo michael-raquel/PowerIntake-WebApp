@@ -50,25 +50,21 @@ export default function MsConsentCallback() {
         setStatus("Completing sign-in...");
 
         // ── Step 1: Resolve account ──────────────────────────────────────────
-        // handleRedirectPromise() will return null here because MsalProvider
-        // already consumed the redirect result during its own initialization
-        // in _app.jsx. Instead we rely on two fallback sources:
-        //   1. The account stored by our _app.jsx event callback (most reliable)
-        //   2. MSAL's own account cache (getAllAccounts)
+        // sessionStorage is wiped by the cross-origin adminconsent redirect.
+        // We use localStorage to persist account meta across that navigation.
         let account = null;
+        let storedMeta = null;
 
-        // Source 1 — account captured by the LOGIN_SUCCESS event in _app.jsx
-        const storedAccountRaw = sessionStorage.getItem(MSAL_ACCOUNT_KEY);
+        // Source 1 — account stored in localStorage by checking.jsx
+        const storedAccountRaw = localStorage.getItem(MSAL_ACCOUNT_KEY);
         if (storedAccountRaw) {
           try {
-            const storedMeta = JSON.parse(storedAccountRaw);
-            // Use the homeAccountId to look up the full account object from
-            // MSAL's cache — we need the full object for acquireTokenSilent
+            storedMeta = JSON.parse(storedAccountRaw);
             const allAccounts = instance.getAllAccounts();
             account = allAccounts.find(
               (a) => a.homeAccountId === storedMeta.homeAccountId,
             ) ?? null;
-            addLog(`Source 1 (event capture) — resolved: ${account?.username ?? "not found in cache"}`);
+            addLog(`Source 1 (localStorage) — cache lookup: ${account?.username ?? "not in MSAL cache"}`);
           } catch {
             addLog("Source 1 — failed to parse stored account meta");
           }
@@ -80,7 +76,21 @@ export default function MsConsentCallback() {
         if (!account) {
           const allAccounts = instance.getAllAccounts();
           account = allAccounts[0] ?? null;
-          addLog(`Source 2 (cache fallback) — resolved: ${account?.username ?? "NONE"} | cached: ${allAccounts.length}`);
+          addLog(`Source 2 (MSAL cache) — resolved: ${account?.username ?? "NONE"} | cached: ${allAccounts.length}`);
+        }
+
+        // Source 3 — reconstruct minimal account from stored meta so
+        // acquireTokenSilent can still be attempted when the MSAL cache
+        // was cleared by the adminconsent redirect
+        if (!account && storedMeta?.homeAccountId) {
+          account = {
+            homeAccountId:  storedMeta.homeAccountId,
+            localAccountId: storedMeta.localAccountId,
+            username:       storedMeta.username,
+            tenantId:       storedMeta.tenantId,
+            environment:    "login.microsoftonline.com",
+          };
+          addLog(`Source 3 (reconstructed) — username: ${account.username}`);
         }
 
         if (!account) {
@@ -94,7 +104,7 @@ export default function MsConsentCallback() {
         addLog(`Active account set — ${account.username}`);
 
         // Clean up the stored account meta — no longer needed
-        sessionStorage.removeItem(MSAL_ACCOUNT_KEY);
+        localStorage.removeItem(MSAL_ACCOUNT_KEY);
 
         // ── Step 2: Read consent params ──────────────────────────────────────
         const {

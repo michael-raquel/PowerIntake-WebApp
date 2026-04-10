@@ -62,12 +62,14 @@ export default function Checking() {
           if (isGlobalAdmin) {
             setStatus("Redirecting to Microsoft for approval...");
 
-            // ✅ Save account so ms-consent-callback can restore it without re-login
-            sessionStorage.setItem(
-              "pre_consent_account",
+            // ✅ Save to localStorage — sessionStorage is wiped by the cross-origin adminconsent redirect
+            localStorage.setItem(
+              "msal_consent_account",
               JSON.stringify({
-                homeAccountId: accounts[0].homeAccountId,
-                tenantId: tid,
+                homeAccountId:  accounts[0].homeAccountId,
+                localAccountId: accounts[0].localAccountId,
+                username:       accounts[0].username,
+                tenantId:       tid,
               }),
             );
 
