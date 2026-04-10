@@ -18,7 +18,10 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   // ── Auth redirect ───────────────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {
-      instance.loginRedirect(loginRequest);
+      instance.loginRedirect({
+        ...loginRequest,
+        redirectUri: typeof window !== "undefined" ? window.location.origin + "/checking" : "/checking",
+      });
     }
   }, [isAuthenticated, instance]);
 
