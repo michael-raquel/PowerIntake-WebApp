@@ -6,7 +6,6 @@ import { InteractionStatus } from "@azure/msal-browser";
 import { apiRequest } from "@/lib/msalConfig";
 
 const CONSENT_STORAGE_KEY = "ms_consent_params";
-const MSAL_ACCOUNT_KEY    = "msal_consent_account";
 
 const readStoredConsent = () => {
   if (typeof window === "undefined") return null;
@@ -29,6 +28,9 @@ export default function MsConsentCallback() {
   const [status, setStatus] = useState("Processing consent...");
   const [error, setError] = useState(null);
   const [logs, setLogs] = useState([]);
+
+  // Prevent the effect from firing twice when inProgress transitions
+  // through multiple values (e.g. "startup" → "handleRedirect" → "none")
   const hasRun = useRef(false);
 
   const addLog = useCallback((msg) => {
@@ -37,66 +39,59 @@ export default function MsConsentCallback() {
   }, []);
 
   useEffect(() => {
+    // Wait for Next.js router
     if (!router.isReady) return;
+
+    // ── CRITICAL: Wait for MSAL to finish its own internal startup ──────────
+    // When Microsoft redirects back here, MSAL goes through these states:
+    //   "startup" → "handleRedirect" → "none"
+    // If we call handleRedirectPromise() during "startup" or "handleRedirect",
+    // it either returns null (misses the redirect) or throws. We must wait
+    // until inProgress === "none" before proceeding — that's the signal that
+    // MSAL has finished processing the redirect internally and the account
+    // is safely in the cache.
     if (inProgress !== InteractionStatus.None) {
-      addLog(`Waiting for MSAL — inProgress=${inProgress}`);
+      addLog(`MSAL not ready yet — inProgress=${inProgress}, waiting...`);
       return;
     }
+
+    // Prevent double-execution across re-renders caused by inProgress changes
     if (hasRun.current) return;
     hasRun.current = true;
 
     const run = async () => {
       try {
+        // ── Step 1: Handle MSAL redirect response ───────────────────────────
+        // By the time inProgress==="none", MSAL has already processed the
+        // redirect internally. handleRedirectPromise() here retrieves the
+        // result of that processing (the account + tokens) from the cache.
+        addLog("Calling handleRedirectPromise...");
         setStatus("Completing sign-in...");
 
-        // ── Step 1: Resolve account ──────────────────────────────────────────
-        // handleRedirectPromise() will return null here because MsalProvider
-        // already consumed the redirect result during its own initialization
-        // in _app.jsx. Instead we rely on two fallback sources:
-        //   1. The account stored by our _app.jsx event callback (most reliable)
-        //   2. MSAL's own account cache (getAllAccounts)
-        let account = null;
+        const redirectResult = await instance.handleRedirectPromise();
 
-        // Source 1 — account captured by the LOGIN_SUCCESS event in _app.jsx
-        const storedAccountRaw = sessionStorage.getItem(MSAL_ACCOUNT_KEY);
-        if (storedAccountRaw) {
-          try {
-            const storedMeta = JSON.parse(storedAccountRaw);
-            // Use the homeAccountId to look up the full account object from
-            // MSAL's cache — we need the full object for acquireTokenSilent
-            const allAccounts = instance.getAllAccounts();
-            account = allAccounts.find(
-              (a) => a.homeAccountId === storedMeta.homeAccountId,
-            ) ?? null;
-            addLog(`Source 1 (event capture) — resolved: ${account?.username ?? "not found in cache"}`);
-          } catch {
-            addLog("Source 1 — failed to parse stored account meta");
-          }
+        if (redirectResult) {
+          addLog(`Redirect result — account: ${redirectResult.account?.username ?? "unknown"}`);
         } else {
-          addLog("Source 1 — no stored account meta found");
+          addLog("handleRedirectPromise returned null — checking account cache...");
         }
 
-        // Source 2 — fall back to whatever is in the MSAL cache
-        if (!account) {
-          const allAccounts = instance.getAllAccounts();
-          account = allAccounts[0] ?? null;
-          addLog(`Source 2 (cache fallback) — resolved: ${account?.username ?? "NONE"} | cached: ${allAccounts.length}`);
-        }
+        // ── Step 2: Resolve account ─────────────────────────────────────────
+        const allAccounts = instance.getAllAccounts();
+        const account = redirectResult?.account ?? allAccounts[0] ?? null;
+
+        addLog(`Account resolved: ${account?.username ?? "NONE"} | cached accounts: ${allAccounts.length}`);
 
         if (!account) {
-          addLog("No account resolved from any source — cannot proceed");
+          addLog("No account found after MSAL initialization — cannot proceed");
           setError("Sign-in could not be completed. Please return to the app and try again.");
           setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
           return;
         }
 
         instance.setActiveAccount(account);
-        addLog(`Active account set — ${account.username}`);
 
-        // Clean up the stored account meta — no longer needed
-        sessionStorage.removeItem(MSAL_ACCOUNT_KEY);
-
-        // ── Step 2: Read consent params ──────────────────────────────────────
+        // ── Step 3: Read consent params ─────────────────────────────────────
         const {
           tenant: queryTenant,
           admin_consent: queryAdminConsent,
@@ -104,14 +99,15 @@ export default function MsConsentCallback() {
         } = router.query;
 
         const stored = readStoredConsent();
-        const tenant       = normalizeParam(queryTenant)       ?? stored?.tenant        ?? null;
+        const tenant = normalizeParam(queryTenant) ?? stored?.tenant ?? null;
         const adminConsent = normalizeParam(queryAdminConsent) ?? stored?.admin_consent ?? null;
 
+        // Always persist — in case token acquisition causes any further navigation
         writeStoredConsent({ tenant, admin_consent: adminConsent });
 
         addLog(`Params — tenant=${tenant ?? "none"} | admin_consent=${adminConsent ?? "none"} | msError=${msError ?? "none"}`);
 
-        // ── Step 3: Guard — Microsoft error ─────────────────────────────────
+        // ── Step 4: Guard — Microsoft error ─────────────────────────────────
         if (msError) {
           addLog(`Microsoft returned error: ${msError}`);
           setError(`Microsoft error: ${msError}`);
@@ -119,15 +115,16 @@ export default function MsConsentCallback() {
           return;
         }
 
-        // ── Step 4: Guard — missing tenant ──────────────────────────────────
+        // ── Step 5: Guard — missing tenant ──────────────────────────────────
         if (!tenant) {
-          addLog("Missing tenant parameter");
+          addLog("Missing tenant parameter — cannot proceed");
           setError("Missing tenant parameter. Please try the consent process again.");
           setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
           return;
         }
 
-        // ── Step 5: Acquire token silently ──────────────────────────────────
+        // ── Step 6: Acquire token silently ──────────────────────────────────
+        // Safe to call now — MSAL is fully initialized and account is set
         setStatus("Acquiring access token...");
         addLog("Calling acquireTokenSilent...");
 
@@ -140,10 +137,12 @@ export default function MsConsentCallback() {
           accessToken = tokenRes?.accessToken ?? null;
           addLog(`Token acquired — scopes: ${tokenRes?.scopes?.join(", ") ?? "unknown"}`);
         } catch (tokenErr) {
+          // Token acquisition failure is non-fatal here — the backend uses its
+          // own app-only token for provisioning. We still pass what we have.
           addLog(`acquireTokenSilent failed (non-fatal): ${tokenErr.message}`);
         }
 
-        // ── Step 6: Call backend ─────────────────────────────────────────────
+        // ── Step 7: Call backend consent-callback ───────────────────────────
         setStatus("Sending consent to server...");
 
         const params = new URLSearchParams();
@@ -159,7 +158,7 @@ export default function MsConsentCallback() {
           },
         });
 
-        addLog(`Backend — HTTP ${res.status}`);
+        addLog(`Backend responded — HTTP ${res.status}`);
 
         if (!res.ok) {
           const text = await res.text();
@@ -169,7 +168,7 @@ export default function MsConsentCallback() {
           return;
         }
 
-        // ── Step 7: Follow redirect ──────────────────────────────────────────
+        // ── Step 8: Follow backend redirect ─────────────────────────────────
         setStatus("Finalizing...");
         const data = await res.json();
         addLog(`Backend response: ${JSON.stringify(data)}`);
@@ -194,6 +193,9 @@ export default function MsConsentCallback() {
     };
 
     run();
+
+  // inProgress is intentionally in the dep array — the effect re-evaluates
+  // each time MSAL's state changes, and only proceeds once it hits "none"
   }, [router.isReady, router.query, inProgress]);
 
   return (
