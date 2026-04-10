@@ -57,18 +57,18 @@ export default function MsConsentCallback() {
         //   2. MSAL's own account cache (getAllAccounts)
         let account = null;
 
-        // Source 1 — account stored by checking.jsx before the adminconsent redirect
-        // (LOGIN_SUCCESS never fires for adminconsent — it's not an MSAL login flow)
-        let storedMeta = null;
+        // Source 1 — account captured by the LOGIN_SUCCESS event in _app.jsx
         const storedAccountRaw = sessionStorage.getItem(MSAL_ACCOUNT_KEY);
         if (storedAccountRaw) {
           try {
-            storedMeta = JSON.parse(storedAccountRaw);
+            const storedMeta = JSON.parse(storedAccountRaw);
+            // Use the homeAccountId to look up the full account object from
+            // MSAL's cache — we need the full object for acquireTokenSilent
             const allAccounts = instance.getAllAccounts();
             account = allAccounts.find(
               (a) => a.homeAccountId === storedMeta.homeAccountId,
             ) ?? null;
-            addLog(`Source 1 (stored meta) — cache lookup: ${account?.username ?? "not in cache"}`);
+            addLog(`Source 1 (event capture) — resolved: ${account?.username ?? "not found in cache"}`);
           } catch {
             addLog("Source 1 — failed to parse stored account meta");
           }
@@ -81,20 +81,6 @@ export default function MsConsentCallback() {
           const allAccounts = instance.getAllAccounts();
           account = allAccounts[0] ?? null;
           addLog(`Source 2 (cache fallback) — resolved: ${account?.username ?? "NONE"} | cached: ${allAccounts.length}`);
-        }
-
-        // Source 3 — reconstruct a minimal account from stored meta so
-        // acquireTokenSilent can still be attempted even if the MSAL cache
-        // was cleared by the adminconsent browser redirect
-        if (!account && storedMeta?.homeAccountId) {
-          account = {
-            homeAccountId:  storedMeta.homeAccountId,
-            localAccountId: storedMeta.localAccountId,
-            username:       storedMeta.username,
-            tenantId:       storedMeta.tenantId,
-            environment:    "login.microsoftonline.com",
-          };
-          addLog(`Source 3 (reconstructed from meta) — username: ${account.username}`);
         }
 
         if (!account) {

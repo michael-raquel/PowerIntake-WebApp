@@ -64,11 +64,9 @@ export default function Checking() {
 
             // ✅ Save account so ms-consent-callback can restore it without re-login
             sessionStorage.setItem(
-              "msal_consent_account",
+              "pre_consent_account",
               JSON.stringify({
                 homeAccountId: accounts[0].homeAccountId,
-                localAccountId: accounts[0].localAccountId,
-                username: accounts[0].username,
                 tenantId: tid,
               }),
             );
