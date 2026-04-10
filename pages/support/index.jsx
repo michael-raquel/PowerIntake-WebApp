@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, MessageSquare, PhoneCall, BookOpen, Info, ExternalLink } from "lucide-react";
+import { Mail, MessageSquare, PhoneCall, BookOpen, Info, ExternalLink, ArrowUpRight } from "lucide-react";
 import ComCard, { supportCards, learnMoreCards } from "@/components/support/ComCard";
 import ComSupportForm from "@/components/support/ComSupportForm";
 import ComFeedbackForm from "@/components/support/ComFeedbackForm";
@@ -75,9 +75,10 @@ export default function SupportRoute() {
                             if (card.title === "Email Support") setSupportOpen(true);
                             if (card.title === "Give Feedback") setFeedbackOpen(true);
                           }}
-                          className="inline-flex items-center justify-center rounded-full bg-violet-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-violet-700 dark:bg-violet-500 dark:hover:bg-violet-600"
+                          className="inline-flex items-center justify-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
                         >
                           {card.cta}
+                          <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       ) : (
                         <div className="rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-center dark:border-orange-900/50 dark:bg-orange-950/40">

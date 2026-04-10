@@ -167,8 +167,7 @@ export default function SettingsPage() {
             <div className="flex justify-end">
               <Button
                 onClick={handleReset}
-                variant="outline"
-                className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100 dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800 appearance-none"
+                className="gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
                 disabled={!isReady || isSaving || submitting}
               >
                 Reset
