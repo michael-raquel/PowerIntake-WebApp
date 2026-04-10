@@ -1,5 +1,4 @@
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
-import { InteractionStatus } from "@azure/msal-browser";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { loginRequest } from "@/lib/msalConfig";
@@ -11,31 +10,30 @@ const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
 
 export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts, inProgress } = useMsal();
+  const { instance, accounts } = useMsal();
   const router = useRouter();
 
   const [verified, setVerified] = useState(null);
 
-  // ── Auth redirect — only when MSAL is fully idle ─────────────────────────
+  // ── Auth redirect ───────────────────────────────────────
   useEffect(() => {
-    if (!isAuthenticated && inProgress === InteractionStatus.None) {
+    if (!isAuthenticated) {
       instance.loginRedirect(loginRequest);
     }
-  }, [isAuthenticated, inProgress, instance]);
+  }, [isAuthenticated, instance]);
 
-  // ── Consent gate — wait for auth + idle ──────────────────────────────────
-  useEffect(() => {
-    if (!isAuthenticated || inProgress !== InteractionStatus.None) return;
+  // ── Consent gate ────────────────────────────────────────
+ useEffect(() => {
+  if (!isAuthenticated) return;
+  const isVerified = sessionStorage.getItem("consent_verified") === "1";
+  if (isVerified) {
+    setTimeout(() => setVerified(true), 0);
+  } else {
+    router.replace("/checking");
+  }
+}, [isAuthenticated, router]);
 
-    const isVerified = sessionStorage.getItem("consent_verified") === "1";
-    if (isVerified) {
-      setTimeout(() => setVerified(true), 0);
-    } else {
-      router.replace("/checking");
-    }
-  }, [isAuthenticated, inProgress, router]);
-
-  // ── Role check ────────────────────────────────────────────────────────────
+  // ── Role check ──────────────────────────────────────────
   const hasRequiredRole = useMemo(() => {
     if (!requiredRoles || requiredRoles.length === 0) return true;
     const roles = (accounts[0]?.idTokenClaims?.roles ?? []).map(String);
@@ -43,18 +41,12 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   }, [accounts, requiredRoles]);
 
   useEffect(() => {
-    if (
-      isAuthenticated &&
-      inProgress === InteractionStatus.None &&
-      verified &&
-      requiredRoles?.length > 0 &&
-      !hasRequiredRole
-    ) {
+    if (isAuthenticated && verified && requiredRoles?.length > 0 && !hasRequiredRole) {
       router.replace("/unauthorized");
     }
-  }, [isAuthenticated, inProgress, verified, requiredRoles, hasRequiredRole, router]);
+  }, [isAuthenticated, verified, requiredRoles, hasRequiredRole, router]);
 
-  // ── Loading shell ─────────────────────────────────────────────────────────
+  // ── Loading shell ────────────────────────────────────────
   const loadingScreen = (message) => (
     <div className="flex min-h-screen items-center justify-center bg-black">
       {message ? (
@@ -65,13 +57,11 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
     </div>
   );
 
-  // Wait for MSAL to finish processing redirect/token before doing anything
-  if (inProgress !== InteractionStatus.None) return loadingScreen(null);
   if (!isAuthenticated) return loadingScreen("Redirecting to Microsoft login...");
   if (verified !== true) return loadingScreen(null);
   if (requiredRoles?.length > 0 && !hasRequiredRole) return loadingScreen("Checking permissions...");
 
-  // ── Verified: render full layout ──────────────────────────────────────────
+  // ── Verified: render full layout ─────────────────────────
   return (
     <div className="flex h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300 w-full">
       {showSidebar && <SideNavbar />}
