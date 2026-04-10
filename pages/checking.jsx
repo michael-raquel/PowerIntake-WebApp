@@ -62,23 +62,17 @@ export default function Checking() {
           if (isGlobalAdmin) {
             setStatus("Redirecting to Microsoft for approval...");
 
-            // ✅ Save account so ms-consent-callback can restore it without re-login
-            sessionStorage.setItem(
-              "pre_consent_account",
-              JSON.stringify({
-                homeAccountId: accounts[0].homeAccountId,
-                tenantId: tid,
-              }),
-            );
-
             const consentUrl = [
               `https://login.microsoftonline.com/${tid}/adminconsent`,
               `?client_id=${process.env.NEXT_PUBLIC_AZURE_CLIENT_ID}`,
               `&redirect_uri=${process.env.NEXT_PUBLIC_APP_URL}/ms-consent-callback`,
-              `&prompt=consent`,
+              `&prompt=consent`, // ← forces full permission screen
             ].join("");
 
             window.location.href = consentUrl;
+          } else {
+            setStatus("Waiting for administrator approval...");
+            router.replace("/no-consent?reason=needs-admin-login");
           }
           return;
         }
