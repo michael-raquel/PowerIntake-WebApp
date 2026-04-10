@@ -111,6 +111,11 @@ export default function SuperAdminView() {
     settingsRowsPerPage ??
     storedRowsPerPage ??
     recordsPerPage;
+  const mobileRecordsPerPage =
+    userRowsPerPage ??
+    settingsRowsPerPage ??
+    storedRowsPerPage ??
+    MOBILE_PER_PAGE;
 
   useEffect(() => {
     if (!rowsPerPageStorageKey || typeof window === "undefined") return;
@@ -121,7 +126,7 @@ export default function SuperAdminView() {
     );
   }, [rowsPerPageStorageKey, settingsRowsPerPage]);
 
-  const perPage = isMobile ? MOBILE_PER_PAGE : effectiveRecordsPerPage;
+  const perPage = isMobile ? mobileRecordsPerPage : effectiveRecordsPerPage;
   const totalPages = Math.max(1, Math.ceil(totalRecords / perPage));
   const safePage = Math.min(currentPage, totalPages);
 
@@ -300,10 +305,44 @@ export default function SuperAdminView() {
                 isMobile ? "px-5 flex-col" : "pr-15 flex-row"
               }`}
             >
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                {totalRecords} Total Records
-              </span>
-              <div className="flex items-center gap-3">
+              <div
+                className={`flex items-center gap-3 ${
+                  isMobile ? "w-full justify-between" : ""
+                }`}
+              >
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  {totalRecords} Total Records
+                </span>
+                {isMobile && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">
+                      Rows per page:
+                    </label>
+                    <Select
+                      value={String(mobileRecordsPerPage ?? 10)}
+                      onValueChange={handleRecordsPerPageChange}
+                      disabled={updating}
+                    >
+                      <SelectTrigger className="w-20 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="15">15</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              <div
+                className={`flex items-center gap-3 ${
+                  isMobile ? "w-full justify-center" : ""
+                }`}
+              >
                 <div className="hidden md:flex items-center gap-2">
                   <label className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                     Rows per page:
@@ -484,7 +523,7 @@ export default function SuperAdminView() {
             <div className="px-4 pb-4 pt-0 flex-1 min-h-0 overflow-auto">
               <ComTenantTable
                 {...tableProps}
-                recordsPerPage={MOBILE_PER_PAGE}
+                recordsPerPage={mobileRecordsPerPage}
                 renderAs="cards"
                 CardComponent={ComCard}
               />

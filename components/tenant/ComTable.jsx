@@ -525,29 +525,31 @@ export default function ComTable({
 
   if (renderAs === "cards") {
     return (
-      <div className="md:hidden">
-        <div className="flex justify-between items-center px-0 py-3 border-b border-gray-200 dark:border-gray-800">
+      <div className="md:hidden h-full flex flex-col min-h-0">
+        <div className="flex justify-between items-center px-0 py-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {filteredTenants.length} Total Records
           </span>
         </div>
-        <div className="space-y-3 p-3">
-          {paginated.map((row) => (
-            <CardComponent
-              key={readField(
-                row.source,
-                ["v_tenantuuid", "tenantuuid", "v_tenantid", "tenantid"],
-                row.tenantId,
-              )}
-              tenant={row.source}
-              onClick={() => onTenantSelect?.(row.source)}
-            />
-          ))}
-          {!paginated.length && (
-            <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">
-              No tenants found.
-            </p>
-          )}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="space-y-3 p-3">
+            {paginated.map((row) => (
+              <CardComponent
+                key={readField(
+                  row.source,
+                  ["v_tenantuuid", "tenantuuid", "v_tenantid", "tenantid"],
+                  row.tenantId,
+                )}
+                tenant={row.source}
+                onClick={() => onTenantSelect?.(row.source)}
+              />
+            ))}
+            {!paginated.length && (
+              <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">
+                No tenants found.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     );
