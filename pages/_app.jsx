@@ -1,6 +1,6 @@
 import "@/styles/globals.css";
 import { useEffect } from "react";
-import { PublicClientApplication } from "@azure/msal-browser";
+import { PublicClientApplication, EventType } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
 import { msalConfig } from "@/lib/msalConfig";
 import { useRouter } from "next/router";
@@ -8,22 +8,41 @@ import dynamic from "next/dynamic";
 import { AuthProvider } from "@/context/AuthContext";
 import { ThemeProvider as NextThemeProvider } from "next-themes";
 import { ThemeProvider } from "@/context/ThemeContext";
-import {
-  SpartaAssistProvider,
-  useSpartaAssist,
-} from "@/context/SpartaAssistContext";
+import { SpartaAssistProvider, useSpartaAssist } from "@/context/SpartaAssistContext";
 import { Toaster } from "sonner";
 import Clarity from "@microsoft/clarity";
 
-const AuthGuard = dynamic(() => import("@/components/AuthGuard"), {
-  ssr: false,
-});
-const SpartaAssistWidget = dynamic(
-  () => import("@/components/SpartaAssistWidget"),
-  { ssr: false },
-);
+const AuthGuard = dynamic(() => import("@/components/AuthGuard"), { ssr: false });
+const SpartaAssistWidget = dynamic(() => import("@/components/SpartaAssistWidget"), { ssr: false });
 
 const msalInstance = new PublicClientApplication(msalConfig);
+
+// ── Intercept MSAL redirect result BEFORE MsalProvider consumes it ──────────
+// MsalProvider calls handleRedirectPromise internally on mount. By the time
+// any page component mounts and runs its own useEffect, the redirect result
+// is already consumed and gone from MSAL's internal state.
+//
+// We register an event callback here — before MsalProvider initializes —
+// so we can capture the account from the LOGIN_SUCCESS event and store it
+// in sessionStorage. The ms-consent-callback page reads it from there.
+msalInstance.addEventCallback((event) => {
+  if (
+    event.eventType === EventType.LOGIN_SUCCESS &&
+    event.payload?.account
+  ) {
+    const account = event.payload.account;
+    console.log("[MSAL EVENT] LOGIN_SUCCESS — capturing account for consent callback:", account.username);
+    sessionStorage.setItem(
+      "msal_consent_account",
+      JSON.stringify({
+        homeAccountId: account.homeAccountId,
+        localAccountId: account.localAccountId,
+        username: account.username,
+        tenantId: account.tenantId,
+      }),
+    );
+  }
+});
 
 const noSidebarPages = [
   "/",
@@ -103,8 +122,6 @@ export default function App(props) {
         <AuthProvider>
           <ThemeProvider>
             <SpartaAssistProvider>
-              {" "}
-              {/* ← now inside AuthProvider */}
               <AppContent {...props} />
             </SpartaAssistProvider>
           </ThemeProvider>
