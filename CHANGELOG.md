@@ -1,3 +1,20 @@
+## [1.6.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5...v1.6.6) (2026-04-12)
+
+
+### Bug Fixes
+
+* added a profile picture and replaced email with role ([a3e2f2e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a3e2f2e10342521c1352a611672442e65ce46a6b))
+* ST-ticket loading and sync label ([852cb73](https://github.com/michael-raquel/PowerIntake-WebApp/commit/852cb73cb95ad88fd4ef029b4c272ff4ec27882a))
+* ST-ticket powersuite AI ([4808a81](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4808a81a3a03d1c596e44dd0713dd519cdb64ab5))
+* ST-ticket-ai integration making prompt more helpful ([ce38ae4](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ce38ae4fdfdf9d0b09b677a18d6c420f15b255a7))
+* user now cannot overscroll ([0b8b50d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0b8b50d1f80b0c1f8b71e4f766ca6e57c209d2d6))
+
+
+### Reverts
+
+* Revert "commented the tokens" ([58aed97](https://github.com/michael-raquel/PowerIntake-WebApp/commit/58aed970e9c7c844f4c22fde2587ca9970823c5d))
+* Revert "HELLO UNIVERSE 3" ([c5fff36](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c5fff361921a822163e2a5a39e189eafcd6111e2))
+
 ## [1.6.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4...v1.6.5) (2026-04-07)
 
 
