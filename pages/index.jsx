@@ -176,7 +176,7 @@ export default function Home() {
                     onClick={() =>
                     instance.loginRedirect({
                       ...loginRequest,
-                      prompt: "login", // 🔥 THIS is the key
+                      prompt: "select_account",
                     })
                   }
                     className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-md transition-all duration-200 hover:bg-slate-50 hover:shadow-lg hover:shadow-white/10 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-900"

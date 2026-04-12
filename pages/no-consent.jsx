@@ -229,7 +229,8 @@ export default function NoConsent() {
     });
   }, [instance]);
 
-  const goHome = () => router.push("/");
+  const changeAccount = () =>
+    instance.loginRedirect({ scopes: ["openid", "profile", "User.Read"], prompt: "select_account" });
   const retry = () => router.replace("/checking");
 
   return (
@@ -238,17 +239,42 @@ export default function NoConsent() {
         <title>Access Issue — Power Intake</title>
       </Head>
 
-      <div className="flex min-h-screen items-center justify-center bg-black px-6">
-        <div className="w-full max-w-md p-8 rounded-2xl border border-white/10 bg-white/5 space-y-5">
+      <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-black px-6">
+        {/* Grid texture */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.022) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.022) 1px, transparent 1px)",
+            backgroundSize: "52px 52px",
+          }}
+        />
+
+        {/* Glow blob */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[420px] w-[420px] rounded-full"
+          style={{
+            background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)",
+          }}
+        />
+
+        {/* Card */}
+        <div className="relative z-10 w-full max-w-[420px] rounded-2xl border border-white/[0.07] bg-white/[0.025] p-8 shadow-2xl backdrop-blur-sm space-y-5">
           {/* Title + body */}
           <div className="text-center space-y-2">
-            <h1 className="text-lg text-white font-semibold">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold tracking-widest uppercase border bg-violet-500/10 border-violet-500/20 text-violet-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />
+              Power Intake
+            </span>
+            <h1 className="text-[17px] font-semibold tracking-tight text-white leading-snug">
               {scenario.title}
             </h1>
-            <p className="text-sm text-zinc-400">{scenario.body}</p>
+            <p className="text-sm leading-relaxed text-zinc-500">{scenario.body}</p>
           </div>
 
-          <div className="border-t border-white/10" />
+          <div className="border-t border-white/[0.06]" />
 
           {/* ── CONTACT ─────────────────────────────────── */}
           {scenario.actions === "contact" && <SupportBlock />}
@@ -265,26 +291,32 @@ export default function NoConsent() {
             <div className="flex flex-col gap-4">
               <button
                 onClick={retry}
-                className="w-full bg-white/10 hover:bg-white/20 text-white py-2 rounded-xl text-sm transition-colors"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border border-white/[0.06] transition-all active:scale-[0.98]"
               >
                 Retry
               </button>
-
-              <div className="border-t border-white/[0.08]" />
-
+              <div className="border-t border-white/[0.06]" />
               <SupportBlock />
             </div>
           )}
 
-          <div className="border-t border-white/10" />
+          <div className="border-t border-white/[0.06]" />
 
-          {/* Go home */}
+          {/* Change account */}
           <button
-            onClick={goHome}
-            className="w-full text-sm text-zinc-500 hover:text-white transition-colors"
+            onClick={changeAccount}
+            className="w-full text-sm text-zinc-600 hover:text-zinc-400 transition-colors"
           >
-            Go home
+            Sign in with a different account
           </button>
+        </div>
+
+        {/* Footer branding */}
+        <div className="relative z-10 mt-5 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-violet-500 opacity-60" />
+          <p className="text-xs text-zinc-700 tracking-wide">
+            Power Intake · Sparta Services, LLC
+          </p>
         </div>
       </div>
     </>

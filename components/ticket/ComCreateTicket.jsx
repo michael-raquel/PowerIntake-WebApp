@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef } from 'react';
-import { X, Plus, Upload, Clock, MapPin, Calendar as CalendarIcon, AlertCircle, FileText, RefreshCw } from 'lucide-react';
+import { X, Plus, Upload, Clock, MapPin, Calendar as CalendarIcon, AlertCircle, FileText, RefreshCw, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import Image from 'next/image';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,6 +17,9 @@ import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
 import { useCreateTicket } from "@/hooks/useCreateTicket";
 import { toast } from "sonner";
 import useUploadImage from '@/hooks/UseUploadImage';
+import { useSpartaAssistOnce } from "@/hooks/UseSpartaAssist";
+import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
+import powersuiteaiicon from '../settings/assets/powersuiteai.svg';
 
 const LOCATIONS = ['Remote', 'Hybrid', 'Office'];
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
@@ -23,6 +27,39 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const CALL_DURATION_HOURS = 2;
 const END_TIME_THRESHOLD_MINUTES = 23 * 60 + 30;
 const END_TIME_CAP = '23:59';
+
+const ANIMATED_STYLES = `
+  @keyframes borderCycle {
+    0%   { border-color: #f472b6; }
+    25%  { border-color: #ec4899; }
+    50%  { border-color: #818cf8; }
+    75%  { border-color: #a78bfa; }
+    100% { border-color: #f472b6; }
+  }
+  @keyframes bgCycle {
+    0%   { background-color: #f472b6; }
+    25%  { background-color: #ec4899; }
+    50%  { background-color: #818cf8; }
+    75%  { background-color: #a78bfa; }
+    100% { background-color: #f472b6; }
+  }
+  .animated-border {
+    border-width: 3px;
+    border-style: solid;
+    animation: borderCycle 8s ease-in-out infinite alternate-reverse;
+  }
+  .animate-border {
+    animation: borderCycle 8s ease-in-out infinite alternate-reverse;
+  }
+  .animated-bg {
+    animation: bgCycle 8s ease-in-out infinite alternate-reverse;
+  }
+  .animated-border-bg {
+    border-width: 3px;
+    border-style: solid;
+    animation: borderCycle 8s ease-in-out infinite alternate-reverse, bgCycle 8s ease-in-out infinite alternate-reverse;
+  }
+`;
 
 const getDefaultStartTime = (now = new Date()) => {
   const totalMinutes = now.getHours() * 60 + now.getMinutes() + 30;
@@ -216,6 +253,10 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
+  const { askAssist, loading: aiLoading, suggestion, error: aiError, clear: clearSuggestion } = useSpartaAssistOnce();
+
+  const { userSettings } = useFetchUserSettings({ entrauserid: account?.localAccountId });
+  const powersuiteaiEnabled = userSettings?.[0]?.v_powersuiteai ?? false;
 
   const handleInputChange = ({ target: { name, value } }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -294,6 +335,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black py-6">
+      <style>{ANIMATED_STYLES}</style>
       <div className="w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center mb-6">
           <div>
@@ -308,42 +350,103 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
 
-            {/* Title & Description */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
+           <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
               <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg flex gap-2 mb-4">
                 <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-800 dark:text-blue-300">Please review all details before submitting.</p>
               </div>
-              {['title', 'description'].map(field => (
+
+              {['title'].map(field => (
                 <div key={field} className="mb-4">
                   <Label className="text-xs mb-1 block">
                     {field.charAt(0).toUpperCase() + field.slice(1)} <span className="text-red-500">*</span>
                   </Label>
                   <div ref={el => fieldRefs.current[field] = el}>
-                    {field === 'description' ? (
-                      <Textarea
-                        name={field}
-                        value={formData[field]}
-                        onChange={handleInputChange}
-                        rows={4}
-                        placeholder={`Provide ${field}...`}
-                        className={errors[field] ? 'border-red-500' : ''}
-                        disabled={submitting}
-                      />
-                    ) : (
-                      <Input
-                        name={field}
-                        value={formData[field]}
-                        onChange={handleInputChange}
-                        placeholder={`Brief ${field} of the issue`}
-                        className={errors[field] ? 'border-red-500' : ''}
-                        disabled={submitting}
-                      />
-                    )}
+                    <Input
+                      name={field}
+                      value={formData[field]}
+                      onChange={handleInputChange}
+                      placeholder="Brief title of the issue"
+                      className={errors[field] ? 'border-red-500' : ''}
+                      disabled={submitting}
+                    />
                     {errors[field] && <p className="text-xs text-red-500 mt-1">This field is required.</p>}
                   </div>
                 </div>
               ))}
+
+              <div className="mb-4">
+                <Label className="text-xs mb-1 block">
+                  Description <span className="text-red-500">*</span>
+                </Label>
+                <div ref={el => fieldRefs.current['description'] = el}>
+                  <Textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    rows={4}
+                    placeholder="Provide description..."
+                    className={errors.description ? 'border-red-500' : ''}
+                    disabled={submitting}
+                  />
+                  {errors.description && <p className="text-xs text-red-500 mt-1">This field is required.</p>}
+                </div>
+
+               {powersuiteaiEnabled && formData.description.trim().split(/\s+/).filter(Boolean).length >= 2 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                   className="mt-3 animated-bg
+                        text-white py-4 cursor-pointer hover:text-white"
+                   onClick={() => askAssist(formData.title, formData.description)}
+                    disabled={aiLoading || submitting || formData.description.length > 1000}
+                  >
+                     <Image 
+                        src={powersuiteaiicon} 
+                        alt="PowerSuite AI" 
+                        width={16} 
+                        height={16} 
+                      />
+                    {aiLoading ? "Getting suggestions..." : "PowerSuite AI Recommendation"}
+                  </Button>
+                )}
+
+              {suggestion && (
+                <>
+                  <div className="animated-border mt-3 max-h-[400px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-950/30 rounded-lg border-3  border-red-300 dark:border-indigo-500">
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                        <Image src={powersuiteaiicon} alt="PowerSuite AI" width={16} height={16} />
+                        Suggested Resolution Steps
+                      </p>
+                      {/* <button onClick={clearSuggestion} className="text-gray-400 hover:text-gray-600">
+                        <X className="w-3.5 h-3.5" />
+                      </button> */}
+                    </div>
+
+                    <div
+                      className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm dark:prose-invert max-w-none
+                        [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:text-gray-900 [&_h2]:dark:text-white
+                        [&_ol]:pl-5 [&_ol]:list-decimal [&_ol]:space-y-1
+                        [&_ul]:pl-5 [&_ul]:list-disc [&_ul]:space-y-1
+                        [&_li]:text-sm [&_p]:mb-2 [&_strong]:font-semibold"
+                      dangerouslySetInnerHTML={{ __html: suggestion }}
+                    />
+                  </div>
+                    <div className='flex justify-end gap-2 mt-2'>
+                     <ThumbsUp className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
+                     <ThumbsDown className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
+                    </div>
+                  </>
+                )}
+
+                {aiError && (
+                  <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {aiError}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Support Call Schedule */}
@@ -533,16 +636,21 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     resetCalls();
                     setAttachments([]);
                     setErrors({});
+                    clearSuggestion();
                   }}
                   disabled={submitting}
                   className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100
-    dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800
-    appearance-none"
+                          dark:bg-gray-900 dark:text-white dark:border-gray-600 dark:hover:bg-gray-800
+                          appearance-none"
                 >
                   Clear
                 </Button>
 
-                <Button onClick={handleSubmit} disabled={submitting}>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
+                >
                   {submitting ? (
                     <span className="flex items-center gap-2">
                       <RefreshCw className="w-4 h-4 animate-spin" /> Submitting...

@@ -127,80 +127,80 @@ const COLUMNS = [
     key: "entratenantid",
     label: "Entra Tenant ID",
     align: "left",
-    minWidth: 250,
-    defaultWidth: 300,
+    minWidth: 160,
+    defaultWidth: 180,
     sortValue: (row) => row.entratenantid,
   },
   {
     key: "tenantname",
     label: "Tenant Name",
     align: "left",
-    minWidth: 200,
-    defaultWidth: 240,
+    minWidth: 150,
+    defaultWidth: 170,
     sortValue: (row) => row.tenantName,
   },
   {
     key: "tenantemail",
     label: "Tenant Email",
     align: "left",
-    minWidth: 200,
-    defaultWidth: 240,
+    minWidth: 150,
+    defaultWidth: 170,
     sortValue: (row) => row.tenantEmail,
   },
   {
     key: "dynamicsaccountid",
     label: "Dynamics Account ID",
     align: "left",
-    minWidth: 250,
-    defaultWidth: 300,
+    minWidth: 160,
+    defaultWidth: 180,
     sortValue: (row) => row.dynamicsaccountid,
   },
   {
     key: "admingroupid",
     label: "Admin Group ID",
     align: "left",
-    minWidth: 250,
-    defaultWidth: 300,
+    minWidth: 160,
+    defaultWidth: 180,
     sortValue: (row) => row.admingroupid,
   },
   {
     key: "usergroupid",
     label: "User Group ID",
     align: "left",
-    minWidth: 250,
-    defaultWidth: 300,
+    minWidth: 160,
+    defaultWidth: 180,
     sortValue: (row) => row.usergroupid,
   },
   {
     key: "isconsented",
     label: "Is Consented",
     align: "center",
-    minWidth: 120,
-    defaultWidth: 140,
+    minWidth: 140,
+    defaultWidth: 150,
     sortValue: (row) => row.consentLabel,
   },
   {
     key: "isapproved",
     label: "Is Approved",
     align: "center",
-    minWidth: 120,
-    defaultWidth: 140,
+    minWidth: 140,
+    defaultWidth: 150,
     sortValue: (row) => row.approvalLabel,
   },
   {
     key: "isactive",
     label: "Is Active",
     align: "center",
-    minWidth: 120,
-    defaultWidth: 130,
+    minWidth: 110,
+    defaultWidth: 120,
     sortValue: (row) => row.statusLabel,
   },
   {
     key: "createdat",
     label: "Created At",
     align: "left",
-    minWidth: 180,
-    defaultWidth: 210,
+    minWidth: 150,
+    defaultWidth: 170,
     sortValue: (row) => row.createdAt,
   },
 ];
@@ -231,6 +231,9 @@ export default function ComTable({
     direction: "desc",
   });
   const [columnWidths, setColumnWidths] = useState({});
+  const columnWidthsRef = useRef({});
+  const tableContainerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(0);
   const resizeStateRef = useRef(null);
 
   const normalizedTenants = useMemo(
@@ -291,6 +294,71 @@ export default function ComTable({
       return next;
     });
   }, []);
+
+  useEffect(() => {
+    columnWidthsRef.current = columnWidths;
+  }, [columnWidths]);
+
+  useEffect(() => {
+    if (!tableContainerRef.current) return;
+
+    const updateWidth = () => {
+      const nextWidth = tableContainerRef.current?.clientWidth ?? 0;
+      setContainerWidth(nextWidth);
+    };
+
+    updateWidth();
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(() => updateWidth());
+      observer.observe(tableContainerRef.current);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener("resize", updateWidth);
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
+
+  useEffect(() => {
+    if (!containerWidth) return;
+
+    const availableWidth = Math.max(0, containerWidth - 1);
+    if (!availableWidth) return;
+
+    const baseWidths = COLUMNS.map((column) => {
+      const current = columnWidthsRef.current?.[column.key];
+      return current ?? column.defaultWidth ?? column.minWidth ?? 120;
+    });
+
+    const totalBase = baseWidths.reduce((sum, value) => sum + value, 0);
+    if (!totalBase) return;
+
+    const next = {};
+    let used = 0;
+
+    COLUMNS.forEach((column, index) => {
+      const scaled = Math.floor((baseWidths[index] / totalBase) * availableWidth);
+      next[column.key] = scaled;
+      used += scaled;
+    });
+
+    const remainder = availableWidth - used;
+    if (COLUMNS.length > 0 && remainder !== 0) {
+      const key = COLUMNS[0].key;
+      next[key] = (next[key] ?? 0) + remainder;
+    }
+
+    setColumnWidths((prev) => {
+      let changed = false;
+      for (const column of COLUMNS) {
+        if (prev[column.key] !== next[column.key]) {
+          changed = true;
+          break;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [containerWidth]);
 
   useEffect(() => {
     const statusOptions = [
@@ -457,29 +525,31 @@ export default function ComTable({
 
   if (renderAs === "cards") {
     return (
-      <div className="md:hidden">
-        <div className="flex justify-between items-center px-0 py-3 border-b border-gray-200 dark:border-gray-800">
+      <div className="md:hidden h-full flex flex-col min-h-0">
+        <div className="flex justify-between items-center px-0 py-3 border-b border-gray-200 dark:border-gray-800 shrink-0">
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {filteredTenants.length} Total Records
           </span>
         </div>
-        <div className="space-y-3 p-3">
-          {paginated.map((row) => (
-            <CardComponent
-              key={readField(
-                row.source,
-                ["v_tenantuuid", "tenantuuid", "v_tenantid", "tenantid"],
-                row.tenantId,
-              )}
-              tenant={row.source}
-              onClick={() => onTenantSelect?.(row.source)}
-            />
-          ))}
-          {!paginated.length && (
-            <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">
-              No tenants found.
-            </p>
-          )}
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <div className="space-y-3 p-3">
+            {paginated.map((row) => (
+              <CardComponent
+                key={readField(
+                  row.source,
+                  ["v_tenantuuid", "tenantuuid", "v_tenantid", "tenantid"],
+                  row.tenantId,
+                )}
+                tenant={row.source}
+                onClick={() => onTenantSelect?.(row.source)}
+              />
+            ))}
+            {!paginated.length && (
+              <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">
+                No tenants found.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -487,7 +557,10 @@ export default function ComTable({
 
   return (
     <div className="hidden md:flex flex-col flex-1 min-h-0">
-      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-auto">
+      <div
+        ref={tableContainerRef}
+        className="flex-1 min-h-0 overflow-x-auto overflow-y-auto"
+      >
         <table className="w-full text-sm table-fixed border-collapse">
           <colgroup>
             {COLUMNS.map((column) => (
@@ -539,7 +612,7 @@ export default function ComTable({
                       } hover:text-gray-700 dark:hover:text-gray-200`}
                       title={`Sort by ${column.label}`}
                     >
-                      <span className="truncate">{column.label}</span>
+                      <span className="whitespace-nowrap">{column.label}</span>
                       {sortIcon}
                     </button>
                     <div

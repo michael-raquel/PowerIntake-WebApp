@@ -6,6 +6,9 @@ import ComTenantTable from "@/components/tenant/ComTenantTable";
 import ComCreateTenant from "@/components/tenant/ComCreateTenant";
 import ComUpdateForm from "@/components/tenant/ComUpdateForm";
 import ComCard from "@/components/tenant/ComCard";
+import { useAuth } from "@/context/AuthContext";
+import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
+import { useUpdateRecordCount } from "@/hooks/UseUpdateRecordCount";
 import {
   ExternalLink,
   ChevronLeft,
@@ -28,6 +31,8 @@ const VALID_TABS = new Set(["all-tenant"]);
 export default function SuperAdminView() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { tokenInfo } = useAuth();
+  const userId = tokenInfo?.account?.localAccountId;
 
   const initialTab = searchParams.get("tab") || null;
   const initialSearch = searchParams.get("search") || "";
@@ -45,17 +50,83 @@ export default function SuperAdminView() {
   const [selectedFilters, setSelectedFilters] = useState({});
   const [filterOptions, setFilterOptions] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
-  const [recordsPerPage, setRecordsPerPage] = useState(DEFAULT_ROWS);
+  const recordsPerPage = DEFAULT_ROWS;
+  const [userRowsPerPage, setUserRowsPerPage] = useState(null);
   const [selectedTenant, setSelectedTenant] = useState(null);
 
-  const tabs = useMemo(() => [{ id: "all-tenant", label: "All Tenants" }], []);
+  const rowsPerPageStorageKey = useMemo(
+    () => (userId ? `tenant-rows-per-page:${userId}` : null),
+    [userId],
+  );
+
+  const { userSettings, refetch: refetchUserSettings } = useFetchUserSettings({
+    entrauserid: userId,
+  });
+  const { updateRecordCount, loading: updating } = useUpdateRecordCount();
+
+  const matchedUserSettings = useMemo(() => {
+    const normalizedUserId = String(userId || "").trim();
+    if (!Array.isArray(userSettings) || userSettings.length === 0) return null;
+
+    return (
+      userSettings.find((setting) => {
+        const settingUserId = String(
+          setting?.v_entrauserid ?? setting?.entrauserid ?? "",
+        ).trim();
+        return settingUserId && settingUserId === normalizedUserId;
+      }) || userSettings[0]
+    );
+  }, [userSettings, userId]);
+
+  const tabs = useMemo(() => [{ id: "all-tenant", label: "Tenants" }], []);
 
   const safeTab = useMemo(() => {
     const ids = tabs.map((tab) => tab.id);
     return ids.includes(activeTab) ? activeTab : "all-tenant";
   }, [tabs, activeTab]);
 
-  const perPage = isMobile ? MOBILE_PER_PAGE : recordsPerPage;
+  const settingsRowsPerPage = useMemo(() => {
+    if (matchedUserSettings) {
+      const setting = matchedUserSettings;
+      const recordCount = Number(
+        setting?.v_tenantrecordcount ?? setting?.tenantrecordcount,
+      );
+      if (recordCount > 0) {
+        return recordCount;
+      }
+    }
+    return null;
+  }, [matchedUserSettings]);
+
+  const storedRowsPerPage = useMemo(() => {
+    if (!rowsPerPageStorageKey || typeof window === "undefined") return null;
+    const raw = window.localStorage.getItem(rowsPerPageStorageKey);
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+    return parsed;
+  }, [rowsPerPageStorageKey]);
+
+  const effectiveRecordsPerPage =
+    userRowsPerPage ??
+    settingsRowsPerPage ??
+    storedRowsPerPage ??
+    recordsPerPage;
+  const mobileRecordsPerPage =
+    userRowsPerPage ??
+    settingsRowsPerPage ??
+    storedRowsPerPage ??
+    MOBILE_PER_PAGE;
+
+  useEffect(() => {
+    if (!rowsPerPageStorageKey || typeof window === "undefined") return;
+    if (!Number.isFinite(settingsRowsPerPage) || settingsRowsPerPage <= 0) return;
+    window.localStorage.setItem(
+      rowsPerPageStorageKey,
+      String(settingsRowsPerPage),
+    );
+  }, [rowsPerPageStorageKey, settingsRowsPerPage]);
+
+  const perPage = isMobile ? mobileRecordsPerPage : effectiveRecordsPerPage;
   const totalPages = Math.max(1, Math.ceil(totalRecords / perPage));
   const safePage = Math.min(currentPage, totalPages);
 
@@ -72,12 +143,50 @@ export default function SuperAdminView() {
     setCurrentPage(1);
   }, []);
 
-  const handleRecordsPerPageChange = useCallback((value) => {
-    const next = Number(value);
-    if (!Number.isFinite(next) || next <= 0) return;
+  const handleRecordsPerPageChange = useCallback(async (value) => {
+    const newValue = Number(value);
+    if (!Number.isFinite(newValue) || newValue <= 0) return;
     setCurrentPage(1);
-    setRecordsPerPage(next);
-  }, []);
+    setUserRowsPerPage(newValue);
+    if (rowsPerPageStorageKey && typeof window !== "undefined") {
+      window.localStorage.setItem(rowsPerPageStorageKey, String(newValue));
+    }
+
+    const entraUserIdToSave =
+      matchedUserSettings?.v_entrauserid ??
+      matchedUserSettings?.entrauserid ??
+      userId;
+
+    if (!entraUserIdToSave) return;
+
+    try {
+      const payload = {
+        entrauserid: entraUserIdToSave,
+        ticketrecordcount:
+          matchedUserSettings?.v_ticketrecordcount ??
+          matchedUserSettings?.ticketrecordcount ??
+          null,
+        managerecordcount:
+          matchedUserSettings?.v_managerecordcount ??
+          matchedUserSettings?.managerecordcount ??
+          null,
+        tenantrecordcount: newValue,
+        modifiedby: tokenInfo?.account?.username ?? null,
+      };
+
+      await updateRecordCount(payload);
+      await refetchUserSettings?.();
+    } catch (err) {
+      console.error("Failed to update record count:", err);
+    }
+  }, [
+    matchedUserSettings,
+    updateRecordCount,
+    tokenInfo,
+    userId,
+    refetchUserSettings,
+    rowsPerPageStorageKey,
+  ]);
 
   const handleTenantCreated = useCallback(() => {
     setShowCreateTenant(false);
@@ -122,7 +231,7 @@ export default function SuperAdminView() {
   }
 
   const header = (
-    <div className="px-4 bg-linear-to-l from-pink-500 to-violet-800 rounded-xl py-5 shrink-0 shadow-md">
+    <div className="px-4 bg-linear-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-lg bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
           <Building2 className="w-5 h-5 text-white" />
@@ -140,7 +249,7 @@ export default function SuperAdminView() {
   );
 
   const tabBar = (
-    <div className="flex border-b border-gray-200 dark:border-gray-800 shrink-0">
+    <div className="flex border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
       <nav className="flex gap-x-1">
         {tabs.map(({ id, label }) => (
           <button
@@ -196,17 +305,52 @@ export default function SuperAdminView() {
                 isMobile ? "px-5 flex-col" : "pr-15 flex-row"
               }`}
             >
-              <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                {totalRecords} Total Records
-              </span>
-              <div className="flex items-center gap-3">
+              <div
+                className={`flex items-center gap-3 ${
+                  isMobile ? "w-full justify-between" : ""
+                }`}
+              >
+                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                  {totalRecords} Total Records
+                </span>
+                {isMobile && (
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">
+                      Rows per page:
+                    </label>
+                    <Select
+                      value={String(mobileRecordsPerPage ?? 10)}
+                      onValueChange={handleRecordsPerPageChange}
+                      disabled={updating}
+                    >
+                      <SelectTrigger className="w-20 h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">5</SelectItem>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="15">15</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="25">25</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              <div
+                className={`flex items-center gap-3 ${
+                  isMobile ? "w-full justify-center" : ""
+                }`}
+              >
                 <div className="hidden md:flex items-center gap-2">
                   <label className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                     Rows per page:
                   </label>
                   <Select
-                    value={String(recordsPerPage ?? 5)}
+                    value={String(effectiveRecordsPerPage ?? 5)}
                     onValueChange={handleRecordsPerPageChange}
+                    disabled={updating}
                   >
                     <SelectTrigger className="w-20 h-8 text-xs">
                       <SelectValue />
@@ -359,12 +503,12 @@ export default function SuperAdminView() {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen flex flex-col p-4 pb-0">
-        <div className="flex-1 flex flex-col gap-4">
+      <div className="h-[100dvh] flex flex-col p-4 pb-0 overflow-hidden">
+        <div className="flex-1 flex flex-col gap-4 min-h-0">
           {header}
           {tabBar}
-          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col">
-            <div className="p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col flex-1 min-h-0">
+            <div className="p-4 flex-shrink-0">
               <ComFilters
                 onCreateTenant={() => setShowCreateTenant(true)}
                 activeTab={safeTab}
@@ -375,11 +519,11 @@ export default function SuperAdminView() {
                 filterOptions={filterOptions}
               />
             </div>
-            <div className="border-t border-gray-200 dark:border-gray-800" />
-            <div className="p-4">
+            <div className="border-t border-gray-200 dark:border-gray-800 flex-shrink-0" />
+            <div className="px-4 pb-4 pt-0 flex-1 min-h-0 overflow-auto">
               <ComTenantTable
                 {...tableProps}
-                recordsPerPage={MOBILE_PER_PAGE}
+                recordsPerPage={mobileRecordsPerPage}
                 renderAs="cards"
                 CardComponent={ComCard}
               />
@@ -401,12 +545,12 @@ export default function SuperAdminView() {
   }
 
   return (
-    <div className="h-dvh flex flex-col p-4 pb-0 overflow-hidden">
+    <div className="h-[100dvh] flex flex-col p-4 pb-0 overflow-hidden">
       <div className="flex flex-col gap-4 flex-1 min-h-0">
         {header}
         {tabBar}
         <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 p-4 pb-0 flex flex-col flex-1 min-h-0">
-          <div className="shrink-0">
+          <div className="flex-shrink-0">
             <ComFilters
               onCreateTenant={() => setShowCreateTenant(true)}
               activeTab={safeTab}
@@ -417,9 +561,12 @@ export default function SuperAdminView() {
               filterOptions={filterOptions}
             />
           </div>
-          <div className="shrink-0 border-b border-gray-200 dark:border-gray-800 mt-3" />
+          <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 mt-3" />
           <div className="flex-1 min-h-0 overflow-auto">
-            <ComTenantTable {...tableProps} recordsPerPage={recordsPerPage} />
+            <ComTenantTable
+              {...tableProps}
+              recordsPerPage={effectiveRecordsPerPage}
+            />
           </div>
           {pagination}
         </div>

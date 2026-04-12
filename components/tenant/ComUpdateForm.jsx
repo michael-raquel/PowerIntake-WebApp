@@ -464,13 +464,13 @@ export default function ComUpdateForm({
           </>
         )}
 
-        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
           <Button
             type="button"
             variant="outline"
             onClick={handleReset}
             disabled={isBusy || !hasChanges}
-            className={OUTLINE_BUTTON_CLASS}
+            className={`${OUTLINE_BUTTON_CLASS} w-full sm:w-auto`}
           >
             Reset
           </Button>
@@ -480,7 +480,7 @@ export default function ComUpdateForm({
               variant="outline"
               onClick={onClose}
               disabled={isBusy}
-              className={OUTLINE_BUTTON_CLASS}
+              className={`${OUTLINE_BUTTON_CLASS} w-full sm:w-auto`}
             >
               Cancel
             </Button>
