@@ -1,68 +1,13 @@
-## [1.6.5-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.9...v1.6.5-dev.10) (2026-04-10)
-
-
-### Reverts
-
-* Revert "HELLO UNIVERSE 3" ([c5fff36](https://github.com/michael-raquel/PowerIntake-WebApp/commit/c5fff361921a822163e2a5a39e189eafcd6111e2))
-
-## [1.6.5-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.8...v1.6.5-dev.9) (2026-04-09)
+## [1.6.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4...v1.6.5) (2026-04-07)
 
 
 ### Bug Fixes
 
-* ST-ticket powersuite AI ([4808a81](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4808a81a3a03d1c596e44dd0713dd519cdb64ab5))
-
-## [1.6.5-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.7...v1.6.5-dev.8) (2026-04-09)
-
-
-### Reverts
-
-* Revert "commented the tokens" ([0352b66](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0352b669ec3050c77f335746bb2d3072cf496efe))
-* Revert "fix: added no role user scenario" ([bad08eb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/bad08eb4b5dac0379c438c441dca2d9502b701f6))
-* Revert "Improve AuthGuard login flow and consent checks" ([6c5b81d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6c5b81dd2602ccdd18e55ac3edeab1f6ca82529b))
-
-## [1.6.5-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.6...v1.6.5-dev.7) (2026-04-09)
-
-
-### Reverts
-
-* Revert "commented the tokens" ([58aed97](https://github.com/michael-raquel/PowerIntake-WebApp/commit/58aed970e9c7c844f4c22fde2587ca9970823c5d))
-* Revert "Merge pull request [#142](https://github.com/michael-raquel/PowerIntake-WebApp/issues/142) from michael-raquel/2226-No-Role-User-Scenario" ([f657525](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f657525237fde58741e52f73b9479636d11a29d9))
-
-## [1.6.5-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.5...v1.6.5-dev.6) (2026-04-09)
-
-
-### Bug Fixes
-
-* added no role user scenario ([0c4b159](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0c4b1595a7eeb273d6a35041bf2a72ee5c88a91b))
-
-## [1.6.5-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.4...v1.6.5-dev.5) (2026-04-09)
-
-
-### Bug Fixes
-
-* ST-ticket-ai integration making prompt more helpful ([ce38ae4](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ce38ae4fdfdf9d0b09b677a18d6c420f15b255a7))
-
-## [1.6.5-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.3...v1.6.5-dev.4) (2026-04-09)
-
-
-### Bug Fixes
-
-* user now cannot overscroll ([0b8b50d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0b8b50d1f80b0c1f8b71e4f766ca6e57c209d2d6))
-
-## [1.6.5-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.2...v1.6.5-dev.3) (2026-04-09)
-
-
-### Bug Fixes
-
-* ST-ticket loading and sync label ([852cb73](https://github.com/michael-raquel/PowerIntake-WebApp/commit/852cb73cb95ad88fd4ef029b4c272ff4ec27882a))
-
-## [1.6.5-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5-dev.1...v1.6.5-dev.2) (2026-04-08)
-
-
-### Bug Fixes
-
-* added a profile picture and replaced email with role ([a3e2f2e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a3e2f2e10342521c1352a611672442e65ce46a6b))
+* added a tenant record count ([6ee3539](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6ee3539a7c279d30b1a03d6ccfc6e27960fe3af4))
+* Rows per page filter does not work on My Company on Manage Page ([f8e9fc0](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f8e9fc03f09745a621fd82f98a23ebdc98468349))
+* st-2201 No Historical Data for Ticket Status Table (Timeline) for initial Sync of Tickets ([41c82e2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/41c82e255ca282da18cffcd4ef04ec116854e20f))
+* ST-ticket remove support call from description ([713796a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/713796aea54243a3712127b4d477fc2ba89be695))
+* updated the settings ([e1abac3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e1abac3dd7f4433eeeac438df969fadee23bbcdf))
 
 ## [1.6.5-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.4...v1.6.5-dev.1) (2026-04-07)
 
