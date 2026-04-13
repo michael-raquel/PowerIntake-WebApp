@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
 import { useCreateTicket } from "@/hooks/useCreateTicket";
+import { useCreatePowerSuiteAILog } from "@/hooks/UseCreatePowerSuiteAILogs";
+import { useDeletePowerSuiteAILogs } from "@/hooks/UseDeletePowerSuiteAILogs";
+import { useUpdatePowerSuiteAILogs } from "@/hooks/UseUpdatePowerSuiteAILogs";
 import { toast } from "sonner";
 import useUploadImage from '@/hooks/UseUploadImage';
 import { useSpartaAssistOnce } from "@/hooks/UseSpartaAssist";
@@ -251,9 +254,14 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [feedbackChoice, setFeedbackChoice] = useState(null);
+  const [feedbackLogId, setFeedbackLogId] = useState(null);
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
   const { askAssist, loading: aiLoading, suggestion, error: aiError, clear: clearSuggestion } = useSpartaAssistOnce();
+  const { submitFeedback, submitting: feedbackSubmitting } = useCreatePowerSuiteAILog();
+  const { deletePowerSuiteAILog, loading: deleteSubmitting } = useDeletePowerSuiteAILogs();
+  const { updatePowerSuiteAILogsTicketId, loading: updateSubmitting } = useUpdatePowerSuiteAILogs();
 
   const { userSettings } = useFetchUserSettings({ entrauserid: account?.localAccountId });
   const powersuiteaiEnabled = userSettings?.[0]?.v_powersuiteai ?? false;
@@ -302,6 +310,10 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
   const handleSubmit = async () => {
     if (!validateAll()) return;
+    if (feedbackChoice === "up") {
+      toast.error("Please clear thumbs up feedback before submitting.");
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -316,7 +328,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
       const callTimezone = primaryCall?.timezone ?? detectedTimezone;
       const callLocation = primaryCall?.location ?? 'Remote';
 
-      await createTicket({
+      const ticketuuid = await createTicket({
         formData,
         supportCalls,
         attachments: uploadedAttachments,
@@ -324,12 +336,63 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
         location: callLocation,
       });
 
+      if (feedbackChoice === "down" && feedbackLogId && ticketuuid) {
+        try {
+          await updatePowerSuiteAILogsTicketId({
+            powersuiteailogsuuid: feedbackLogId,
+            ticketuuid,
+          });
+        } catch (err) {
+          toast.error(err.message || "Ticket created, but feedback link failed.");
+        }
+      }
+
       toast.success('Ticket submitted successfully!');
       onClose?.();
 
     } catch (err) {
       setSubmitting(false);
       toast.error(err.message || 'Failed to submit ticket');
+    }
+  };
+
+  const isFeedbackBusy = feedbackSubmitting || deleteSubmitting || updateSubmitting || submitting || aiLoading;
+  const isSubmitDisabled = submitting || aiLoading || feedbackChoice === "up";
+
+  const handleFeedback = async (feedbackType) => {
+    if (!suggestion || isFeedbackBusy || feedbackChoice) return;
+
+    try {
+      setFeedbackChoice(feedbackType);
+
+      const data = await submitFeedback({
+        feedbackType,
+        entrauserid: account?.localAccountId,
+        title: formData.title,
+        description: formData.description,
+        suggestion,
+        createdby: account?.localAccountId,
+      });
+
+      setFeedbackLogId(data?.powersuiteailogsuuid ?? null);
+
+      toast.success("Thanks for your feedback!");
+    } catch (err) {
+      setFeedbackChoice(null);
+      toast.error(err.message || "Failed to submit feedback");
+    }
+  };
+
+  const handleClearFeedback = async () => {
+    if (!feedbackLogId || feedbackSubmitting || deleteSubmitting) return;
+
+    try {
+      await deletePowerSuiteAILog(feedbackLogId);
+      setFeedbackChoice(null);
+      setFeedbackLogId(null);
+      toast.success("Feedback removed.");
+    } catch (err) {
+      toast.error(err.message || "Failed to remove feedback");
     }
   };
 
@@ -399,7 +462,11 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     size="sm"
                    className="mt-3 animated-bg
                         text-white py-4 cursor-pointer hover:text-white"
-                   onClick={() => askAssist(formData.title, formData.description)}
+                   onClick={() => {
+                     setFeedbackChoice(null);
+                     setFeedbackLogId(null);
+                     askAssist(formData.title, formData.description);
+                   }}
                     disabled={aiLoading || submitting || formData.description.length > 1000}
                   >
                      <Image 
@@ -434,9 +501,72 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                       dangerouslySetInnerHTML={{ __html: suggestion }}
                     />
                   </div>
-                    <div className='flex justify-end gap-2 mt-2'>
-                     <ThumbsUp className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
-                     <ThumbsDown className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
+                    <div className='flex items-center justify-end gap-2 mt-2'>
+                     {feedbackLogId && (
+                       <Button
+                         type="button"
+                         variant="outline"
+                         size="sm"
+                         className="h-7 px-2 text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700/40 dark:text-red-300 dark:hover:bg-red-950/40"
+                         onClick={handleClearFeedback}
+                         disabled={isFeedbackBusy}
+                       >
+                         <X className="h-3 w-3" />
+                         <span>Clear feedback</span>
+                       </Button>
+                     )}
+                     <button
+                       type="button"
+                       aria-pressed={feedbackChoice === "up"}
+                       className={cn(
+                         "rounded-full p-1 transition-colors",
+                         feedbackChoice === "up"
+                           ? "bg-green-100 dark:bg-green-900/30"
+                           : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                         isFeedbackBusy || feedbackChoice
+                           ? feedbackChoice === "up"
+                             ? "cursor-default"
+                             : "opacity-50 cursor-not-allowed"
+                           : "cursor-pointer"
+                       )}
+                       onClick={() => handleFeedback("up")}
+                       disabled={isFeedbackBusy || feedbackChoice}
+                     >
+                       <ThumbsUp
+                         className={cn(
+                           "w-5 h-5",
+                           feedbackChoice === "up"
+                             ? "text-green-600 dark:text-green-400"
+                             : "text-pink-500 dark:text-blue-400"
+                         )}
+                       />
+                     </button>
+                     <button
+                       type="button"
+                       aria-pressed={feedbackChoice === "down"}
+                       className={cn(
+                         "rounded-full p-1 transition-colors",
+                         feedbackChoice === "down"
+                           ? "bg-red-100 dark:bg-red-900/30"
+                           : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                         isFeedbackBusy || feedbackChoice
+                           ? feedbackChoice === "down"
+                             ? "cursor-default"
+                             : "opacity-50 cursor-not-allowed"
+                           : "cursor-pointer"
+                       )}
+                       onClick={() => handleFeedback("down")}
+                       disabled={isFeedbackBusy || feedbackChoice}
+                     >
+                       <ThumbsDown
+                         className={cn(
+                           "w-5 h-5",
+                           feedbackChoice === "down"
+                             ? "text-red-600 dark:text-red-400"
+                             : "text-pink-500 dark:text-blue-400"
+                         )}
+                       />
+                     </button>
                     </div>
                   </>
                 )}
@@ -637,6 +767,8 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     setAttachments([]);
                     setErrors({});
                     clearSuggestion();
+                    setFeedbackChoice(null);
+                    setFeedbackLogId(null);
                   }}
                   disabled={submitting}
                   className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100
@@ -648,7 +780,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
                 <Button
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  disabled={isSubmitDisabled}
                   className="gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
                 >
                   {submitting ? (
