@@ -487,7 +487,6 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                       <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:300ms]" />
                     </span>
                   </div>
-<<<<<<< Updated upstream
                     <div className="flex items-center justify-end gap-2 mt-2">
                       <p className="text-xs text-gray-500 dark:text-gray-300 mr-2">Was this suggestion helpful?</p>
                       <button
@@ -557,10 +556,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                           <span>Clear feedback</span>
                         </Button>
                       )}
-                    </div>
-                  </>
-                )}
-=======
+                    </div>           
                 </div>
               )}
 
@@ -591,7 +587,6 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                 </div>
               </>
             )}
->>>>>>> Stashed changes
 
                 {aiError && (
                   <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
