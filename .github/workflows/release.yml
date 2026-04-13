@@ -41,7 +41,7 @@ jobs:
       - name: Set release metadata
         run: |
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
-          echo "NEXT_PUBLIC_APP_RELEASE_TIMESTAMP=$(date -u '+%H:%M:%S')" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_APP_RELEASE_TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
       # Build
       - name: Build
