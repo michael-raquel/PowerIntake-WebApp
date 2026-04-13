@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.7.0...v1.8.0) (2026-04-13)
+
+
+### Features
+
+* added s on aura ([d9ea03f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d9ea03fb7dff19e61d7be260bfa65ba959255ceb))
+
 # [1.7.0](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.8...v1.7.0) (2026-04-13)
 
 
