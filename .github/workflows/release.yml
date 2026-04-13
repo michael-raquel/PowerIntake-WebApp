@@ -1,10 +1,11 @@
-
 name: Release
+
 on:
   push:
     branches:
       - main
       - dev
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -12,6 +13,7 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+
     steps:
       - uses: actions/checkout@v3
         with:
@@ -24,20 +26,27 @@ jobs:
 
       - run: npm ci
 
-      # 👇 Configure git auth so successCmd can push the alias tag
+      # Configure git auth
       - name: Configure git credentials
         run: |
           git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
 
+      # Run semantic-release
       - name: Run Semantic Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
-      # Build runs AFTER semantic-release so env vars are populated
+      # Set release metadata (date + timestamp)
+      - name: Set release metadata
+        run: |
+          echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_APP_RELEASE_TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
+
+      # Build
       - name: Build
         run: npm run build
         env:
           NEXT_PUBLIC_APP_VERSION: ${{ env.NEXT_PUBLIC_APP_VERSION }}
           NEXT_PUBLIC_APP_RELEASE_DATE: ${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}
-
+          NEXT_PUBLIC_APP_RELEASE_TIMESTAMP: ${{ env.NEXT_PUBLIC_APP_RELEASE_TIMESTAMP }}
