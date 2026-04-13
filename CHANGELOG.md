@@ -1,3 +1,10 @@
+## [1.6.6-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.4...v1.6.6-dev.5) (2026-04-13)
+
+
+### Bug Fixes
+
+* remove socket ([538523d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/538523d5b824820e76b0b5aef65637c5fd339523))
+
 ## [1.6.6-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.3...v1.6.6-dev.4) (2026-04-13)
 
 
