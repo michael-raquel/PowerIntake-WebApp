@@ -1,3 +1,10 @@
+## [1.6.6-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.3...v1.6.6-dev.4) (2026-04-13)
+
+
+### Bug Fixes
+
+* notification socket ([74c488e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/74c488e83922c82bceb46317874948c50a1d2b69))
+
 ## [1.6.6-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.2...v1.6.6-dev.3) (2026-04-13)
 
 
