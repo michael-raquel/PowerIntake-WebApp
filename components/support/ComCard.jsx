@@ -35,9 +35,10 @@ export const learnMoreCards = [
     iconBg: "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-300",
     version: process.env.NEXT_PUBLIC_APP_VERSION || "v0.0.0-local",
     release: `Released ${process.env.NEXT_PUBLIC_APP_RELEASE_DATE || "August 01, 2025"}`,
+    timestamp: process.env.NEXT_PUBLIC_APP_RELEASE_TIMESTAMP || "2025-08-01T00:00:00Z",
   },
 ];
-//jasperwitnessserer1auralacaespaeaheyhuhhehi
+
 export default function ComCard({
   title,
   description,
