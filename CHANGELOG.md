@@ -1,3 +1,10 @@
+## [1.6.6-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.7...v1.6.6-dev.8) (2026-04-13)
+
+
+### Bug Fixes
+
+* my client table pagination row count and hide the notification ([6e210c6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6e210c6a359edef02d5d68720de5e16f7943029b))
+
 ## [1.6.6-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.6...v1.6.6-dev.7) (2026-04-13)
 
 
