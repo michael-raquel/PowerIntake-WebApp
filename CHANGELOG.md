@@ -1,3 +1,10 @@
+## [1.6.7-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.7-dev.1...v1.6.7-dev.2) (2026-04-13)
+
+
+### Reverts
+
+* Revert "fix: ST-powersuiteai create new" ([d332a98](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d332a98a39608b7a4793aea4dc14c76d174e12ba))
+
 ## [1.6.7-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6...v1.6.7-dev.1) (2026-04-13)
 
 
