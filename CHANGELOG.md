@@ -1,3 +1,10 @@
+## [1.6.6-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.10...v1.6.6-dev.11) (2026-04-13)
+
+
+### Bug Fixes
+
+* Power Suite AI Logs Front End and minor changes ([ba614a2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ba614a2bf0d6ae5c81a73779e810e0dcadc2a6be))
+
 ## [1.6.6-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.9...v1.6.6-dev.10) (2026-04-13)
 
 
