@@ -1,8 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Mail, MessageSquare, PhoneCall, BookOpen, Info, ExternalLink, ArrowUpRight } from "lucide-react";
-import ComCard, { supportCards, learnMoreCards } from "@/components/support/ComCard";
+import {
+  Mail,
+  MessageSquare,
+  PhoneCall,
+  BookOpen,
+  Info,
+  ExternalLink,
+  ArrowUpRight,
+} from "lucide-react";
+import ComCard, {
+  supportCards,
+  learnMoreCards,
+} from "@/components/support/ComCard";
 import ComSupportForm from "@/components/support/ComSupportForm";
 import ComFeedbackForm from "@/components/support/ComFeedbackForm";
 
@@ -15,12 +26,16 @@ export default function SupportRoute() {
 
   return (
     <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
-
-      <ComSupportForm open={supportOpen} onClose={() => setSupportOpen(false)} />
-      <ComFeedbackForm open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
+      <ComSupportForm
+        open={supportOpen}
+        onClose={() => setSupportOpen(false)}
+      />
+      <ComFeedbackForm
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+      />
 
       <div className="flex flex-col gap-4 flex-1">
-
         <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -32,7 +47,8 @@ export default function SupportRoute() {
                   Power Intake Help Center
                 </h2>
                 <p className="text-xs text-white/60 mt-0.5">
-                  Improving Accessibility | Fostering Accountability | Exceptional Service
+                  Improving Accessibility | Fostering Accountability |
+                  Exceptional Service
                 </p>
               </div>
             </div>
@@ -40,7 +56,6 @@ export default function SupportRoute() {
         </div>
 
         <div className="space-y-12">
-
           <section>
             <div className="flex items-start gap-3">
               <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300">
@@ -51,8 +66,8 @@ export default function SupportRoute() {
                   Need help? We have got your back
                 </h3>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  We would love to hear from you. Whether you have a question, feedback, or need
-                  assistance, here is how you can reach us.
+                  We would love to hear from you. Whether you have a question,
+                  feedback, or need assistance, here is how you can reach us.
                 </p>
               </div>
             </div>
@@ -72,8 +87,10 @@ export default function SupportRoute() {
                         <button
                           type="button"
                           onClick={() => {
-                            if (card.title === "Email Support") setSupportOpen(true);
-                            if (card.title === "Give Feedback") setFeedbackOpen(true);
+                            if (card.title === "Email Support")
+                              setSupportOpen(true);
+                            if (card.title === "Give Feedback")
+                              setFeedbackOpen(true);
                           }}
                           className="inline-flex items-center justify-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
                         >
@@ -85,13 +102,17 @@ export default function SupportRoute() {
                           <div className="flex gap-4 justify-center">
                             {card.telephone && (
                               <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                                <span className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Telephone</span>
+                                <span className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">
+                                  Telephone
+                                </span>
                                 +1 {card.telephone}
                               </p>
                             )}
                             {card.localNumber && (
                               <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                                <span className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">Local number</span>
+                                <span className="block text-xs text-gray-600 dark:text-gray-400 mb-0.5">
+                                  Local number
+                                </span>
                                 +1 {card.localNumber}
                               </p>
                             )}
@@ -121,7 +142,8 @@ export default function SupportRoute() {
                   Learn more
                 </h3>
                 <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                  Explore additional resources and information to get the most out of our app.
+                  Explore additional resources and information to get the most
+                  out of our app.
                 </p>
               </div>
             </div>
@@ -153,6 +175,11 @@ export default function SupportRoute() {
                           <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
                             {card.release}
                           </p>
+                          {card.timestamp && (
+                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
+                              {new Date(card.timestamp).toLocaleString()}
+                            </p>
+                          )}
                         </div>
                       )
                     }
@@ -161,59 +188,84 @@ export default function SupportRoute() {
               })}
             </div>
           </section>
-
         </div>
       </div>
 
-     <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
-      <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
+      <footer className="mt-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="px-6 py-2 flex flex-col sm:flex-row items-center sm:justify-between gap-2">
+          <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
+            <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
+            <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
+              Sparta Services, LLC
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2 shrink-0 order-1 sm:order-1">
-          <span className="w-2 h-2 rounded-full bg-purple-500 shrink-0" />
-          <p className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">Sparta Services, LLC</p>
-        </div>
+          <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3 sm:pr-14">
+            <div className="hidden sm:flex items-center gap-1">
+              {[
+                {
+                  href: "https://www.spartaserv.com/terms-conditions",
+                  label: "Terms",
+                },
+                { href: "https://Portal.SpartaServ.com", label: "Portal" },
+                {
+                  href: "https://www.spartaserv.com/privacy-policy",
+                  label: "Privacy Policy",
+                },
+                { href: "https://www.spartaserv.com", label: "SpartaServ.com" },
+              ].map((link, i, arr) => (
+                <span key={link.label} className="flex items-center">
+                  <a
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap"
+                  >
+                    {link.label}
+                    <ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
+                  </a>
+                  {i < arr.length - 1 && (
+                    <span className="w-px h-3 bg-gray-300 dark:bg-gray-700 mx-0.5 shrink-0" />
+                  )}
+                </span>
+              ))}
+            </div>
 
-        <div className="flex items-center gap-1 shrink-0 order-2 sm:order-3 sm:pr-14">
-          <div className="hidden sm:flex items-center gap-1">
-            {[
-              { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
-              { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
-              { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
-              { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
-            ].map((link, i, arr) => (
-              <span key={link.label} className="flex items-center">
-                <a href={link.href} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap">
-                  {link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
+            <div className="grid sm:hidden grid-cols-2 gap-x-0 gap-y-0">
+              {[
+                {
+                  href: "https://www.spartaserv.com/terms-conditions",
+                  label: "Terms",
+                },
+                { href: "https://Portal.SpartaServ.com", label: "Portal" },
+                {
+                  href: "https://www.spartaserv.com/privacy-policy",
+                  label: "Privacy Policy",
+                },
+                { href: "https://www.spartaserv.com", label: "SpartaServ.com" },
+              ].map((link, i) => (
+                <a
+                  key={link.label}
+                  href={link.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap ${
+                    i % 2 === 0 ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  {link.label}
+                  <ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
                 </a>
-                {i < arr.length - 1 && <span className="w-px h-3 bg-gray-300 dark:bg-gray-700 mx-0.5 shrink-0" />}
-              </span>
-            ))}
+              ))}
+            </div>
           </div>
 
-          <div className="grid sm:hidden grid-cols-2 gap-x-0 gap-y-0">
-            {[
-              { href: 'https://www.spartaserv.com/terms-conditions', label: 'Terms' },
-              { href: 'https://Portal.SpartaServ.com', label: 'Portal' },
-              { href: 'https://www.spartaserv.com/privacy-policy', label: 'Privacy Policy' },
-              { href: 'https://www.spartaserv.com', label: 'SpartaServ.com' },
-            ].map((link, i) => (
-              <a key={link.label} href={link.href} target="_blank" rel="noopener noreferrer"
-                className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-xs font-medium text-purple-600 dark:text-purple-400 underline underline-offset-2 decoration-purple-300 dark:decoration-purple-700 hover:decoration-purple-600 dark:hover:decoration-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/30 transition-all whitespace-nowrap ${i % 2 === 0 ? 'justify-end' : 'justify-start'
-                  }`}>
-                {link.label}<ExternalLink className="w-2.5 h-2.5 opacity-70 shrink-0" />
-              </a>
-            ))}
-          </div>
+          <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">
+            &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights
+            reserved.
+          </p>
         </div>
-
-        <p className="text-[11px] text-gray-400 dark:text-gray-500 whitespace-nowrap order-3 sm:order-2">
-          &copy; {new Date().getFullYear()} Sparta Services, LLC. All rights reserved.
-        </p>
-
-      </div>
-    </footer>
-
+      </footer>
     </div>
   );
 }

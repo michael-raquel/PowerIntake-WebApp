@@ -45,21 +45,45 @@ export default function ComCard({
   Icon,
   iconBg,
   footer,
+  version,
+  release,
+  timestamp,
 }) {
   return (
     <div className="flex flex-col rounded-2xl border border-dashed border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      
+      {/* Icon */}
       <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${iconBg}`}>
-        <Icon className="h-5 w-5" />
+        {Icon && <Icon className="h-5 w-5" />}
       </div>
+
+      {/* Title */}
       <h4 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">
         {title}
       </h4>
+
+      {/* Description */}
       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
         {description}
       </p>
-      <div className="mt-6">{footer}</div>
+
+      {/* ✅ Version Info Block */}
+      {version && (
+        <div className="mt-4 text-sm text-gray-500 dark:text-gray-400 space-y-1">
+          <div className="font-medium text-gray-700 dark:text-gray-300">
+            {version}
+          </div>
+          <div>{release}</div>
+          <div>
+            {timestamp
+              ? new Date(timestamp).toLocaleString()
+              : "No timestamp available"}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
+      {footer && <div className="mt-6">{footer}</div>}
     </div>
   );
 }
-
-// Aura
