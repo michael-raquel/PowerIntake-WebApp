@@ -17,6 +17,7 @@ import Image from "next/image";
 import { useMsal } from "@azure/msal-react";
 import { useAuth } from "@/context/AuthContext";
 import { useAppTheme } from "@/context/ThemeContext";
+import Notification from "@/components/Notification";
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -144,6 +145,8 @@ export default function SideNavbar() {
                 )}
               </span>
             </button>
+
+            {/* <Notification isMobile /> */}
 
             <div className="relative">
               <button
@@ -345,6 +348,8 @@ export default function SideNavbar() {
               </div>
             )}
           </div>
+
+          {/* <Notification isCollapsed={isCollapsed} /> */}
 
           <div className="relative">
             <button

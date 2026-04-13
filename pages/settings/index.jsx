@@ -9,7 +9,7 @@ import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateUserSettings } from '@/hooks/UseUpdateUserSettings';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Settings } from 'lucide-react';
-import { NotificationsSection, AssistSection, DarkModeSection } from '@/components/settings/ComCards';
+import { AssistSection, DarkModeSection } from '@/components/settings/ComCards';
 
 export default function SettingsPage() {
   const { accounts } = useMsal();
@@ -132,7 +132,7 @@ export default function SettingsPage() {
               </div>
               <div>
                 <h2 className="font-black text-xl sm:text-2xl text-white tracking-tight">Settings</h2>
-                <p className="text-xs text-white/60 mt-0.5">Manage notifications, assist tools, and theme preferences</p>
+                <p className="text-xs text-white/60 mt-0.5">Manage assist tools and theme preferences</p>
               </div>
             </div>
           </div>
@@ -145,13 +145,14 @@ export default function SettingsPage() {
                 Error: {error}
               </div>
             )}
-            
+            {/*
             <NotificationsSection
               localSettings={localSettings}
               onToggle={handleToggle}
               loadingToggles={loadingToggles}
               isLoading={loading}
             />
+            */}
             <AssistSection
               localSettings={localSettings}
               onToggle={handleToggle}

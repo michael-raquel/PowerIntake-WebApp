@@ -36,6 +36,7 @@ const FOOTER_LINKS = [
 ];
 
 const VALID_TABS = new Set(['my-client', 'my-company', 'my-team', 'my-ticket']);
+const TEXT_INPUT_FILTERS = new Set(['Client', 'Manager']);
 
 export default function TicketPage() {
   const searchParams = useSearchParams();
@@ -62,6 +63,7 @@ export default function TicketPage() {
   const [searchValue, setSearchValue] = useState(initialSearch);
   const [selectedFilters, setSelectedFilters] = useState({});
   const [filterOptions, setFilterOptions] = useState({});
+  const prevFilterOptionsRef = useRef({});
   const [refreshKey, setRefreshKey] = useState(0);
   const [recordsPerPage, setRecordsPerPage] = useState(DEFAULT_ROWS);
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
@@ -138,6 +140,42 @@ export default function TicketPage() {
   const handleFiltersChange = useCallback((filters) => {
     setSelectedFilters(filters);
     setCurrentPage(1);
+  }, []);
+
+  const handleFilterOptionsChange = useCallback((options) => {
+    const prevOptionsSnapshot = prevFilterOptionsRef.current;
+    setFilterOptions(options);
+    setSelectedFilters((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      for (const [filter, values] of Object.entries(options || {})) {
+        if (TEXT_INPUT_FILTERS.has(filter)) {
+          if (Array.isArray(prev[filter])) {
+            delete next[filter];
+            changed = true;
+          }
+          continue;
+        }
+
+        const currentOptions = Array.isArray(values) ? values : [];
+        const prevOptions = Array.isArray(prevOptionsSnapshot[filter])
+          ? prevOptionsSnapshot[filter]
+          : [];
+        const selected = Array.isArray(prev[filter]) ? prev[filter] : [];
+        const added = currentOptions.filter((value) => !prevOptions.includes(value));
+        const wasAllSelected = selected.length > 0 && selected.length === prevOptions.length;
+        const isInitial = selected.length === 0 && prevOptions.length === 0;
+
+        if (added.length > 0 && (isInitial || wasAllSelected)) {
+          next[filter] = Array.from(new Set([...selected, ...added]));
+          changed = true;
+        }
+      }
+
+      return changed ? next : prev;
+    });
+    prevFilterOptionsRef.current = options || {};
   }, []);
 
   const handleTicketSelect = useCallback((ticket) => {
@@ -442,7 +480,7 @@ export default function TicketPage() {
     activeTab: safeTab,
     currentPage: safePage,
     onTotalRecordsChange: setTotalRecords,
-    onFilterOptionsChange: setFilterOptions,
+    onFilterOptionsChange: handleFilterOptionsChange,
     searchValue,
     filters: selectedFilters,
     refreshKey,

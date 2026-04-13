@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useFetchUserProfile } from "@/hooks/UseFetchUserProfile";
 import { useCreateTicket } from "@/hooks/useCreateTicket";
+import { useCreatePowerSuiteAILog } from "@/hooks/UseCreatePowerSuiteAILogs";
+import { useDeletePowerSuiteAILogs } from "@/hooks/UseDeletePowerSuiteAILogs";
+import { useUpdatePowerSuiteAILogs } from "@/hooks/UseUpdatePowerSuiteAILogs";
 import { toast } from "sonner";
 import useUploadImage from '@/hooks/UseUploadImage';
 import { useSpartaAssistOnce } from "@/hooks/UseSpartaAssist";
@@ -251,9 +254,14 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   const [dragOver, setDragOver] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [feedbackChoice, setFeedbackChoice] = useState(null);
+  const [feedbackLogId, setFeedbackLogId] = useState(null);
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
-  const { askAssist, loading: aiLoading, suggestion, error: aiError, clear: clearSuggestion } = useSpartaAssistOnce();
+  const { askAssist, loading: aiLoading, suggestion, isStreaming, error: aiError, clear: clearSuggestion } = useSpartaAssistOnce();
+  const { submitFeedback, submitting: feedbackSubmitting } = useCreatePowerSuiteAILog();
+  const { deletePowerSuiteAILog, loading: deleteSubmitting } = useDeletePowerSuiteAILogs();
+  const { updatePowerSuiteAILogsTicketId, loading: updateSubmitting } = useUpdatePowerSuiteAILogs();
 
   const { userSettings } = useFetchUserSettings({ entrauserid: account?.localAccountId });
   const powersuiteaiEnabled = userSettings?.[0]?.v_powersuiteai ?? false;
@@ -302,6 +310,10 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
   const handleSubmit = async () => {
     if (!validateAll()) return;
+    if (suggestion && feedbackChoice !== "down") {
+      toast.error("Please select thumbs down feedback before submitting.");
+      return;
+    }
     setSubmitting(true);
 
     try {
@@ -316,7 +328,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
       const callTimezone = primaryCall?.timezone ?? detectedTimezone;
       const callLocation = primaryCall?.location ?? 'Remote';
 
-      await createTicket({
+      const ticketuuid = await createTicket({
         formData,
         supportCalls,
         attachments: uploadedAttachments,
@@ -324,12 +336,59 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
         location: callLocation,
       });
 
+      if (feedbackChoice === "down" && feedbackLogId && ticketuuid) {
+        try {
+          await updatePowerSuiteAILogsTicketId({
+            powersuiteailogsuuid: feedbackLogId,
+            ticketuuid,
+          });
+        } catch (err) {
+          toast.error(err.message || "Ticket created, but feedback link failed.");
+        }
+      }
+
       toast.success('Ticket submitted successfully!');
       onClose?.();
 
     } catch (err) {
       setSubmitting(false);
       toast.error(err.message || 'Failed to submit ticket');
+    }
+  };
+
+  const isFeedbackBusy = feedbackSubmitting || deleteSubmitting || updateSubmitting || submitting || aiLoading;
+  const isSubmitDisabled = submitting || aiLoading || (suggestion && feedbackChoice !== "down");
+
+  const handleFeedback = async (feedbackType) => {
+    if (!suggestion || isFeedbackBusy || feedbackChoice) return;
+
+    try {
+      setFeedbackChoice(feedbackType);
+
+      const data = await submitFeedback({
+        feedbackType,
+        entrauserid: account?.localAccountId,
+        title: formData.title,
+        description: formData.description,
+        suggestion,
+        createdby: account?.localAccountId,
+      });
+
+      setFeedbackLogId(data?.powersuiteailogsuuid ?? null);
+
+    } catch (err) {
+      setFeedbackChoice(null);
+    }
+  };
+
+  const handleClearFeedback = async () => {
+    if (!feedbackLogId || feedbackSubmitting || deleteSubmitting) return;
+
+    try {
+      await deletePowerSuiteAILog(feedbackLogId);
+      setFeedbackChoice(null);
+      setFeedbackLogId(null);
+    } catch (err) {
     }
   };
 
@@ -399,7 +458,11 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     size="sm"
                    className="mt-3 animated-bg
                         text-white py-4 cursor-pointer hover:text-white"
-                   onClick={() => askAssist(formData.title, formData.description)}
+                   onClick={() => {
+                     setFeedbackChoice(null);
+                     setFeedbackLogId(null);
+                     askAssist(formData.title, formData.description);
+                   }}
                     disabled={aiLoading || submitting || formData.description.length > 1000}
                   >
                      <Image 
@@ -410,36 +473,125 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                       />
                     {aiLoading ? "Getting suggestions..." : "PowerSuite AI Recommendation"}
                   </Button>
-                )}
-
-              {suggestion && (
-                <>
-                  <div className="animated-border mt-3 max-h-[400px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-950/30 rounded-lg border-3  border-red-300 dark:border-indigo-500">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                        <Image src={powersuiteaiicon} alt="PowerSuite AI" width={16} height={16} />
-                        Suggested Resolution Steps
-                      </p>
-                      {/* <button onClick={clearSuggestion} className="text-gray-400 hover:text-gray-600">
-                        <X className="w-3.5 h-3.5" />
-                      </button> */}
-                    </div>
-
-                    <div
-                      className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm dark:prose-invert max-w-none
-                        [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:text-gray-900 [&_h2]:dark:text-white
-                        [&_ol]:pl-5 [&_ol]:list-decimal [&_ol]:space-y-1
-                        [&_ul]:pl-5 [&_ul]:list-disc [&_ul]:space-y-1
-                        [&_li]:text-sm [&_p]:mb-2 [&_strong]:font-semibold"
-                      dangerouslySetInnerHTML={{ __html: suggestion }}
-                    />
+                )}                       
+              {aiLoading && !suggestion && (
+                <div className="animated-border mt-3 p-4 bg-gray-50 dark:bg-gray-950/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Image src={powersuiteaiicon} alt="PowerSuite AI" width={16} height={16} />
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                      PowerSuite AI is thinking...
+                    </p>
+                    <span className="flex gap-1">
+                      <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:0ms]" />
+                      <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:150ms]" />
+                      <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                    </span>
                   </div>
-                    <div className='flex justify-end gap-2 mt-2'>
-                     <ThumbsUp className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
-                     <ThumbsDown className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
+<<<<<<< Updated upstream
+                    <div className="flex items-center justify-end gap-2 mt-2">
+                      <p className="text-xs text-gray-500 dark:text-gray-300 mr-2">Was this suggestion helpful?</p>
+                      <button
+                        type="button"
+                        aria-pressed={feedbackChoice === "up"}
+                        className={cn(
+                          "rounded-full p-1 transition-colors",
+                          feedbackChoice === "up"
+                            ? "bg-green-100 dark:bg-green-900/30"
+                            : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                          isFeedbackBusy || feedbackChoice
+                            ? feedbackChoice === "up"
+                              ? "cursor-default"
+                              : "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
+                        )}
+                        onClick={() => handleFeedback("up")}
+                        disabled={isFeedbackBusy || feedbackChoice}
+                      >
+                        <ThumbsUp
+                          className={cn(
+                            "w-5 h-5",
+                            feedbackChoice === "up"
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-pink-500 dark:text-blue-400"
+                          )}
+                        />
+                      </button>
+
+                      <button
+                        type="button"
+                        aria-pressed={feedbackChoice === "down"}
+                        className={cn(
+                          "rounded-full p-1 transition-colors",
+                          feedbackChoice === "down"
+                            ? "bg-red-100 dark:bg-red-900/30"
+                            : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                          isFeedbackBusy || feedbackChoice
+                            ? feedbackChoice === "down"
+                              ? "cursor-default"
+                              : "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
+                        )}
+                        onClick={() => handleFeedback("down")}
+                        disabled={isFeedbackBusy || feedbackChoice}
+                      >
+                        <ThumbsDown
+                          className={cn(
+                            "w-5 h-5",
+                            feedbackChoice === "down"
+                              ? "text-red-600 dark:text-red-400"
+                              : "text-pink-500 dark:text-blue-400"
+                          )}
+                        />
+                      </button>
+
+                      {feedbackLogId && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="ml-2 h-7 px-2 text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700/40 dark:text-red-300 dark:hover:bg-red-950/40"
+                          onClick={handleClearFeedback}
+                          disabled={isFeedbackBusy}
+                        >
+                          <X className="h-3 w-3" />
+                          <span>Clear feedback</span>
+                        </Button>
+                      )}
                     </div>
                   </>
                 )}
+=======
+                </div>
+              )}
+
+             {suggestion && (
+              <>
+                <div className="animated-border mt-3 max-h-[400px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-950/30 rounded-lg border-3 border-red-300 dark:border-indigo-500">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                      <Image src={powersuiteaiicon} alt="PowerSuite AI" width={16} height={16} />
+                      Suggested Resolution Steps
+                    </p>
+                  </div>
+
+                  <div
+                    className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm dark:prose-invert max-w-none
+                      [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:text-gray-900 [&_h2]:dark:text-white
+                      [&_ol]:pl-5 [&_ol]:list-decimal [&_ol]:space-y-1
+                      [&_ul]:pl-5 [&_ul]:list-disc [&_ul]:space-y-1
+                      [&_li]:text-sm [&_p]:mb-2 [&_strong]:font-semibold"
+                    dangerouslySetInnerHTML={{ 
+                      __html: suggestion + (isStreaming ? '<span class="inline-block w-2 h-4 bg-pink-500 animate-pulse ml-0.5 align-middle rounded-sm"></span>' : '')
+                    }}
+                  />
+                </div>
+                <div className='flex justify-end gap-2 mt-2'>
+                  <ThumbsUp className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
+                  <ThumbsDown className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
+                </div>
+              </>
+            )}
+>>>>>>> Stashed changes
 
                 {aiError && (
                   <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
@@ -637,6 +789,8 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     setAttachments([]);
                     setErrors({});
                     clearSuggestion();
+                    setFeedbackChoice(null);
+                    setFeedbackLogId(null);
                   }}
                   disabled={submitting}
                   className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100
@@ -648,7 +802,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
                 <Button
                   onClick={handleSubmit}
-                  disabled={submitting}
+                  disabled={isSubmitDisabled}
                   className="gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
                 >
                   {submitting ? (
