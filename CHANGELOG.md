@@ -1,3 +1,10 @@
+## [1.6.6-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.5...v1.6.6-dev.6) (2026-04-13)
+
+
+### Bug Fixes
+
+* updated filtering to fix the default filtering issue ([13b99a5](https://github.com/michael-raquel/PowerIntake-WebApp/commit/13b99a54fb5567b947959a3ed9d3383d63161815))
+
 ## [1.6.6-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.4...v1.6.6-dev.5) (2026-04-13)
 
 
