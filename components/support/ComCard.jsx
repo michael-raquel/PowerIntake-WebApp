@@ -88,4 +88,4 @@ export default function ComCard({
   );
 }
 
-// quite good
+// quite good aura
