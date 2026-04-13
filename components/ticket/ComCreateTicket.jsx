@@ -310,8 +310,8 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
   const handleSubmit = async () => {
     if (!validateAll()) return;
-    if (feedbackChoice === "up") {
-      toast.error("Please clear thumbs up feedback before submitting.");
+    if (suggestion && feedbackChoice !== "down") {
+      toast.error("Please select thumbs down feedback before submitting.");
       return;
     }
     setSubmitting(true);
@@ -357,7 +357,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   };
 
   const isFeedbackBusy = feedbackSubmitting || deleteSubmitting || updateSubmitting || submitting || aiLoading;
-  const isSubmitDisabled = submitting || aiLoading || feedbackChoice === "up";
+  const isSubmitDisabled = submitting || aiLoading || (suggestion && feedbackChoice !== "down");
 
   const handleFeedback = async (feedbackType) => {
     if (!suggestion || isFeedbackBusy || feedbackChoice) return;
@@ -376,10 +376,8 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
       setFeedbackLogId(data?.powersuiteailogsuuid ?? null);
 
-      toast.success("Thanks for your feedback!");
     } catch (err) {
       setFeedbackChoice(null);
-      toast.error(err.message || "Failed to submit feedback");
     }
   };
 
@@ -390,9 +388,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
       await deletePowerSuiteAILog(feedbackLogId);
       setFeedbackChoice(null);
       setFeedbackLogId(null);
-      toast.success("Feedback removed.");
     } catch (err) {
-      toast.error(err.message || "Failed to remove feedback");
     }
   };
 
@@ -501,77 +497,75 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                       dangerouslySetInnerHTML={{ __html: suggestion }}
                     />
                   </div>
-                    <div className='flex items-center justify-between gap-2 mt-2'>
+                    <div className="flex items-center justify-end gap-2 mt-2">
                       <p className="text-xs text-gray-500 dark:text-gray-300 mr-2">Was this suggestion helpful?</p>
-                      <div className="flex items-center gap-2">
-                        {feedbackLogId && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-7 px-2 text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700/40 dark:text-red-300 dark:hover:bg-red-950/40"
-                            onClick={handleClearFeedback}
-                            disabled={isFeedbackBusy}
-                          >
-                            <X className="h-3 w-3" />
-                            <span>Clear feedback</span>
-                          </Button>
+                      <button
+                        type="button"
+                        aria-pressed={feedbackChoice === "up"}
+                        className={cn(
+                          "rounded-full p-1 transition-colors",
+                          feedbackChoice === "up"
+                            ? "bg-green-100 dark:bg-green-900/30"
+                            : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                          isFeedbackBusy || feedbackChoice
+                            ? feedbackChoice === "up"
+                              ? "cursor-default"
+                              : "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
                         )}
-
-                        <button
-                          type="button"
-                          aria-pressed={feedbackChoice === "up"}
+                        onClick={() => handleFeedback("up")}
+                        disabled={isFeedbackBusy || feedbackChoice}
+                      >
+                        <ThumbsUp
                           className={cn(
-                            "rounded-full p-1 transition-colors",
+                            "w-5 h-5",
                             feedbackChoice === "up"
-                              ? "bg-green-100 dark:bg-green-900/30"
-                              : "hover:bg-gray-100 dark:hover:bg-gray-800",
-                            isFeedbackBusy || feedbackChoice
-                              ? feedbackChoice === "up"
-                                ? "cursor-default"
-                                : "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer"
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-pink-500 dark:text-blue-400"
                           )}
-                          onClick={() => handleFeedback("up")}
-                          disabled={isFeedbackBusy || feedbackChoice}
-                        >
-                          <ThumbsUp
-                            className={cn(
-                              "w-5 h-5",
-                              feedbackChoice === "up"
-                                ? "text-green-600 dark:text-green-400"
-                                : "text-pink-500 dark:text-blue-400"
-                            )}
-                          />
-                        </button>
+                        />
+                      </button>
 
-                        <button
-                          type="button"
-                          aria-pressed={feedbackChoice === "down"}
+                      <button
+                        type="button"
+                        aria-pressed={feedbackChoice === "down"}
+                        className={cn(
+                          "rounded-full p-1 transition-colors",
+                          feedbackChoice === "down"
+                            ? "bg-red-100 dark:bg-red-900/30"
+                            : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                          isFeedbackBusy || feedbackChoice
+                            ? feedbackChoice === "down"
+                              ? "cursor-default"
+                              : "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
+                        )}
+                        onClick={() => handleFeedback("down")}
+                        disabled={isFeedbackBusy || feedbackChoice}
+                      >
+                        <ThumbsDown
                           className={cn(
-                            "rounded-full p-1 transition-colors",
+                            "w-5 h-5",
                             feedbackChoice === "down"
-                              ? "bg-red-100 dark:bg-red-900/30"
-                              : "hover:bg-gray-100 dark:hover:bg-gray-800",
-                            isFeedbackBusy || feedbackChoice
-                              ? feedbackChoice === "down"
-                                ? "cursor-default"
-                                : "opacity-50 cursor-not-allowed"
-                              : "cursor-pointer"
+                              ? "text-red-600 dark:text-red-400"
+                              : "text-pink-500 dark:text-blue-400"
                           )}
-                          onClick={() => handleFeedback("down")}
-                          disabled={isFeedbackBusy || feedbackChoice}
+                        />
+                      </button>
+
+                      {feedbackLogId && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="ml-2 h-7 px-2 text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700/40 dark:text-red-300 dark:hover:bg-red-950/40"
+                          onClick={handleClearFeedback}
+                          disabled={isFeedbackBusy}
                         >
-                          <ThumbsDown
-                            className={cn(
-                              "w-5 h-5",
-                              feedbackChoice === "down"
-                                ? "text-red-600 dark:text-red-400"
-                                : "text-pink-500 dark:text-blue-400"
-                            )}
-                          />
-                        </button>
-                      </div>
+                          <X className="h-3 w-3" />
+                          <span>Clear feedback</span>
+                        </Button>
+                      )}
                     </div>
                   </>
                 )}
