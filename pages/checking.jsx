@@ -62,12 +62,12 @@ export default function Checking() {
           if (isGlobalAdmin) {
             setStatus("Redirecting to Microsoft for approval...");
 
-            sessionStorage.setItem(
+            localStorage.setItem(
               "pre_consent_account",
               JSON.stringify({
                 homeAccountId: accounts[0].homeAccountId,
                 tenantId: tid,
-                loginHint: accounts[0].username, // ← add this
+                loginHint: accounts[0].username,
               }),
             );
 

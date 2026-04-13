@@ -9,7 +9,7 @@ const CONSENT_STORAGE_KEY = "ms_consent_params";
 
 const readStoredConsent = () => {
   if (typeof window === "undefined") return null;
-  const raw = sessionStorage.getItem(CONSENT_STORAGE_KEY);
+  const raw = localStorage.getItem(CONSENT_STORAGE_KEY); // ← localStorage
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -21,7 +21,7 @@ const readStoredConsent = () => {
 const writeStoredConsent = (params) => {
   if (typeof window === "undefined") return;
   if (!params?.tenant && !params?.admin_consent) return;
-  sessionStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(params));
+  localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(params)); // ← localStorage
 };
 
 const normalizeParam = (value) => (Array.isArray(value) ? value[0] : value);
@@ -93,7 +93,7 @@ export default function MsConsentCallback() {
             `sessionStorage keys (${allKeys.length}): ${allKeys.join(", ") || "(empty)"}`,
           );
 
-          const raw = sessionStorage.getItem("pre_consent_account");
+          const raw = localStorage.getItem("pre_consent_account");
           addLog(`pre_consent_account raw value: ${raw ?? "(null)"}`);
 
           if (raw) {
@@ -280,7 +280,9 @@ export default function MsConsentCallback() {
         const data = await res.json();
         addLog(`Backend response: ${JSON.stringify(data)}`);
 
-        sessionStorage.removeItem(CONSENT_STORAGE_KEY);
+        sessionStorage.removeItem(CONSENT_STORAGE_KEY); // keep existing
+        localStorage.removeItem(CONSENT_STORAGE_KEY); // ← add
+        localStorage.removeItem("pre_consent_account"); // ← add
 
         if (data?.redirectUrl) {
           addLog(`Redirecting → ${data.redirectUrl}`);
