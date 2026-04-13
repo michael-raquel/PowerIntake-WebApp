@@ -1,3 +1,11 @@
+# [1.7.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.7.0-dev.3...v1.7.0-dev.4) (2026-04-13)
+
+
+### Reverts
+
+* Revert "Update release timestamp format in workflow" ([2a15ee8](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2a15ee866b9714f84e38c3a7ac86dbd907b64546))
+* Revert "Update release timestamp to show only time" ([245ca6a](https://github.com/michael-raquel/PowerIntake-WebApp/commit/245ca6a4552d2f12dad9e98848ef2a1be0c05cc7))
+
 # [1.7.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.7.0-dev.2...v1.7.0-dev.3) (2026-04-13)
 
 
