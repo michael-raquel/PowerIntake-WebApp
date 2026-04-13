@@ -1,3 +1,10 @@
+## [1.6.6-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.2...v1.6.6-dev.3) (2026-04-13)
+
+
+### Bug Fixes
+
+* Fixed the button grouping ([663d76f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/663d76fe7ff93688565b9176dcf60a1b00e3e3f0))
+
 ## [1.6.6-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.1...v1.6.6-dev.2) (2026-04-13)
 
 
