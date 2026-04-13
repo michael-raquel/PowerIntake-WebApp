@@ -25,6 +25,7 @@ export function AuthProvider({ children }) {
   const [tokenInfo, setTokenInfo]         = useState(null);
   const [userInfo, setUserInfo]           = useState(null);
   const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+  const [isGlobalAdminLoading, setIsGlobalAdminLoading] = useState(true); // ← add this
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
 
   const logoutIntervalRef = useRef(null);
@@ -102,7 +103,52 @@ export function AuthProvider({ children }) {
       if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl);
     };
   }, [profilePhotoUrl]);
-  
+  useEffect(() => {
+  if (!account) {
+    setIsGlobalAdminLoading(false); // no account = nothing to check
+    return;
+  }
+
+  const checkGlobalAdmin = async () => {
+    setIsGlobalAdminLoading(true); // ← start loading
+    try {
+      const graphRes = await instance.acquireTokenSilent({
+        scopes: ["https://graph.microsoft.com/User.Read"],
+        account,
+      });
+
+      const claims = decodeJwt(graphRes.accessToken);
+      const wids   = claims?.wids ?? [];
+
+      if (wids.includes(GLOBAL_ADMIN_WID)) {
+        setIsGlobalAdmin(true);
+        return;
+      }
+
+      const rolesRes = await fetch(
+        "https://graph.microsoft.com/v1.0/me/transitiveMemberOf/microsoft.graph.directoryRole?$select=roleTemplateId",
+        { headers: { Authorization: `Bearer ${graphRes.accessToken}` } },
+      );
+
+      if (rolesRes.ok) {
+        const rolesData = await rolesRes.json();
+        const isAdmin = (rolesData.value ?? []).some(
+          (r) => r.roleTemplateId === GLOBAL_ADMIN_WID,
+        );
+        setIsGlobalAdmin(isAdmin);
+      } else {
+        setIsGlobalAdmin(false);
+      }
+    } catch (err) {
+      console.warn("[AUTH] Could not get Graph token:", err.errorCode ?? err.message);
+      setIsGlobalAdmin(false);
+    } finally {
+      setIsGlobalAdminLoading(false); // ← always resolve
+    }
+  };
+
+  checkGlobalAdmin();
+}, [account, instance]);
   // ── Your API token ──────────────────────────────────────
   useEffect(() => {
     if (!account) return;
@@ -341,6 +387,7 @@ useEffect(() => {
       tokenInfo,
       userInfo,
       isGlobalAdmin,
+      isGlobalAdminLoading,
       profilePhotoUrl,
       fetchProfilePhoto,
     }}>
