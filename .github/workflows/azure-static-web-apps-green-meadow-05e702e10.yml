@@ -21,23 +21,27 @@ jobs:
           lfs: false
           fetch-depth: 0
 
-      # 1️⃣ Resolve version and date — production tag
+      # 1️⃣ Resolve version, date, timestamp (PRODUCTION)
       - name: Set version and date env vars
         run: |
           git fetch --tags
           VERSION=$(git describe --tags --abbrev=0 --match "v[0-9]*" 2>/dev/null || echo "v0.0.0")
+
           echo "NEXT_PUBLIC_APP_VERSION=${VERSION}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_APP_RELEASE_TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
-      # 2️⃣ Write .env.production for Next.js build
+      # 2️⃣ Generate .env.production
       - name: Write .env.production
         run: |
           echo "NEXT_PUBLIC_APP_VERSION=${{ env.NEXT_PUBLIC_APP_VERSION }}" >> .env.production
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}" >> .env.production
+          echo "NEXT_PUBLIC_APP_RELEASE_TIMESTAMP=${{ env.NEXT_PUBLIC_APP_RELEASE_TIMESTAMP }}" >> .env.production
+
           echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL }}" >> .env.production
           echo "NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID }}" >> .env.production
 
-          # ✅ PRODUCTION values (no _DEV)
+          # ✅ PRODUCTION values
           echo "NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL }}" >> .env.production
           echo "NEXT_PUBLIC_AZURE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_AZURE_CLIENT_ID }}" >> .env.production
 
@@ -54,12 +58,14 @@ jobs:
           output_location: "out"
           production_branch: "main"
 
-        # 4️⃣ Safety net envs
+        # 4️⃣ Safety net envs (for Next.js build)
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL }}
           NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID }}
+
           NEXT_PUBLIC_APP_VERSION: ${{ env.NEXT_PUBLIC_APP_VERSION }}
           NEXT_PUBLIC_APP_RELEASE_DATE: ${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}
+          NEXT_PUBLIC_APP_RELEASE_TIMESTAMP: ${{ env.NEXT_PUBLIC_APP_RELEASE_TIMESTAMP }}
 
           # ✅ PRODUCTION values
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
