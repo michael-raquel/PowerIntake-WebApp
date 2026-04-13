@@ -1,3 +1,15 @@
+## [1.6.8-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.7...v1.6.8-dev.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* ST-merge conflict issue ([2a7bac7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2a7bac76fa5c66df2a2b2d2f3f4853d899f1f280))
+* ST-merge conflict resolve ([a682440](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a682440529300e5921c757db55ec33a38832584c))
+
+
+### Reverts
+
+* Revert "fix: ST-powersuiteai create new" ([d332a98](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d332a98a39608b7a4793aea4dc14c76d174e12ba))
 
 ## [1.6.7-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.7-dev.3...v1.6.7-dev.4) (2026-04-13)
 
