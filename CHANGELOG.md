@@ -1,3 +1,10 @@
+## [1.6.6-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.11...v1.6.6-dev.12) (2026-04-13)
+
+
+### Bug Fixes
+
+* ST-powersuiteai create new ([74aed56](https://github.com/michael-raquel/PowerIntake-WebApp/commit/74aed564613e1bca3e198ce7f4c8d9133d8ec4ed))
+
 ## [1.6.6-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.10...v1.6.6-dev.11) (2026-04-13)
 
 
