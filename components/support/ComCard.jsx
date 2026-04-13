@@ -49,15 +49,6 @@ export default function ComCard({
   release,
   timestamp,
 }) {
-  // ✅ Format timestamp → TIME ONLY
-  const formattedTime = timestamp
-    ? new Date(timestamp).toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      })
-    : "No timestamp";
-
   return (
     <div className="flex flex-col rounded-2xl border border-dashed border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
       
@@ -76,14 +67,18 @@ export default function ComCard({
         {description}
       </p>
 
-      {/* ✅ Version + Release + Timestamp */}
+      {/* ✅ Version Info Block */}
       {version && (
         <div className="mt-4 text-sm text-gray-500 dark:text-gray-400 space-y-1">
           <div className="font-medium text-gray-700 dark:text-gray-300">
             {version}
           </div>
           <div>{release}</div>
-          <div>{formattedTime}</div>
+          <div>
+            {timestamp
+              ? new Date(timestamp).toLocaleString()
+              : "No timestamp available"}
+          </div>
         </div>
       )}
 
