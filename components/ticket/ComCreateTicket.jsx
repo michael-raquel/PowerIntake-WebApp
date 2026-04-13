@@ -501,7 +501,8 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                       dangerouslySetInnerHTML={{ __html: suggestion }}
                     />
                   </div>
-                    <div className='flex items-center justify-end gap-2 mt-2'>
+                    <div className='flex items-center justify-between gap-2 mt-2'>
+                      <p className="text-xs text-gray-500 dark:text-gray-300 mr-2">Was this suggestion helpful?</p>
                      {feedbackLogId && (
                        <Button
                          type="button"
