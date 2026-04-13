@@ -9,7 +9,7 @@ import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateUserSettings } from '@/hooks/UseUpdateUserSettings';
 import { Button } from '@/components/ui/button';
 import { ExternalLink, Settings } from 'lucide-react';
-import { NotificationsSection, AssistSection, DarkModeSection } from '@/components/settings/ComCards';
+import { AssistSection, DarkModeSection } from '@/components/settings/ComCards';
 
 export default function SettingsPage() {
   const { accounts } = useMsal();
@@ -145,13 +145,14 @@ export default function SettingsPage() {
                 Error: {error}
               </div>
             )}
-            
+            {/*
             <NotificationsSection
               localSettings={localSettings}
               onToggle={handleToggle}
               loadingToggles={loadingToggles}
               isLoading={loading}
             />
+            */}
             <AssistSection
               localSettings={localSettings}
               onToggle={handleToggle}
