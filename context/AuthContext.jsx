@@ -24,7 +24,7 @@ export function AuthProvider({ children }) {
   const [accessToken, setAccessToken]     = useState(null);
   const [tokenInfo, setTokenInfo]         = useState(null);
   const [userInfo, setUserInfo]           = useState(null);
-  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+  const [isGlobalAdmin, setIsGlobalAdmin] = useState(null);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
 
   const logoutIntervalRef = useRef(null);

@@ -14,88 +14,100 @@ export default function Checking() {
   const [status, setStatus] = useState("Verifying your access...");
 
   useEffect(() => {
-    if (!isAuthenticated || !accounts?.[0]) return;
+  if (!isAuthenticated || !accounts?.[0]) return;
+  // Wait until isGlobalAdmin has been determined — it starts as false
+  // and is set asynchronously after the Graph token resolves.
+  // Without this guard a Global Admin looks like a regular user on first render.
+  if (isGlobalAdmin === null || isGlobalAdmin === undefined) return;
 
-    const check = async () => {
-      try {
-        const tokenRes = await instance.acquireTokenSilent({
-          ...apiRequest,
-          account: accounts[0],
-        });
+  const check = async () => {
+    try {
+      const tokenRes = await instance.acquireTokenSilent({
+        ...apiRequest,
+        account: accounts[0],
+      });
 
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-status`,
-          { headers: { Authorization: `Bearer ${tokenRes.accessToken}` } },
-        );
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-status`,
+        { headers: { Authorization: `Bearer ${tokenRes.accessToken}` } },
+      );
 
-        if (res.status === 403) {
-          router.replace("/no-consent?reason=not-registered");
-          return;
+      // 403 = tenant not in DB and caller is not a Global Admin
+      if (res.status === 403) {
+        if (isGlobalAdmin) {
+          // Race condition safety net: backend said non-admin but frontend
+          // disagrees — trust the backend and show not-registered rather
+          // than looping. This should not happen in practice.
+          console.warn("[CHECKING] 403 but isGlobalAdmin=true — backend wids check failed?");
         }
-
-        if (!res.ok) throw new Error("Consent status request failed");
-
-        const data = await res.json();
-        const claims = JSON.parse(atob(tokenRes.accessToken.split(".")[1]));
-        const tid = claims?.tid;
-        const consented = data?.consented === true;
-        const isactive = data?.isactive === true;
-        const isapproved = data?.isapproved === true;
-
-        // console.log("[CHECKING]", data);
-
-        if (!isapproved) {
-          setStatus("Awaiting Sparta Services approval...");
-          router.replace("/no-consent?reason=pending-approval");
-          return;
-        }
-
-        if (consented && !isactive) {
-          setStatus("Your organization has been deactivated...");
-          router.replace("/no-consent?reason=deactivated");
-          return;
-        }
-
-        if (consented) {
-          setStatus("Access granted. Redirecting...");
-          sessionStorage.setItem("consent_verified", "1");
-          router.replace("/home");
-          return;
-        }
-
-        if (!consented) {
-          if (isGlobalAdmin) {
-            setStatus("Redirecting to Microsoft for approval...");
-
-            // ✅ Save account so ms-consent-callback can restore it without re-login
-            sessionStorage.setItem(
-              "pre_consent_account",
-              JSON.stringify({
-                homeAccountId: accounts[0].homeAccountId,
-                tenantId: tid,
-              }),
-            );
-
-            const consentUrl = [
-              `https://login.microsoftonline.com/${tid}/adminconsent`,
-              `?client_id=${process.env.NEXT_PUBLIC_AZURE_CLIENT_ID}`,
-              `&redirect_uri=${process.env.NEXT_PUBLIC_APP_URL}/ms-consent-callback`,
-              `&prompt=consent`,
-            ].join("");
-
-            window.location.href = consentUrl;
-          }
-          return;
-        }
-      } catch (err) {
-        console.error("[CHECKING ERROR]", err.message);
-        setStatus("Something went wrong. Redirecting...");
-        router.replace("/no-consent?reason=error");
+        router.replace("/no-consent?reason=not-registered");
+        return;
       }
-    };
 
-    check();
-  }, [isAuthenticated, accounts, instance, router, isGlobalAdmin]);
+      if (!res.ok) throw new Error("Consent status request failed");
+
+      const data = await res.json();
+      const claims = JSON.parse(atob(tokenRes.accessToken.split(".")[1]));
+      const tid = claims?.tid;
+      const consented  = data?.consented === true;
+      const isactive   = data?.isactive === true;
+      const isapproved = data?.isapproved === true;
+
+      if (!isapproved) {
+        setStatus("Awaiting Sparta Services approval...");
+        router.replace("/no-consent?reason=pending-approval");
+        return;
+      }
+
+      if (consented && !isactive) {
+        setStatus("Your organization has been deactivated...");
+        router.replace("/no-consent?reason=deactivated");
+        return;
+      }
+
+      if (consented) {
+        setStatus("Access granted. Redirecting...");
+        sessionStorage.setItem("consent_verified", "1");
+        router.replace("/home");
+        return;
+      }
+
+      if (!consented) {
+        if (isGlobalAdmin) {
+          setStatus("Redirecting to Microsoft for approval...");
+
+          sessionStorage.setItem(
+            "pre_consent_account",
+            JSON.stringify({
+              homeAccountId: accounts[0].homeAccountId,
+              tenantId: tid,
+            }),
+          );
+
+          const consentUrl = [
+            `https://login.microsoftonline.com/${tid}/adminconsent`,
+            `?client_id=${process.env.NEXT_PUBLIC_AZURE_CLIENT_ID}`,
+            `&redirect_uri=${process.env.NEXT_PUBLIC_APP_URL}/ms-consent-callback`,
+            `&prompt=consent`,
+          ].join("");
+
+          window.location.href = consentUrl;
+        } else {
+          // Tenant exists in DB but not consented, and user is not a Global Admin
+          setStatus("Admin approval required...");
+          router.replace("/no-consent?reason=needs-admin-login");
+        }
+        return;
+      }
+    } catch (err) {
+      console.error("[CHECKING ERROR]", err.message);
+      setStatus("Something went wrong. Redirecting...");
+      router.replace("/no-consent?reason=error");
+    }
+  };
+
+  check();
+}, [isAuthenticated, accounts, instance, router, isGlobalAdmin]);
 
   return (
     <>
