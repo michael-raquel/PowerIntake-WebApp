@@ -258,7 +258,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   const [feedbackLogId, setFeedbackLogId] = useState(null);
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
-  const { askAssist, loading: aiLoading, suggestion, error: aiError, clear: clearSuggestion } = useSpartaAssistOnce();
+  const { askAssist, loading: aiLoading, suggestion, isStreaming, error: aiError, clear: clearSuggestion } = useSpartaAssistOnce();
   const { submitFeedback, submitting: feedbackSubmitting } = useCreatePowerSuiteAILog();
   const { deletePowerSuiteAILog, loading: deleteSubmitting } = useDeletePowerSuiteAILogs();
   const { updatePowerSuiteAILogsTicketId, loading: updateSubmitting } = useUpdatePowerSuiteAILogs();
@@ -473,30 +473,21 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                       />
                     {aiLoading ? "Getting suggestions..." : "PowerSuite AI Recommendation"}
                   </Button>
-                )}
-
-              {suggestion && (
-                <>
-                  <div className="animated-border mt-3 max-h-[400px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-950/30 rounded-lg border-3  border-red-300 dark:border-indigo-500">
-                    <div className="flex justify-between items-center mb-2">
-                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1">
-                        <Image src={powersuiteaiicon} alt="PowerSuite AI" width={16} height={16} />
-                        Suggested Resolution Steps
-                      </p>
-                      {/* <button onClick={clearSuggestion} className="text-gray-400 hover:text-gray-600">
-                        <X className="w-3.5 h-3.5" />
-                      </button> */}
-                    </div>
-
-                    <div
-                      className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm dark:prose-invert max-w-none
-                        [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:text-gray-900 [&_h2]:dark:text-white
-                        [&_ol]:pl-5 [&_ol]:list-decimal [&_ol]:space-y-1
-                        [&_ul]:pl-5 [&_ul]:list-disc [&_ul]:space-y-1
-                        [&_li]:text-sm [&_p]:mb-2 [&_strong]:font-semibold"
-                      dangerouslySetInnerHTML={{ __html: suggestion }}
-                    />
+                )}                       
+              {aiLoading && !suggestion && (
+                <div className="animated-border mt-3 p-4 bg-gray-50 dark:bg-gray-950/30 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Image src={powersuiteaiicon} alt="PowerSuite AI" width={16} height={16} />
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                      PowerSuite AI is thinking...
+                    </p>
+                    <span className="flex gap-1">
+                      <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:0ms]" />
+                      <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:150ms]" />
+                      <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:300ms]" />
+                    </span>
                   </div>
+<<<<<<< Updated upstream
                     <div className="flex items-center justify-end gap-2 mt-2">
                       <p className="text-xs text-gray-500 dark:text-gray-300 mr-2">Was this suggestion helpful?</p>
                       <button
@@ -569,6 +560,38 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     </div>
                   </>
                 )}
+=======
+                </div>
+              )}
+
+             {suggestion && (
+              <>
+                <div className="animated-border mt-3 max-h-[400px] overflow-y-auto p-4 bg-gray-50 dark:bg-gray-950/30 rounded-lg border-3 border-red-300 dark:border-indigo-500">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-1">
+                      <Image src={powersuiteaiicon} alt="PowerSuite AI" width={16} height={16} />
+                      Suggested Resolution Steps
+                    </p>
+                  </div>
+
+                  <div
+                    className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed prose prose-sm dark:prose-invert max-w-none
+                      [&_h2]:text-base [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:text-gray-900 [&_h2]:dark:text-white
+                      [&_ol]:pl-5 [&_ol]:list-decimal [&_ol]:space-y-1
+                      [&_ul]:pl-5 [&_ul]:list-disc [&_ul]:space-y-1
+                      [&_li]:text-sm [&_p]:mb-2 [&_strong]:font-semibold"
+                    dangerouslySetInnerHTML={{ 
+                      __html: suggestion + (isStreaming ? '<span class="inline-block w-2 h-4 bg-pink-500 animate-pulse ml-0.5 align-middle rounded-sm"></span>' : '')
+                    }}
+                  />
+                </div>
+                <div className='flex justify-end gap-2 mt-2'>
+                  <ThumbsUp className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
+                  <ThumbsDown className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
+                </div>
+              </>
+            )}
+>>>>>>> Stashed changes
 
                 {aiError && (
                   <p className="text-xs text-red-500 mt-2 flex items-center gap-1">

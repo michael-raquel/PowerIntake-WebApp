@@ -245,7 +245,7 @@ export default function ComTableMyTickets({
       disabled={loading || syncing}
       className="p-1.5 rounded-lg text-violet-500 hover:text-violet-700 hover:bg-violet-100 dark:text-violet-400 dark:hover:text-violet-300 dark:hover:bg-violet-900/30 transition-colors disabled:opacity-50"
     >
-      <RefreshCw className={`w-5 h-5 ${loading || syncing ? 'animate-spin' : ''}`} />
+      <RefreshCw className={`w-5 h-5 ${syncing ? 'animate-spin' : ''}`} />
     </button>
   );
 
