@@ -8,16 +8,13 @@ import { apiRequest } from "@/lib/msalConfig";
 export default function Checking() {
   const isAuthenticated = useIsAuthenticated();
   const { instance, accounts } = useMsal();
-  const { isGlobalAdmin, isGlobalAdminLoading } = useAuth(); // ← add isGlobalAdminLoading
+  const { isGlobalAdmin } = useAuth();
   const router = useRouter();
 
   const [status, setStatus] = useState("Verifying your access...");
 
   useEffect(() => {
-    // Wait until we know whether this user is a Global Admin or not.
-    // Without this guard, check() fires while isGlobalAdmin=false (still loading),
-    // the backend 403s for a new Global Admin tenant, and we wrongly show not-registered.
-    if (!isAuthenticated || !accounts?.[0] || isGlobalAdminLoading) return;
+    if (!isAuthenticated || !accounts?.[0]) return;
 
     const check = async () => {
       try {
@@ -32,8 +29,6 @@ export default function Checking() {
         );
 
         if (res.status === 403) {
-          // Backend blocked because user is not a Global Admin and tenant doesn't exist.
-          // isGlobalAdminLoading is false here so isGlobalAdmin is settled — safe to read.
           router.replace("/no-consent?reason=not-registered");
           return;
         }
@@ -43,9 +38,11 @@ export default function Checking() {
         const data = await res.json();
         const claims = JSON.parse(atob(tokenRes.accessToken.split(".")[1]));
         const tid = claims?.tid;
-        const consented  = data?.consented === true;
-        const isactive   = data?.isactive === true;
+        const consented = data?.consented === true;
+        const isactive = data?.isactive === true;
         const isapproved = data?.isapproved === true;
+
+        // console.log("[CHECKING]", data);
 
         if (!isapproved) {
           setStatus("Awaiting Sparta Services approval...");
@@ -70,6 +67,7 @@ export default function Checking() {
           if (isGlobalAdmin) {
             setStatus("Redirecting to Microsoft for approval...");
 
+            // ✅ Save account so ms-consent-callback can restore it without re-login
             sessionStorage.setItem(
               "pre_consent_account",
               JSON.stringify({
@@ -97,7 +95,8 @@ export default function Checking() {
     };
 
     check();
-  }, [isAuthenticated, accounts, instance, router, isGlobalAdmin, isGlobalAdminLoading]);
+  }, [isAuthenticated, accounts, instance, router, isGlobalAdmin]);
+
   return (
     <>
       <Head>
