@@ -1,3 +1,10 @@
+## [1.6.6-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.8...v1.6.6-dev.9) (2026-04-13)
+
+
+### Bug Fixes
+
+* hid the notification on the settings ([2f384be](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2f384be58b658e27b040774ce387ad5cd54beb01))
+
 ## [1.6.6-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.7...v1.6.6-dev.8) (2026-04-13)
 
 
