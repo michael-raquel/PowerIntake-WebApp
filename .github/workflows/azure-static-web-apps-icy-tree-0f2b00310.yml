@@ -22,23 +22,26 @@ jobs:
           lfs: false
           fetch-depth: 0
 
-      # 1️⃣ Resolve version and date
+      # 1️⃣ Resolve version, date, timestamp
       - name: Set version and date env vars
         run: |
           git fetch --tags
           VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0-dev")
+
           echo "NEXT_PUBLIC_APP_VERSION=${VERSION}" >> $GITHUB_ENV
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=$(date -u '+%B %d, %Y')" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_APP_RELEASE_TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_ENV
 
-      # 2️⃣ Generate .env.production for Next.js build
+      # 2️⃣ Generate .env.production
       - name: Write .env.production
         run: |
           echo "NEXT_PUBLIC_APP_VERSION=${{ env.NEXT_PUBLIC_APP_VERSION }}" >> .env.production
           echo "NEXT_PUBLIC_APP_RELEASE_DATE=${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}" >> .env.production
+          echo "NEXT_PUBLIC_APP_RELEASE_TIMESTAMP=${{ env.NEXT_PUBLIC_APP_RELEASE_TIMESTAMP }}" >> .env.production
+
           echo "NEXT_PUBLIC_API_BASE_URL=${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}" >> .env.production
           echo "NEXT_PUBLIC_CLARITY_PROJECT_ID=${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID_DEV }}" >> .env.production
 
-          # ✅ DEV → STANDARD mapping
           echo "NEXT_PUBLIC_APP_URL=${{ secrets.NEXT_PUBLIC_APP_URL_DEV }}" >> .env.production
           echo "NEXT_PUBLIC_AZURE_CLIENT_ID=${{ secrets.NEXT_PUBLIC_AZURE_CLIENT_ID_DEV }}" >> .env.production
 
@@ -55,14 +58,14 @@ jobs:
           output_location: "out"
           production_branch: "dev"
 
-        # 4️⃣ Safety fallback envs
         env:
           NEXT_PUBLIC_API_BASE_URL: ${{ secrets.NEXT_PUBLIC_API_BASE_URL_DEV }}
           NEXT_PUBLIC_CLARITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_CLARITY_PROJECT_ID_DEV }}
+
           NEXT_PUBLIC_APP_VERSION: ${{ env.NEXT_PUBLIC_APP_VERSION }}
           NEXT_PUBLIC_APP_RELEASE_DATE: ${{ env.NEXT_PUBLIC_APP_RELEASE_DATE }}
+          NEXT_PUBLIC_APP_RELEASE_TIMESTAMP: ${{ env.NEXT_PUBLIC_APP_RELEASE_TIMESTAMP }}
 
-          # ✅ DEV → STANDARD mapping
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL_DEV }}
           NEXT_PUBLIC_AZURE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_AZURE_CLIENT_ID_DEV }}
 
