@@ -84,7 +84,8 @@ export default function ComFilters({
   const activeFilterCount = filtersForTab.filter((filter) => {
     if (TEXT_INPUT_FILTERS.has(filter)) {
       const v = selectedFilters[filter];
-      return !!v?.trim();
+      if (typeof v !== 'string') return false;
+      return v.trim().length > 0;
     }
     const selected = getSelected(filter);
     const options = getOptions(filter);
