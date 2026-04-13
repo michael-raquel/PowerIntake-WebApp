@@ -1,3 +1,4 @@
+
 ## [1.6.6-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.11...v1.6.6-dev.12) (2026-04-13)
 
 
@@ -76,6 +77,7 @@
 * added a label asking if the ai was helpful ([de76562](https://github.com/michael-raquel/PowerIntake-WebApp/commit/de76562fce3f4e45958acdfa94015ae0e926cba6))
 
 ## [1.6.6-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5...v1.6.6-dev.1) (2026-04-12)
+
 
 
 ### Bug Fixes
