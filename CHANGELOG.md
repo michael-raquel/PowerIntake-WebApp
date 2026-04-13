@@ -1,3 +1,10 @@
+# [1.7.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.7.0-dev.4...v1.7.0-dev.5) (2026-04-13)
+
+
+### Bug Fixes
+
+* aura ([391c3ac](https://github.com/michael-raquel/PowerIntake-WebApp/commit/391c3ac101a9e1479f063f765edd826e11515b61))
+
 # [1.7.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.7.0-dev.3...v1.7.0-dev.4) (2026-04-13)
 
 
