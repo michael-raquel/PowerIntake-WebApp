@@ -11,7 +11,11 @@ const readStoredConsent = () => {
   if (typeof window === "undefined") return null;
   const raw = sessionStorage.getItem(CONSENT_STORAGE_KEY);
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch { return null; }
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
 };
 
 const writeStoredConsent = (params) => {
@@ -32,7 +36,10 @@ export default function MsConsentCallback() {
 
   const addLog = useCallback((msg) => {
     console.log(`[MS-CONSENT-CALLBACK] ${msg}`);
-    setLogs((prev) => [...prev, { time: new Date().toLocaleTimeString(), msg }]);
+    setLogs((prev) => [
+      ...prev,
+      { time: new Date().toLocaleTimeString(), msg },
+    ]);
   }, []);
 
   useEffect(() => {
@@ -49,10 +56,6 @@ export default function MsConsentCallback() {
         setStatus("Completing sign-in...");
 
         // ── Step 1: Resolve account ──────────────────────────────────────────
-        // Calling handleRedirectPromise() ourselves is safe and idempotent.
-        // If MsalProvider already consumed the redirect result, this returns
-        // null — but crucially, awaiting it guarantees MSAL has finished
-        // processing the redirect and getAllAccounts() is now populated.
         let account = null;
 
         try {
@@ -61,26 +64,97 @@ export default function MsConsentCallback() {
             account = redirectResult.account;
             addLog(`handleRedirectPromise — resolved: ${account.username}`);
           } else {
-            addLog("handleRedirectPromise — returned null (already consumed by MsalProvider)");
+            addLog(
+              "handleRedirectPromise — returned null (already consumed by MsalProvider)",
+            );
           }
         } catch (redirectErr) {
-          addLog(`handleRedirectPromise error (non-fatal): ${redirectErr.message}`);
+          addLog(
+            `handleRedirectPromise error (non-fatal): ${redirectErr.message}`,
+          );
         }
 
-        // Fallback — by the time the above await resolves, MSAL's cache is
-        // guaranteed to be populated, so getAllAccounts() is reliable here.
+        // Fallback 1 — MSAL cache
         if (!account) {
           const allAccounts = instance.getAllAccounts();
           account = allAccounts[0] ?? null;
           addLog(
-            `Cache fallback — resolved: ${account?.username ?? "NONE"} | cached: ${allAccounts.length}`
+            `Cache fallback — resolved: ${account?.username ?? "NONE"} | cached: ${allAccounts.length}`,
           );
+        }
+
+        // Fallback 2 — pre_consent_account stored in checking.tsx before redirect
+        if (!account) {
+          try {
+            const stored = sessionStorage.getItem("pre_consent_account");
+            const parsed = stored ? JSON.parse(stored) : null;
+
+            if (parsed?.homeAccountId) {
+              addLog(
+                `pre_consent_account found — homeAccountId: ${parsed.homeAccountId}, re-authenticating silently...`,
+              );
+
+              // Try to find the account by homeAccountId after a short wait
+              // (MSAL may need a tick to hydrate from localStorage)
+              await new Promise((r) => setTimeout(r, 300));
+              const allAccounts = instance.getAllAccounts();
+              account =
+                allAccounts.find(
+                  (a) => a.homeAccountId === parsed.homeAccountId,
+                ) ?? null;
+
+              if (account) {
+                addLog(
+                  `Matched pre_consent_account in MSAL cache: ${account.username}`,
+                );
+              } else {
+                addLog(
+                  "Account not in cache — triggering ssoSilent to restore session...",
+                );
+
+                try {
+                  // ssoSilent uses the existing browser session cookie with Microsoft
+                  // even though MSAL cache is empty — this is the key call
+                  const ssoResult = await instance.ssoSilent({
+                    ...apiRequest,
+                    loginHint: parsed.loginHint ?? undefined,
+                    tenantId: parsed.tenantId ?? undefined,
+                  });
+                  account = ssoResult.account;
+                  addLog(`ssoSilent succeeded: ${account.username}`);
+                } catch (ssoErr) {
+                  addLog(
+                    `ssoSilent failed (${ssoErr.errorCode}): ${ssoErr.message}`,
+                  );
+                  // Last resort — ask the user to re-authenticate via popup
+                  try {
+                    addLog("Falling back to loginPopup...");
+                    const popupResult = await instance.loginPopup({
+                      ...apiRequest,
+                      loginHint: parsed.loginHint ?? undefined,
+                    });
+                    account = popupResult.account;
+                    addLog(`loginPopup succeeded: ${account.username}`);
+                  } catch (popupErr) {
+                    addLog(`loginPopup failed: ${popupErr.message}`);
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            addLog(`pre_consent_account parse error: ${e.message}`);
+          }
         }
 
         if (!account) {
           addLog("No account resolved from any source — cannot proceed");
-          setError("Sign-in could not be completed. Please return to the app and try again.");
-          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+          setError(
+            "Sign-in could not be completed. Please return to the app and try again.",
+          );
+          setTimeout(
+            () => router.replace("/consent-callback?consent=failed"),
+            3000,
+          );
           return;
         }
 
@@ -95,28 +169,37 @@ export default function MsConsentCallback() {
         } = router.query;
 
         const stored = readStoredConsent();
-        const tenant       = normalizeParam(queryTenant)       ?? stored?.tenant        ?? null;
-        const adminConsent = normalizeParam(queryAdminConsent) ?? stored?.admin_consent ?? null;
+        const tenant = normalizeParam(queryTenant) ?? stored?.tenant ?? null;
+        const adminConsent =
+          normalizeParam(queryAdminConsent) ?? stored?.admin_consent ?? null;
 
         writeStoredConsent({ tenant, admin_consent: adminConsent });
 
         addLog(
-          `Params — tenant=${tenant ?? "none"} | admin_consent=${adminConsent ?? "none"} | msError=${msError ?? "none"}`
+          `Params — tenant=${tenant ?? "none"} | admin_consent=${adminConsent ?? "none"} | msError=${msError ?? "none"}`,
         );
 
         // ── Step 3: Guard — Microsoft error ─────────────────────────────────
         if (msError) {
           addLog(`Microsoft returned error: ${msError}`);
           setError(`Microsoft error: ${msError}`);
-          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+          setTimeout(
+            () => router.replace("/consent-callback?consent=failed"),
+            3000,
+          );
           return;
         }
 
         // ── Step 4: Guard — missing tenant ──────────────────────────────────
         if (!tenant) {
           addLog("Missing tenant parameter");
-          setError("Missing tenant parameter. Please try the consent process again.");
-          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+          setError(
+            "Missing tenant parameter. Please try the consent process again.",
+          );
+          setTimeout(
+            () => router.replace("/consent-callback?consent=failed"),
+            3000,
+          );
           return;
         }
 
@@ -131,7 +214,9 @@ export default function MsConsentCallback() {
             account,
           });
           accessToken = tokenRes?.accessToken ?? null;
-          addLog(`Token acquired — scopes: ${tokenRes?.scopes?.join(", ") ?? "unknown"}`);
+          addLog(
+            `Token acquired — scopes: ${tokenRes?.scopes?.join(", ") ?? "unknown"}`,
+          );
         } catch (tokenErr) {
           addLog(`acquireTokenSilent failed (non-fatal): ${tokenErr.message}`);
         }
@@ -158,7 +243,10 @@ export default function MsConsentCallback() {
           const text = await res.text();
           addLog(`Backend error: ${text}`);
           setError(`Server error ${res.status}: ${text}`);
-          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+          setTimeout(
+            () => router.replace("/consent-callback?consent=failed"),
+            3000,
+          );
           return;
         }
 
@@ -176,13 +264,18 @@ export default function MsConsentCallback() {
         } else {
           addLog("No redirectUrl in response");
           setError("Unexpected server response.");
-          setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+          setTimeout(
+            () => router.replace("/consent-callback?consent=failed"),
+            3000,
+          );
         }
-
       } catch (err) {
         addLog(`Unhandled exception: ${err.message}`);
         setError(`Error: ${err.message}`);
-        setTimeout(() => router.replace("/consent-callback?consent=failed"), 3000);
+        setTimeout(
+          () => router.replace("/consent-callback?consent=failed"),
+          3000,
+        );
       }
     };
 
@@ -208,7 +301,8 @@ export default function MsConsentCallback() {
           aria-hidden
           className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-[400px] w-[400px] rounded-full"
           style={{
-            background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)",
+            background:
+              "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)",
           }}
         />
 
@@ -244,7 +338,10 @@ export default function MsConsentCallback() {
           {logs.length > 0 && (
             <div className="w-full mt-2 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-1 max-h-48 overflow-y-auto">
               {logs.map((log, i) => (
-                <div key={i} className="flex gap-2 text-[10px] font-mono leading-relaxed">
+                <div
+                  key={i}
+                  className="flex gap-2 text-[10px] font-mono leading-relaxed"
+                >
                   <span className="text-zinc-600 shrink-0">{log.time}</span>
                   <span className="text-zinc-400">{log.msg}</span>
                 </div>

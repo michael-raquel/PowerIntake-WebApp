@@ -1,3 +1,26 @@
+## [1.6.7-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6...v1.6.7-dev.1) (2026-04-13)
+
+
+### Bug Fixes
+
+* added a label asking if the ai was helpful ([de76562](https://github.com/michael-raquel/PowerIntake-WebApp/commit/de76562fce3f4e45958acdfa94015ae0e926cba6))
+* Fixed the button grouping ([663d76f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/663d76fe7ff93688565b9176dcf60a1b00e3e3f0))
+* hid the notification on the settings ([2f384be](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2f384be58b658e27b040774ce387ad5cd54beb01))
+* my client table pagination row count and hide the notification ([6e210c6](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6e210c6a359edef02d5d68720de5e16f7943029b))
+* notification socket ([74c488e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/74c488e83922c82bceb46317874948c50a1d2b69))
+* Power Suite AI Logs Front End and minor changes ([ba614a2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ba614a2bf0d6ae5c81a73779e810e0dcadc2a6be))
+* remove socket ([538523d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/538523d5b824820e76b0b5aef65637c5fd339523))
+* ST-powersuiteai create new ([74aed56](https://github.com/michael-raquel/PowerIntake-WebApp/commit/74aed564613e1bca3e198ce7f4c8d9133d8ec4ed))
+* the v? error ([9dea823](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9dea823e6ebf539d17e66c92f9f44ae8f486a1a3))
+* updated filtering to fix the default filtering issue ([13b99a5](https://github.com/michael-raquel/PowerIntake-WebApp/commit/13b99a54fb5567b947959a3ed9d3383d63161815))
+
+## [1.6.6-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.11...v1.6.6-dev.12) (2026-04-13)
+
+
+### Bug Fixes
+
+* ST-powersuiteai create new ([74aed56](https://github.com/michael-raquel/PowerIntake-WebApp/commit/74aed564613e1bca3e198ce7f4c8d9133d8ec4ed))
+
 ## [1.6.6-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.10...v1.6.6-dev.11) (2026-04-13)
 
 
@@ -69,6 +92,7 @@
 * added a label asking if the ai was helpful ([de76562](https://github.com/michael-raquel/PowerIntake-WebApp/commit/de76562fce3f4e45958acdfa94015ae0e926cba6))
 
 ## [1.6.6-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.5...v1.6.6-dev.1) (2026-04-12)
+
 
 
 ### Bug Fixes
