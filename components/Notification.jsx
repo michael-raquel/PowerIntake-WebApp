@@ -114,14 +114,18 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
     useEffect(() => {
         if (!useruuid) return;
 
-        const onNotificationCreated = (payload) => {
+        const isPayloadForCurrentUser = (payload) => {
             const targetUser = payload?.useruuid ?? payload?.v_useruuid ?? payload?.entrauserid;
-            if (targetUser) {
-                const target = String(targetUser);
-                const isDbUserMatch = target === String(useruuid);
-                const isEntraUserMatch = target === String(modifiedby);
-                if (!isDbUserMatch && !isEntraUserMatch) return;
-            }
+            if (!targetUser) return true;
+
+            const target = String(targetUser);
+            const isDbUserMatch = target === String(useruuid);
+            const isEntraUserMatch = target === String(modifiedby);
+            return isDbUserMatch || isEntraUserMatch;
+        };
+
+        const onNotificationCreated = (payload) => {
+            if (!isPayloadForCurrentUser(payload)) return;
 
             const incoming = normalizeIncomingNotification(payload);
             if (!incoming) return;
@@ -134,8 +138,59 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
             });
         };
 
+        const onNotificationUpdated = (payload) => {
+            if (!isPayloadForCurrentUser(payload)) return;
+
+            const notification = payload?.notification ?? payload?.data ?? payload;
+            const notificationId = getNotificationId(notification);
+            if (!notificationId) return;
+
+            setNotifications((prev) => {
+                let found = false;
+
+                const next = prev.map((item) => {
+                    if (getNotificationId(item) !== notificationId) return item;
+                    found = true;
+
+                    return {
+                        ...item,
+                        ...notification,
+                        v_notificationuuid: notificationId,
+                        v_ticketuuid: getTicketUuid(notification) || item?.v_ticketuuid || null,
+                        v_ticketnumber: getTicketNumber(notification) || item?.v_ticketnumber || null,
+                        v_message: notification?.v_message ?? notification?.message ?? item?.v_message ?? "Notification",
+                        v_createdat: notification?.v_createdat ?? notification?.createdat ?? notification?.createdAt ?? item?.v_createdat ?? new Date().toISOString(),
+                        v_isread: toBoolean(notification?.v_isread ?? notification?.isread ?? notification?.isRead ?? item?.v_isread),
+                    };
+                });
+
+                if (found) return next;
+
+                const incoming = normalizeIncomingNotification(payload);
+                if (!incoming) return prev;
+                return [incoming, ...prev];
+            });
+        };
+
+        const onNotificationDeleted = (payload) => {
+            if (!isPayloadForCurrentUser(payload)) return;
+
+            const notification = payload?.notification ?? payload?.data ?? payload;
+            const notificationId = getNotificationId(notification);
+            if (!notificationId) return;
+
+            setNotifications((prev) => prev.filter((item) => getNotificationId(item) !== notificationId));
+        };
+
         socket.on("notification:created", onNotificationCreated);
-        return () => socket.off("notification:created", onNotificationCreated);
+        socket.on("notification:updated", onNotificationUpdated);
+        socket.on("notification:deleted", onNotificationDeleted);
+
+        return () => {
+            socket.off("notification:created", onNotificationCreated);
+            socket.off("notification:updated", onNotificationUpdated);
+            socket.off("notification:deleted", onNotificationDeleted);
+        };
     }, [modifiedby, setNotifications, useruuid]);
 
     const items = useMemo(() =>
