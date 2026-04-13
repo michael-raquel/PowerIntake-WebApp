@@ -123,7 +123,7 @@ export default function MsConsentCallback() {
               addLog(
                 `homeAccountId match: ${account ? account.username : "NOT FOUND"}`,
               );
-
+              
               if (!account) {
                 addLog(
                   `Attempting ssoSilent — loginHint=${parsed.loginHint ?? "none"} | tenantId=${parsed.tenantId ?? "none"}`,
@@ -140,20 +140,18 @@ export default function MsConsentCallback() {
                   addLog(
                     `ssoSilent failed — code=${ssoErr.errorCode ?? "none"} | msg=${ssoErr.message}`,
                   );
+                  addLog("Falling back to loginRedirect with loginHint...");
 
-                  addLog("Falling back to loginPopup...");
-                  try {
-                    const popupResult = await instance.loginPopup({
-                      ...apiRequest,
-                      loginHint: parsed.loginHint ?? undefined,
-                    });
-                    account = popupResult.account;
-                    addLog(`loginPopup succeeded: ${account.username}`);
-                  } catch (popupErr) {
-                    addLog(
-                      `loginPopup failed — code=${popupErr.errorCode ?? "none"} | msg=${popupErr.message}`,
-                    );
-                  }
+                  // loginHint pre-fills the account so the user doesn't have to pick again.
+                  // After redirect, this page re-runs with the account in MSAL cache.
+                  await instance.loginRedirect({
+                    ...apiRequest,
+                    loginHint: parsed.loginHint ?? undefined,
+                    tenantId: parsed.tenantId ?? undefined,
+                    redirectUri:
+                      window.location.origin + "/ms-consent-callback",
+                  });
+                  return; // loginRedirect navigates away — nothing below runs
                 }
               }
             } else {
