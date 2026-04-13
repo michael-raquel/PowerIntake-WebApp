@@ -1,3 +1,10 @@
+# [1.7.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.7.0-dev.2...v1.7.0-dev.3) (2026-04-13)
+
+
+### Bug Fixes
+
+* Revert "Format timestamp to show time only" ([41dd3eb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/41dd3eb91bdcebc084e9b369b14da4bdf1f25688))
+
 # [1.7.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.7.0-dev.1...v1.7.0-dev.2) (2026-04-13)
 
 
