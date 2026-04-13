@@ -1,173 +1,23 @@
-// import { useCallback, useState } from "react";
+import { useCallback, useState } from "react";
 
-// const WS_URL = "wss://sparta-voice-backend-dev-001.azurewebsites.net/ws";
-
-// export function useSpartaAssistOnce() {
-//   const [loading, setLoading] = useState(false);
-//   const [suggestion, setSuggestion] = useState("");
-//   const [error, setError] = useState(null);
-
-//   const askAssist = useCallback((title, description) => {
-//     if (!description?.trim()) return;
-
-//     setLoading(true);
-//     setSuggestion("");
-//     setError(null);
-
-//     const ws = new WebSocket(WS_URL);
-//     let result = "";
-
-//     const fullPrompt = `
-//       You are a friendly and knowledgeable IT support assistant. Your tone is conversational, warm, and approachable — like a smart helpful friend who knows tech really well.
-
-//       You specialize in IT support: troubleshooting, networking, software, hardware, cloud services, Microsoft 365, Azure, PowerApps, cybersecurity, and general tech advice. You adapt your language to match the user's level — simple for beginners, technical for experts.
-
-//       ALWAYS respond using this exact HTML structure — no markdown, no plain text, only clean HTML:
-
-//       <h2>[Short descriptive title of the issue]</h2>
-
-//       <p>Start with a warm, empathetic sentence acknowledging the user's issue.</p>
-
-//       <p><strong>Here are some steps to help resolve it:</strong></p>
-
-//       <ol>
-//         <li><strong>Step name:</strong> Clear explanation of what to do and why.</li>
-//         <li><strong>Step name:</strong> Clear explanation of what to do and why.</li>
-//         <li><strong>Step name:</strong> Clear explanation of what to do and why.</li>
-//       </ol>
-
-//       <p>If the issue persists, it would help to know:</p>
-//       <ul>
-//         <li>Relevant follow-up question 1?</li>
-//         <li>Relevant follow-up question 2?</li>
-//       </ul>
-//       <br/>
-//       <p>Friendly closing sentence encouraging the user. Use an emoji at the end 😊</p>
-
-//       RULES:
-//       - NEVER use markdown (no **, no #, no backticks)
-//       - ALWAYS use the HTML structure above
-//       - Be thorough and specific — always provide AT LEAST 5 to 7 detailed troubleshooting steps, covering all common causes of the issue
-//       - Each step must be actionable and specific (e.g. exact key combinations, menu paths, settings names) — never vague or one-liners
-//       - Cover the full range of likely causes: wrong credentials, account type (local vs Microsoft), hardware issues, network issues, OS-level fixes, account lockouts, etc.
-//       - For complex steps, use nested <ul> inside <li> to show sub-steps or alternative methods
-//       - Think like a Level 2 IT technician — give the same depth of guidance you would give someone over the phone
-//       - If the input is nonsense, too vague, or not an IT issue, respond with only this HTML:
-//         <p>Please provide a more detailed description of your issue so I can give you accurate troubleshooting steps. 😊</p>
-//       - Maximum 8 steps in the <ol>
-
-//       Now help the user with this ticket:
-
-//       Title: ${title.split('\n\n')[0]?.replace('Title: ', '') ?? ''}
-//       Description: ${description.split('\n\n')[1]?.replace('Description: ', '') ?? description}
-//       `;
-
-//     ws.onopen = () => {
-//       ws.send(JSON.stringify({
-//         type: "user_text",
-//         text: fullPrompt
-//       }));
-//     };
-
-//     ws.onmessage = (e) => {
-//       try {
-//         const msg = JSON.parse(e.data);
-//         console.log("[SpartaAssist]", msg);
-
-//         if (msg.type === "error") {
-//           setError(msg.message);
-//           setLoading(false);
-//           ws.close();
-//           return;
-//         }
-
-//         if (msg.type === "provider_event") {
-//           const ev = msg.event;
-
-//           if (ev.type === "response.text.delta") {
-//             result += ev.delta ?? "";
-//             setSuggestion(result);
-//           }
-
-//           if (ev.type === "response.output_item.done") {
-//             const item = ev.item;
-//             if (item?.type === "message") {
-//               const textContent = item.content
-//                 ?.filter(c => c.type === "text")
-//                 ?.map(c => c.text)
-//                 ?.join("") ?? "";
-//               if (textContent && !result) {
-//                 setSuggestion(textContent);
-//               }
-//             }
-//           }
-
-//           if (ev.type === "response.audio_transcript.delta") {
-//             result += ev.delta ?? "";
-//             setSuggestion(result);
-//           }
-
-//           if (ev.type === "response.done" || ev.type === "response.cancelled") {
-//             if (!result) {
-//               const outputs = ev.response?.output ?? [];
-//               for (const out of outputs) {
-//                 for (const content of out.content ?? []) {
-//                   if (content.transcript) result += content.transcript;
-//                   if (content.text) result += content.text;
-//                 }
-//               }
-//               if (result) setSuggestion(result);
-//             }
-//             setLoading(false);
-//             ws.close();
-//           }
-//         }
-//       } catch (err) {
-//         console.error("[SpartaAssist] parse error", err);
-//       }
-//     };
-
-//     ws.onerror = (e) => {
-//       console.error("[SpartaAssist] WebSocket error", e);
-//       setError("Could not connect to Sparta Assist.");
-//       setLoading(false);
-//     };
-
-//     ws.onclose = (e) => {
-//       console.log("[SpartaAssist] closed", e.code, e.reason);
-//       setLoading(false);
-//     };
-//   }, []);
-
-//   const clear = useCallback(() => setSuggestion(""), []);
-
-//   return { askAssist, loading, suggestion, error, clear };
-// }
-
-import { useCallback, useState, useRef } from "react";
-
-const API_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3011";
+const WS_URL = "wss://sparta-voice-backend-dev-001.azurewebsites.net/ws";
 
 export function useSpartaAssistOnce() {
   const [loading, setLoading] = useState(false);
   const [suggestion, setSuggestion] = useState("");
-  const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
-  const resultRef = useRef("");
 
-  const askAssist = useCallback(async (title, description) => {
+  const askAssist = useCallback((title, description) => {
     if (!description?.trim()) return;
 
-    resultRef.current = "";
     setLoading(true);
-    setIsStreaming(true);
     setSuggestion("");
     setError(null);
 
-    const cleanTitle = title.split('\n\n')[0]?.replace('Title: ', '') ?? '';
-    const cleanDescription = description.split('\n\n')[1]?.replace('Description: ', '') ?? description;
+    const ws = new WebSocket(WS_URL);
+    let result = "";
 
-    const systemPrompt = `
+    const fullPrompt = `
       You are a friendly and knowledgeable IT support assistant. Your tone is conversational, warm, and approachable — like a smart helpful friend who knows tech really well.
 
       You specialize in IT support: troubleshooting, networking, software, hardware, cloud services, Microsoft 365, Azure, PowerApps, cybersecurity, and general tech advice. You adapt your language to match the user's level — simple for beginners, technical for experts.
@@ -175,93 +25,121 @@ export function useSpartaAssistOnce() {
       ALWAYS respond using this exact HTML structure — no markdown, no plain text, only clean HTML:
 
       <h2>[Short descriptive title of the issue]</h2>
+
       <p>Start with a warm, empathetic sentence acknowledging the user's issue.</p>
+
       <p><strong>Here are some steps to help resolve it:</strong></p>
+
       <ol>
         <li><strong>Step name:</strong> Clear explanation of what to do and why.</li>
+        <li><strong>Step name:</strong> Clear explanation of what to do and why.</li>
+        <li><strong>Step name:</strong> Clear explanation of what to do and why.</li>
       </ol>
+
       <p>If the issue persists, it would help to know:</p>
       <ul>
-        <li>Relevant follow-up question?</li>
+        <li>Relevant follow-up question 1?</li>
+        <li>Relevant follow-up question 2?</li>
       </ul>
       <br/>
-      <p>Friendly closing sentence. Use an emoji at the end 😊</p>
+      <p>Friendly closing sentence encouraging the user. Use an emoji at the end 😊</p>
 
       RULES:
-      - NEVER use markdown
+      - NEVER use markdown (no **, no #, no backticks)
       - ALWAYS use the HTML structure above
-      - Provide AT LEAST 5 to 7 detailed troubleshooting steps
-      - Each step must be actionable and specific
-      - Think like a Level 2 IT technician
-      - If the input is nonsense or not an IT issue, respond with only:
+      - Be thorough and specific — always provide AT LEAST 5 to 7 detailed troubleshooting steps, covering all common causes of the issue
+      - Each step must be actionable and specific (e.g. exact key combinations, menu paths, settings names) — never vague or one-liners
+      - Cover the full range of likely causes: wrong credentials, account type (local vs Microsoft), hardware issues, network issues, OS-level fixes, account lockouts, etc.
+      - For complex steps, use nested <ul> inside <li> to show sub-steps or alternative methods
+      - Think like a Level 2 IT technician — give the same depth of guidance you would give someone over the phone
+      - If the input is nonsense, too vague, or not an IT issue, respond with only this HTML:
         <p>Please provide a more detailed description of your issue so I can give you accurate troubleshooting steps. 😊</p>
-      - Maximum 8 steps in the ol
-    `;
+      - Maximum 8 steps in the <ol>
 
-    try {
-      const response = await fetch(`${API_URL}/openai/response`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: `Title: ${cleanTitle}\nDescription: ${cleanDescription}`,
-          systemPrompt
-        }),
-      });
+      Now help the user with this ticket:
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData?.error || "Failed to get AI response");
-      }
+      Title: ${title.split('\n\n')[0]?.replace('Title: ', '') ?? ''}
+      Description: ${description.split('\n\n')[1]?.replace('Description: ', '') ?? description}
+      `;
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: "user_text",
+        text: fullPrompt
+      }));
+    };
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+    ws.onmessage = (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        console.log("[SpartaAssist]", msg);
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split("\n").filter(line => line.trim() !== "");
+        if (msg.type === "error") {
+          setError(msg.message);
+          setLoading(false);
+          ws.close();
+          return;
+        }
 
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
+        if (msg.type === "provider_event") {
+          const ev = msg.event;
 
-          const data = line.replace("data: ", "").trim();
-
-          if (data === "[DONE]") {
-            setIsStreaming(false);
-            setSuggestion(resultRef.current);
-            setLoading(false);
-            return;
+          if (ev.type === "response.text.delta") {
+            result += ev.delta ?? "";
+            setSuggestion(result);
           }
 
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.delta) {
-              resultRef.current += parsed.delta;
-              
-              setSuggestion(resultRef.current);
+          if (ev.type === "response.output_item.done") {
+            const item = ev.item;
+            if (item?.type === "message") {
+              const textContent = item.content
+                ?.filter(c => c.type === "text")
+                ?.map(c => c.text)
+                ?.join("") ?? "";
+              if (textContent && !result) {
+                setSuggestion(textContent);
+              }
             }
-          } catch (e) {
-            
+          }
+
+          if (ev.type === "response.audio_transcript.delta") {
+            result += ev.delta ?? "";
+            setSuggestion(result);
+          }
+
+          if (ev.type === "response.done" || ev.type === "response.cancelled") {
+            if (!result) {
+              const outputs = ev.response?.output ?? [];
+              for (const out of outputs) {
+                for (const content of out.content ?? []) {
+                  if (content.transcript) result += content.transcript;
+                  if (content.text) result += content.text;
+                }
+              }
+              if (result) setSuggestion(result);
+            }
+            setLoading(false);
+            ws.close();
           }
         }
+      } catch (err) {
+        console.error("[SpartaAssist] parse error", err);
       }
+    };
 
-    } catch (err) {
-      console.error("[SpartaAssist] Full error:", err);
-      setError(err.message || "Could not connect to Sparta Assist.");
-    } finally {
-      setIsStreaming(false);
+    ws.onerror = (e) => {
+      console.error("[SpartaAssist] WebSocket error", e);
+      setError("Could not connect to Sparta Assist.");
       setLoading(false);
-    }
+    };
+
+    ws.onclose = (e) => {
+      console.log("[SpartaAssist] closed", e.code, e.reason);
+      setLoading(false);
+    };
   }, []);
 
-  const clear = useCallback(() => {
-    resultRef.current = "";
-    setSuggestion("");
-    setIsStreaming(false);
-  }, []);
+  const clear = useCallback(() => setSuggestion(""), []);
 
-  return { askAssist, loading, suggestion, isStreaming, error, clear };
+  return { askAssist, loading, suggestion, error, clear };
 }
