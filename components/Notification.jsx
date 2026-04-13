@@ -7,7 +7,6 @@ import { useAuth } from "@/context/AuthContext";
 import { useFetchNotification } from "@/hooks/UseFetchNotification";
 import { useUpdateNotificationIsRead } from "@/hooks/UseUpdateNotificationIsRead";
 import { useDeleteNotification } from "@/hooks/UseDeleteNotification";
-import socket from "@/lib/socket";
 
 const formatTime = (ts) => {
     if (!ts) return "Just now";
@@ -17,56 +16,13 @@ const formatTime = (ts) => {
 };
 
 const MenuButton = ({ onClick, disabled, className, children }) => (
-    <button
-        type="button"
-        onClick={(e) => {
-            e.stopPropagation();
-            onClick?.(e);
-        }}
+    <button type="button"
+        onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
         disabled={disabled}
         className={`w-full px-3 py-2 text-left text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${className}`}>
         {children}
     </button>
 );
-
-const getNotificationId = (notification) =>
-    String(notification?.v_notificationuuid ?? notification?.notificationuuid ?? notification?.id ?? "");
-
-const getTicketUuid = (notification) => {
-    const value = notification?.v_ticketuuid ?? notification?.ticketuuid;
-    return value ? String(value) : "";
-};
-
-const getTicketNumber = (notification) => {
-    const value = notification?.v_ticketnumber ?? notification?.ticketnumber;
-    return value ? String(value) : "";
-};
-
-const toBoolean = (value) => {
-    if (typeof value === "boolean") return value;
-    if (typeof value === "number") return value === 1;
-    if (value == null) return false;
-    const normalized = String(value).trim().toLowerCase();
-    return normalized === "true" || normalized === "1";
-};
-
-const normalizeIncomingNotification = (payload) => {
-    const notification = payload?.notification ?? payload?.data ?? payload;
-    if (!notification || typeof notification !== "object") return null;
-
-    const notificationId = getNotificationId(notification);
-    if (!notificationId) return null;
-
-    return {
-        ...notification,
-        v_notificationuuid: notificationId,
-        v_ticketuuid: getTicketUuid(notification) || null,
-        v_ticketnumber: getTicketNumber(notification) || null,
-        v_message: notification?.v_message ?? notification?.message ?? "Notification",
-        v_createdat: notification?.v_createdat ?? notification?.createdat ?? notification?.createdAt ?? new Date().toISOString(),
-        v_isread: toBoolean(notification?.v_isread ?? notification?.isread ?? notification?.isRead),
-    };
-};
 
 export default function Notification({ isMobile = false, isCollapsed = false }) {
     const router = useRouter();
@@ -77,7 +33,6 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
         [tokenInfo?.account?.localAccountId, userInfo],
     );
 
-    // The current user's entra ID — sent to API as modifiedby / deletedby
     const modifiedby = useMemo(
         () => tokenInfo?.account?.localAccountId || useruuid || "",
         [tokenInfo?.account?.localAccountId, useruuid],
@@ -90,8 +45,8 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
     const [isOpen,         setIsOpen]         = useState(false);
     const [openBulkMenu,   setOpenBulkMenu]   = useState(false);
     const [openCardMenuId, setOpenCardMenuId] = useState(null);
-    const [isBulkLoading,  setIsBulkLoading]  = useState(false); // bulk action (mark all / delete all) in-flight
-    const [loadingItemId,  setLoadingItemId]  = useState(null);  // UUID of the single item currently being acted on
+    const [isBulkLoading,  setIsBulkLoading]  = useState(false); 
+    const [loadingItemId,  setLoadingItemId]  = useState(null);  
     const containerRef = useRef(null);
 
     const closeMenus = useCallback(() => {
@@ -111,42 +66,17 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
         };
     }, [closeMenus]);
 
-    useEffect(() => {
-        if (!useruuid) return;
-
-        const onNotificationCreated = (payload) => {
-            const targetUser = payload?.useruuid ?? payload?.v_useruuid ?? payload?.entrauserid;
-            if (targetUser) {
-                const target = String(targetUser);
-                const isDbUserMatch = target === String(useruuid);
-                const isEntraUserMatch = target === String(modifiedby);
-                if (!isDbUserMatch && !isEntraUserMatch) return;
-            }
-
-            const incoming = normalizeIncomingNotification(payload);
-            if (!incoming) return;
-
-            setNotifications((prev) => {
-                const incomingId = getNotificationId(incoming);
-                const exists = prev.some((n) => getNotificationId(n) === incomingId);
-                if (exists) return prev;
-                return [incoming, ...prev];
-            });
-        };
-
-        socket.on("notification:created", onNotificationCreated);
-        return () => socket.off("notification:created", onNotificationCreated);
-    }, [modifiedby, setNotifications, useruuid]);
+    //useEffect(() => { if (isOpen && useruuid) refetch(); }, [isOpen, refetch, useruuid]);
 
     const items = useMemo(() =>
         [...(notifications ?? [])]
             .map((n) => ({
-                id:        getNotificationId(n),
-                ticketUuid: getTicketUuid(n),
-                ticketNumber: getTicketNumber(n),
-                message:   n.v_message   ?? "Notification",
-                createdAt: n.v_createdat ?? null,
-                isRead:    toBoolean(n.v_isread ?? n.isread ?? n.isRead),
+                id:           String(n.v_notificationuuid ?? ""),
+                ticketUuid:   n.v_ticketuuid   ? String(n.v_ticketuuid)   : null,
+                ticketNumber: n.v_ticketnumber ? String(n.v_ticketnumber) : null,
+                message:      n.v_message   ?? "Notification",
+                createdAt:    n.v_createdat ?? null,
+                isRead:       Boolean(n.v_isread),
             }))
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
         [notifications],
@@ -225,37 +155,26 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
         }
     }, [modifiedby, deleteNotification, hasNotifications, setNotifications, useruuid]);
 
-    const handleNotificationClick = useCallback((notification) => {
-        if (!notification) return;
+    const handleNotificationClick = useCallback((n) => {
+        if (!n?.ticketUuid && !n?.ticketNumber) return;
 
-        const ticketUuid = notification.ticketUuid;
-        const ticketNumber = notification.ticketNumber;
-        if (!ticketUuid && !ticketNumber) return;
-
-        if (!notification.isRead && notification.id && useruuid && modifiedby) {
-            patchLocal(notification.id, true);
-            updateNotificationIsRead({
-                useruuid,
-                isread: true,
-                modifiedby,
-                notificationuuid: notification.id,
-            }).catch((err) => {
-                toast.error(err.message || "Failed to update notification");
-                patchLocal(notification.id, false);
-            });
+        if (!n.isRead && n.id && useruuid && modifiedby) {
+            patchLocal(n.id, true);
+            updateNotificationIsRead({ useruuid, isread: true, modifiedby, notificationuuid: n.id })
+                .catch((err) => {
+                    toast.error(err.message || "Failed to update notification");
+                    patchLocal(n.id, false);
+                });
         }
 
         const params = new URLSearchParams();
-        if (ticketUuid) params.set("uuid", ticketUuid);
-        if (ticketNumber) params.set("search", ticketNumber);
+        if (n.ticketUuid)   params.set("uuid",   n.ticketUuid);
+        if (n.ticketNumber) params.set("search", n.ticketNumber);
 
         closeMenus();
         router.push(`/ticket?${params.toString()}`);
     }, [closeMenus, modifiedby, patchLocal, router, updateNotificationIsRead, useruuid]);
 
-    // Mobile: fixed to viewport — no absolute positioning that clips outside the screen
-    // Desktop collapsed: anchors right of sidebar icon
-    // Desktop expanded: anchors above trigger
     const panelClass = isMobile
         ? "fixed inset-x-3 top-16 bottom-20 z-50 rounded-2xl"
         : isCollapsed
@@ -290,10 +209,11 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
                 )}
             </button>
 
-            {/* Panel */}
+            {/* Panel — clicking anywhere inside closes any open submenu */}
             {isOpen && (
                 <div className={`flex flex-col overflow-hidden border border-gray-100 bg-white shadow-2xl dark:border-white/[0.08] dark:bg-[#242526] ${panelClass}`}
-                    style={{ boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}>
+                    style={{ boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
+                    onClick={() => { setOpenCardMenuId(null); setOpenBulkMenu(false); }}>
 
                     {/* Header */}
                     <div className="flex items-start justify-between border-b border-gray-100 px-4 py-3 dark:border-white/[0.08]">
@@ -315,7 +235,8 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
                                     <MoreVertical className="h-4 w-4" />
                                 </button>
                                 {openBulkMenu && (
-                                    <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-lg dark:border-white/[0.08] dark:bg-[#2d2f31]">
+                                    <div className="absolute right-0 top-9 z-20 w-44 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-lg dark:border-white/[0.08] dark:bg-[#2d2f31]"
+                                        onClick={(e) => e.stopPropagation()}>
                                         <MenuButton onClick={() => handleMarkAll(true)}  disabled={isBulkLoading || !hasNotifications || !hasUnread}                    className="text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/[0.08]">Mark all as read</MenuButton>
                                         <MenuButton onClick={() => handleMarkAll(false)} disabled={isBulkLoading || !hasNotifications || unreadCount === items.length} className="text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/[0.08]">Mark all as unread</MenuButton>
                                         <MenuButton onClick={handleDeleteAll}            disabled={isBulkLoading || !hasNotifications}                                  className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">Delete all</MenuButton>
@@ -341,23 +262,15 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
                         )}
 
                         {!error && items.map((n) => {
-                            const isItemLoading = loadingItemId === n.id;
-                            const canOpenTicket = Boolean(n.ticketUuid || n.ticketNumber);
-
-                            const handleKeyDown = (e) => {
-                                if (!canOpenTicket) return;
-                                if (e.key === "Enter" || e.key === " ") {
-                                    e.preventDefault();
-                                    handleNotificationClick(n);
-                                }
-                            };
+                            const isItemLoading  = loadingItemId === n.id;
+                            const canOpenTicket  = Boolean(n.ticketUuid || n.ticketNumber);
 
                             return (
                                 <div key={n.id}
                                     role={canOpenTicket ? "button" : undefined}
                                     tabIndex={canOpenTicket ? 0 : undefined}
                                     onClick={canOpenTicket ? () => handleNotificationClick(n) : undefined}
-                                    onKeyDown={handleKeyDown}
+                                    onKeyDown={canOpenTicket ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleNotificationClick(n); } } : undefined}
                                     className={`rounded-xl border ${n.isRead
                                         ? "border-gray-200 bg-gray-50/70 dark:border-gray-800 dark:bg-white/[0.02]"
                                         : "border-violet-200 bg-violet-50/80 dark:border-violet-500/20 dark:bg-violet-500/10"} ${canOpenTicket
@@ -375,17 +288,13 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
                                         {/* Per-card menu */}
                                         <div className="relative">
                                             <button type="button" disabled={!n.id || isItemLoading} aria-label="Notification actions"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setOpenCardMenuId((p) => p === n.id ? null : n.id);
-                                                    setOpenBulkMenu(false);
-                                                }}
+                                                onClick={(e) => { e.stopPropagation(); setOpenCardMenuId((p) => p === n.id ? null : n.id); setOpenBulkMenu(false); }}
                                                 className="rounded-md p-1 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200">
                                                 <MoreVertical className="h-4 w-4" />
                                             </button>
                                             {openCardMenuId === n.id && (
-                                                // Mobile: fixed right-3 so it anchors to viewport edge, never clips
-                                                    <div onClick={(e) => e.stopPropagation()} className={`z-30 w-44 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-lg dark:border-white/[0.08] dark:bg-[#2d2f31] ${isMobile ? "fixed right-3" : "absolute right-0 top-8"}`}>
+                                                <div onClick={(e) => e.stopPropagation()}
+                                                    className={`z-30 w-44 overflow-hidden rounded-lg border border-gray-100 bg-white py-1 shadow-lg dark:border-white/[0.08] dark:bg-[#2d2f31] ${isMobile ? "fixed right-3" : "absolute right-0 top-8"}`}>
                                                     <MenuButton onClick={() => handleMarkOne(n.id, true)}  disabled={isItemLoading || n.isRead}  className="text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/[0.08]">Mark as read</MenuButton>
                                                     <MenuButton onClick={() => handleMarkOne(n.id, false)} disabled={isItemLoading || !n.isRead} className="text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-white/[0.08]">Mark as unread</MenuButton>
                                                     <MenuButton onClick={() => handleDeleteOne(n.id)}      disabled={isItemLoading}              className="text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">Delete</MenuButton>
