@@ -28,11 +28,6 @@ export default function Checking() {
           { headers: { Authorization: `Bearer ${tokenRes.accessToken}` } },
         );
 
-        if (res.status === 403) {
-          router.replace("/no-consent?reason=not-registered");
-          return;
-        }
-
         if (!res.ok) throw new Error("Consent status request failed");
 
         const data = await res.json();
