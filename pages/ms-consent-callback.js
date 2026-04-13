@@ -77,44 +77,58 @@ export default function MsConsentCallback() {
         // Fallback 1 — MSAL cache
         if (!account) {
           const allAccounts = instance.getAllAccounts();
-          account = allAccounts[0] ?? null;
           addLog(
-            `Cache fallback — resolved: ${account?.username ?? "NONE"} | cached: ${allAccounts.length}`,
+            `Cache fallback — resolved: ${allAccounts[0]?.username ?? "NONE"} | cached: ${allAccounts.length}`,
           );
+          account = allAccounts[0] ?? null;
         }
 
-        // Fallback 2 — pre_consent_account stored in checking.tsx before redirect
+        // Fallback 2 — pre_consent_account
         if (!account) {
-          try {
-            const stored = sessionStorage.getItem("pre_consent_account");
-            const parsed = stored ? JSON.parse(stored) : null;
+          addLog("Checking sessionStorage for pre_consent_account...");
+
+          // Log ALL sessionStorage keys so we can see what's actually there
+          const allKeys = Object.keys(sessionStorage);
+          addLog(
+            `sessionStorage keys (${allKeys.length}): ${allKeys.join(", ") || "(empty)"}`,
+          );
+
+          const raw = sessionStorage.getItem("pre_consent_account");
+          addLog(`pre_consent_account raw value: ${raw ?? "(null)"}`);
+
+          if (raw) {
+            let parsed = null;
+            try {
+              parsed = JSON.parse(raw);
+              addLog(
+                `pre_consent_account parsed: homeAccountId=${parsed?.homeAccountId ?? "missing"} | tenantId=${parsed?.tenantId ?? "missing"} | loginHint=${parsed?.loginHint ?? "missing"}`,
+              );
+            } catch (e) {
+              addLog(`pre_consent_account JSON.parse failed: ${e.message}`);
+            }
 
             if (parsed?.homeAccountId) {
+              addLog("Waiting 300ms for MSAL cache hydration...");
+              await new Promise((r) => setTimeout(r, 300));
+
+              const allAccounts = instance.getAllAccounts();
               addLog(
-                `pre_consent_account found — homeAccountId: ${parsed.homeAccountId}, re-authenticating silently...`,
+                `Post-wait MSAL accounts: ${allAccounts.length} — ${allAccounts.map((a) => a.username).join(", ") || "(none)"}`,
               );
 
-              // Try to find the account by homeAccountId after a short wait
-              // (MSAL may need a tick to hydrate from localStorage)
-              await new Promise((r) => setTimeout(r, 300));
-              const allAccounts = instance.getAllAccounts();
               account =
                 allAccounts.find(
                   (a) => a.homeAccountId === parsed.homeAccountId,
                 ) ?? null;
+              addLog(
+                `homeAccountId match: ${account ? account.username : "NOT FOUND"}`,
+              );
 
-              if (account) {
+              if (!account) {
                 addLog(
-                  `Matched pre_consent_account in MSAL cache: ${account.username}`,
+                  `Attempting ssoSilent — loginHint=${parsed.loginHint ?? "none"} | tenantId=${parsed.tenantId ?? "none"}`,
                 );
-              } else {
-                addLog(
-                  "Account not in cache — triggering ssoSilent to restore session...",
-                );
-
                 try {
-                  // ssoSilent uses the existing browser session cookie with Microsoft
-                  // even though MSAL cache is empty — this is the key call
                   const ssoResult = await instance.ssoSilent({
                     ...apiRequest,
                     loginHint: parsed.loginHint ?? undefined,
@@ -124,11 +138,11 @@ export default function MsConsentCallback() {
                   addLog(`ssoSilent succeeded: ${account.username}`);
                 } catch (ssoErr) {
                   addLog(
-                    `ssoSilent failed (${ssoErr.errorCode}): ${ssoErr.message}`,
+                    `ssoSilent failed — code=${ssoErr.errorCode ?? "none"} | msg=${ssoErr.message}`,
                   );
-                  // Last resort — ask the user to re-authenticate via popup
+
+                  addLog("Falling back to loginPopup...");
                   try {
-                    addLog("Falling back to loginPopup...");
                     const popupResult = await instance.loginPopup({
                       ...apiRequest,
                       loginHint: parsed.loginHint ?? undefined,
@@ -136,18 +150,29 @@ export default function MsConsentCallback() {
                     account = popupResult.account;
                     addLog(`loginPopup succeeded: ${account.username}`);
                   } catch (popupErr) {
-                    addLog(`loginPopup failed: ${popupErr.message}`);
+                    addLog(
+                      `loginPopup failed — code=${popupErr.errorCode ?? "none"} | msg=${popupErr.message}`,
+                    );
                   }
                 }
               }
+            } else {
+              addLog(
+                "parsed object missing homeAccountId — cannot attempt ssoSilent",
+              );
             }
-          } catch (e) {
-            addLog(`pre_consent_account parse error: ${e.message}`);
+          } else {
+            addLog(
+              "pre_consent_account not found in sessionStorage — was it set before the Microsoft redirect?",
+            );
+            addLog(
+              "IMPORTANT: sessionStorage does NOT persist across origins. If Microsoft redirected through a different domain, storage was wiped.",
+            );
           }
         }
 
         if (!account) {
-          addLog("No account resolved from any source — cannot proceed");
+          addLog("All resolution strategies exhausted — no account found");
           setError(
             "Sign-in could not be completed. Please return to the app and try again.",
           );

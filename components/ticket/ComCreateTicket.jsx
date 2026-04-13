@@ -486,81 +486,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                       <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:150ms]" />
                       <span className="w-1.5 h-1.5 bg-pink-500 rounded-full animate-bounce [animation-delay:300ms]" />
                     </span>
-                  </div>
-<<<<<<< Updated upstream
-                    <div className="flex items-center justify-end gap-2 mt-2">
-                      <p className="text-xs text-gray-500 dark:text-gray-300 mr-2">Was this suggestion helpful?</p>
-                      <button
-                        type="button"
-                        aria-pressed={feedbackChoice === "up"}
-                        className={cn(
-                          "rounded-full p-1 transition-colors",
-                          feedbackChoice === "up"
-                            ? "bg-green-100 dark:bg-green-900/30"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-800",
-                          isFeedbackBusy || feedbackChoice
-                            ? feedbackChoice === "up"
-                              ? "cursor-default"
-                              : "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer"
-                        )}
-                        onClick={() => handleFeedback("up")}
-                        disabled={isFeedbackBusy || feedbackChoice}
-                      >
-                        <ThumbsUp
-                          className={cn(
-                            "w-5 h-5",
-                            feedbackChoice === "up"
-                              ? "text-green-600 dark:text-green-400"
-                              : "text-pink-500 dark:text-blue-400"
-                          )}
-                        />
-                      </button>
-
-                      <button
-                        type="button"
-                        aria-pressed={feedbackChoice === "down"}
-                        className={cn(
-                          "rounded-full p-1 transition-colors",
-                          feedbackChoice === "down"
-                            ? "bg-red-100 dark:bg-red-900/30"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-800",
-                          isFeedbackBusy || feedbackChoice
-                            ? feedbackChoice === "down"
-                              ? "cursor-default"
-                              : "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer"
-                        )}
-                        onClick={() => handleFeedback("down")}
-                        disabled={isFeedbackBusy || feedbackChoice}
-                      >
-                        <ThumbsDown
-                          className={cn(
-                            "w-5 h-5",
-                            feedbackChoice === "down"
-                              ? "text-red-600 dark:text-red-400"
-                              : "text-pink-500 dark:text-blue-400"
-                          )}
-                        />
-                      </button>
-
-                      {feedbackLogId && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="ml-2 h-7 px-2 text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700/40 dark:text-red-300 dark:hover:bg-red-950/40"
-                          onClick={handleClearFeedback}
-                          disabled={isFeedbackBusy}
-                        >
-                          <X className="h-3 w-3" />
-                          <span>Clear feedback</span>
-                        </Button>
-                      )}
-                    </div>
-                  </>
-                )}
-=======
+                  </div>                       
                 </div>
               )}
 
@@ -585,13 +511,60 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     }}
                   />
                 </div>
-                <div className='flex justify-end gap-2 mt-2'>
-                  <ThumbsUp className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
-                  <ThumbsDown className="w-5 h-5 dark:text-blue-400 text-pink-500 cursor-pointer" />
-                </div>
+                <div className="flex items-center justify-end gap-2 mt-2">
+                <p className="text-xs text-gray-500 dark:text-gray-300 mr-2">Was this suggestion helpful?</p>
+                <button
+                  type="button"
+                  aria-pressed={feedbackChoice === "up"}
+                  className={cn(
+                    "rounded-full p-1 transition-colors",
+                    feedbackChoice === "up"
+                      ? "bg-green-100 dark:bg-green-900/30"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                    isFeedbackBusy || feedbackChoice
+                      ? feedbackChoice === "up" ? "cursor-default" : "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
+                  )}
+                  onClick={() => handleFeedback("up")}
+                  disabled={isFeedbackBusy || !!feedbackChoice}
+                >
+                  <ThumbsUp className={cn("w-5 h-5", feedbackChoice === "up" ? "text-green-600 dark:text-green-400" : "text-pink-500 dark:text-blue-400")} />
+                </button>
+
+                <button
+                  type="button"
+                  aria-pressed={feedbackChoice === "down"}
+                  className={cn(
+                    "rounded-full p-1 transition-colors",
+                    feedbackChoice === "down"
+                      ? "bg-red-100 dark:bg-red-900/30"
+                      : "hover:bg-gray-100 dark:hover:bg-gray-800",
+                    isFeedbackBusy || feedbackChoice
+                      ? feedbackChoice === "down" ? "cursor-default" : "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
+                  )}
+                  onClick={() => handleFeedback("down")}
+                  disabled={isFeedbackBusy || !!feedbackChoice}
+                >
+                  <ThumbsDown className={cn("w-5 h-5", feedbackChoice === "down" ? "text-red-600 dark:text-red-400" : "text-pink-500 dark:text-blue-400")} />
+                </button>
+
+                {feedbackLogId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="ml-2 h-7 px-2 text-xs gap-1 border-red-200 text-red-600 hover:bg-red-50 dark:border-red-700/40 dark:text-red-300 dark:hover:bg-red-950/40"
+                    onClick={handleClearFeedback}
+                    disabled={isFeedbackBusy}
+                  >
+                    <X className="h-3 w-3" />
+                    <span>Clear feedback</span>
+                  </Button>
+                )}
+              </div>
               </>
             )}
->>>>>>> Stashed changes
 
                 {aiError && (
                   <p className="text-xs text-red-500 mt-2 flex items-center gap-1">
