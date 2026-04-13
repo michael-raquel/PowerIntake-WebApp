@@ -1,3 +1,10 @@
+## [1.6.6-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.6...v1.6.6-dev.7) (2026-04-13)
+
+
+### Bug Fixes
+
+* the v? error ([9dea823](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9dea823e6ebf539d17e66c92f9f44ae8f486a1a3))
+
 ## [1.6.6-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.6-dev.5...v1.6.6-dev.6) (2026-04-13)
 
 
