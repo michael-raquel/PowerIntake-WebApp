@@ -131,6 +131,8 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
   const {
     data, loading,
     fetchData,
+    total,
+    totalPages,
     totals,
   } = useFetchMyClients(1, effectiveLimit);
 
@@ -139,6 +141,10 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
       fetchData(1, {});
     }
   }, [selectedRowsPerPage, fetchData]);
+
+  useEffect(() => {
+    fetchData(localPage, {});
+  }, [localPage, fetchData]);
 
   useEffect(() => {
     setColumnWidths((prev) => {
@@ -262,8 +268,11 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
     });
   }, [data, searchValue]);
 
-  const displayTotal = filteredData.length;
-  const displayTotalPages = effectiveLimit > 0 ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit)) : 1;
+  const hasSearch = Boolean(searchValue && searchValue.trim());
+  const displayTotal = hasSearch ? filteredData.length : total;
+  const displayTotalPages = hasSearch
+    ? (effectiveLimit > 0 ? Math.max(1, Math.ceil(filteredData.length / effectiveLimit)) : 1)
+    : Math.max(1, totalPages || 1);
   const displayHasPrev = localPage > 1;
   const displayHasNext = localPage < displayTotalPages;
 
@@ -277,9 +286,12 @@ export default function MyClientsTab({ searchValue = "", onSearchChange = () => 
   }, [filteredData, sortConfig]);
 
   const pagedData = useMemo(() => {
-    const start = (localPage - 1) * effectiveLimit;
-    return sortedData.slice(start, start + effectiveLimit);
-  }, [sortedData, effectiveLimit, localPage]);
+    if (hasSearch) {
+      const start = (localPage - 1) * effectiveLimit;
+      return sortedData.slice(start, start + effectiveLimit);
+    }
+    return sortedData;
+  }, [sortedData, hasSearch, effectiveLimit, localPage]);
 
 
   return (
