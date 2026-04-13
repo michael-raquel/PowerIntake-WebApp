@@ -1,3 +1,10 @@
+## [1.6.7-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.7-dev.2...v1.6.7-dev.3) (2026-04-13)
+
+
+### Bug Fixes
+
+* ST-merge conflict issue ([2a7bac7](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2a7bac76fa5c66df2a2b2d2f3f4853d899f1f280))
+
 ## [1.6.7-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.7-dev.1...v1.6.7-dev.2) (2026-04-13)
 
 
