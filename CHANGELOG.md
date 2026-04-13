@@ -1,9 +1,17 @@
-# [1.7.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.7.0-dev.5...v1.7.0-dev.6) (2026-04-13)
+# [1.7.0](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.6.8...v1.7.0) (2026-04-13)
+
+
+### Bug Fixes
+
+* add comment ([9a3fe73](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9a3fe73637e64e12fd2d91426a25a024569aecb1))
+* aura ([391c3ac](https://github.com/michael-raquel/PowerIntake-WebApp/commit/391c3ac101a9e1479f063f765edd826e11515b61))
+* hello ([f278370](https://github.com/michael-raquel/PowerIntake-WebApp/commit/f2783707c1c8bb5e682a266b0751ffb09bc7d7d4))
+* Revert "Format timestamp to show time only" ([41dd3eb](https://github.com/michael-raquel/PowerIntake-WebApp/commit/41dd3eb91bdcebc084e9b369b14da4bdf1f25688))
 
 
 ### Features
 
-* added s on aura ([d9ea03f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d9ea03fb7dff19e61d7be260bfa65ba959255ceb))
+* aura ([717d107](https://github.com/michael-raquel/PowerIntake-WebApp/commit/717d107cb63666b053d4afd29fabd23bd98f376d))
 
 # [1.7.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.7.0-dev.4...v1.7.0-dev.5) (2026-04-13)
 
