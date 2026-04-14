@@ -3,13 +3,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export default function MyTeamFilter({
   onFiltersChange,
@@ -17,9 +10,6 @@ export default function MyTeamFilter({
   onSearch,
   statuses = [],
   selectedFilters = {},
-  rowsPerPage = 10,
-  onRowsPerPageChange,
-  rowsPerPageDisabled = false,
 }) {
   const rawSelectedStatuses = Array.isArray(selectedFilters.status)
     ? selectedFilters.status
@@ -36,8 +26,6 @@ export default function MyTeamFilter({
   const statusFilterActive = hasStatusFilter && !allStatusesSelected;
   const activeFilterCount = statusFilterActive ? 1 : 0;
   const someStatusesSelected = selectedStatuses.length > 0 && !allStatusesSelected;
-
-  const rowsValue = String(rowsPerPage ?? 10);
 
   const statusNames = selectedStatuses.map((s) => (s === "true" ? "Active" : "Inactive"));
   const statusLabel = statuses.length === 0
@@ -202,23 +190,6 @@ export default function MyTeamFilter({
         </PopoverContent>
       </Popover>
 
-      {onRowsPerPageChange && (
-        <div className="md:hidden">
-          <Select value={rowsValue} onValueChange={onRowsPerPageChange} disabled={rowsPerPageDisabled}>
-            <SelectTrigger size="sm" className="h-8 px-2 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="15">15</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
     </div>
   );
 }
