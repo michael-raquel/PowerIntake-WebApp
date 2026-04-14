@@ -231,7 +231,6 @@ export default function NoConsent() {
 
   const changeAccount = () =>
     instance.loginRedirect({ scopes: ["openid", "profile", "User.Read"], prompt: "select_account" });
-  const retry = () => router.replace("/checking");
 
   return (
     <>
@@ -286,18 +285,9 @@ export default function NoConsent() {
             </p>
           )}
 
-          {/* ── RETRY + CONTACT ──────────────────────────── */}
+          {/* ── CONTACT (error scenarios) ─────────────────── */}
           {scenario.actions === "retry-contact" && (
-            <div className="flex flex-col gap-4">
-              <button
-                onClick={retry}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.04] border border-white/[0.06] transition-all active:scale-[0.98]"
-              >
-                Retry
-              </button>
-              <div className="border-t border-white/[0.06]" />
-              <SupportBlock />
-            </div>
+            <SupportBlock />
           )}
 
           <div className="border-t border-white/[0.06]" />
