@@ -1,3 +1,10 @@
+# [1.8.0-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.11...v1.8.0-dev.12) (2026-04-14)
+
+
+### Bug Fixes
+
+* ST-2244 actions from note dynamics should reflect on powerintake realtime ([9d4a1c4](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9d4a1c468dd50f84d2f6d639a604c2387db31770))
+
 # [1.8.0-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.10...v1.8.0-dev.11) (2026-04-14)
 
 
