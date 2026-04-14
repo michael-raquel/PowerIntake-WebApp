@@ -211,27 +211,13 @@ function SupportBlock() {
 // COMPONENT
 // ─────────────────────────────────────────────────────────────
 export default function NoConsent() {
-  const { instance, accounts } = useMsal();  // ← add accounts
+  const { instance } = useMsal();
   const router = useRouter();
   const { reason } = router.query;
 
   const scenario = SCENARIOS[reason] ?? DEFAULT_SCENARIO;
 
-  // ── If already authenticated, redirect to checking ──────
-  // Handles the case where MSAL completes the redirect and
-  // lands back here with a valid session.
   useEffect(() => {
-    if (accounts?.[0]) {
-      sessionStorage.removeItem("consent_verified");
-      router.replace("/checking");
-    }
-  }, [accounts, router]);
-
-  useEffect(() => {
-    // Only clear MSAL state when there's no active account
-    // (i.e. we genuinely have no session, not mid-redirect)
-    if (accounts?.[0]) return;
-
     instance.setActiveAccount(null);
 
     Object.keys(sessionStorage).forEach((key) => {
@@ -241,14 +227,11 @@ export default function NoConsent() {
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith("msal.")) localStorage.removeItem(key);
     });
-  }, [instance, accounts]);
+  }, [instance]);
 
   const changeAccount = () =>
-    instance.loginRedirect({
-      scopes: ["openid", "profile", "User.Read"],
-      prompt: "select_account",
-      redirectUri: window.location.origin + "/",  // ← send back to index, not /no-consent
-    });
+    instance.loginRedirect({ scopes: ["openid", "profile", "User.Read"], prompt: "select_account" });
+
   return (
     <>
       <Head>
