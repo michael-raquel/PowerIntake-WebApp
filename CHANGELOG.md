@@ -1,3 +1,10 @@
+# [1.8.0-dev.11](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.10...v1.8.0-dev.11) (2026-04-14)
+
+
+### Bug Fixes
+
+* st-2252-Duplicate of "No Tickets Found" on Mobile ([e160061](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e160061961df585f981eb199329453523544a667))
+
 # [1.8.0-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.9...v1.8.0-dev.10) (2026-04-14)
 
 
