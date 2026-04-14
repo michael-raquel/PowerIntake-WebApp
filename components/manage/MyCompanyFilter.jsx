@@ -3,13 +3,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export default function CompanyFilter({
   onFilter,
@@ -18,9 +11,6 @@ export default function CompanyFilter({
   roles       = [],
   departments = [],
   statuses    = [],
-  rowsPerPage = 10,
-  onRowsPerPageChange,
-  rowsPerPageDisabled = false,
 }) {
   const search = filters?.search ?? "";
   const manager = filters?.manager ?? "";
@@ -58,8 +48,6 @@ export default function CompanyFilter({
     if (statuses.length === 0) return nextStatuses;
     return nextStatuses.length === statuses.length ? null : nextStatuses;
   };
-
-  const rowsValue = String(rowsPerPage ?? 10);
 
   const roleLabel = roles.length === 0
     ? "No roles"
@@ -368,24 +356,6 @@ export default function CompanyFilter({
           </div>
         </PopoverContent>
       </Popover>
-
-      {onRowsPerPageChange && (
-        <div className="md:hidden">
-          <Select value={rowsValue} onValueChange={onRowsPerPageChange} disabled={rowsPerPageDisabled}>
-            <SelectTrigger size="sm" className="h-8 px-2 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="5">5</SelectItem>
-              <SelectItem value="10">10</SelectItem>
-              <SelectItem value="15">15</SelectItem>
-              <SelectItem value="20">20</SelectItem>
-              <SelectItem value="25">25</SelectItem>
-              <SelectItem value="50">50</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      )}
 
     </div>
   );

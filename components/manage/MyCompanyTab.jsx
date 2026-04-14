@@ -515,9 +515,6 @@ export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} 
         roles={roles}
         departments={departments}
         statuses={statuses}
-        rowsPerPage={selectedRowsPerPage ?? DEFAULT_ROWS}
-        onRowsPerPageChange={handleRecordsPerPageChange}
-        rowsPerPageDisabled={updating}
       />
 
       <div className="flex items-center px-4 py-3 border-b border-gray-200 dark:border-gray-800">
@@ -703,9 +700,29 @@ export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} 
         demoteGroupLoading={demoteGroupLoading}
       />
 
-      <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-800 pr-20">
-        <div className="text-xs text-gray-500 dark:text-gray-400">{displayTotal} Total Records</div>
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row items-center md:justify-between gap-3 px-4 py-3 border-t border-gray-200 dark:border-gray-800 md:pr-20">
+        <div className="flex items-center justify-between w-full md:w-auto gap-2">
+          <div className="text-xs text-gray-500 dark:text-gray-400">{displayTotal} Total Records</div>
+          <div className="flex items-center gap-2 md:hidden">
+            <label className="text-xs text-gray-600 dark:text-gray-400 font-medium whitespace-nowrap">
+              Rows per page:
+            </label>
+            <Select value={String(selectedRowsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>
+              <SelectTrigger className="w-20 h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="15">15</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 w-full md:w-auto justify-center md:justify-start">
           <div className="hidden md:flex items-center gap-2">
             <label className="text-xs text-gray-600 dark:text-gray-400 font-medium">Rows per page:</label>
             <Select value={String(selectedRowsPerPage ?? 10)} onValueChange={handleRecordsPerPageChange} disabled={updating}>

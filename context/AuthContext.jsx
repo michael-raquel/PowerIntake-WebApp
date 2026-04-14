@@ -88,7 +88,6 @@ export function AuthProvider({ children }) {
       setProfilePhotoUrl(url);
       return url;
     } catch (err) {
-      console.warn("[AUTH] Failed to fetch profile photo:", err?.message ?? err);
       return null;
     }
   }, [account, instance, profilePhotoUrl]);
