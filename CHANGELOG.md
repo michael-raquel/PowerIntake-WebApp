@@ -1,3 +1,10 @@
+# [1.8.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.2...v1.8.0-dev.3) (2026-04-14)
+
+
+### Bug Fixes
+
+* st-2244-notification ([042547b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/042547be39d11ad39a3ce51d91fc63f7885810c8))
+
 # [1.8.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.1...v1.8.0-dev.2) (2026-04-14)
 
 
