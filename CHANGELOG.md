@@ -1,3 +1,10 @@
+# [1.8.0-dev.10](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.9...v1.8.0-dev.10) (2026-04-14)
+
+
+### Bug Fixes
+
+* ST-2262-Hide console logs debugging for all hooks ([2767f0f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2767f0fecbc1b3e9a71e2d6ae7a5250563e4867f))
+
 # [1.8.0-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.8...v1.8.0-dev.9) (2026-04-14)
 
 
