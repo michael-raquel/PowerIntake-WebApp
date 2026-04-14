@@ -7,6 +7,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useFetchNotification } from "@/hooks/UseFetchNotification";
 import { useUpdateNotificationIsRead } from "@/hooks/UseUpdateNotificationIsRead";
 import { useDeleteNotification } from "@/hooks/UseDeleteNotification";
+import socket from "@/lib/socket";
 
 const formatTime = (ts) => {
     if (!ts) return "Just now";
@@ -184,6 +185,30 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
     const triggerClass = isMobile
         ? "relative flex items-center justify-center rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
         : `w-full flex items-center rounded-lg px-3 py-2.5 transition-colors text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04] ${isCollapsed ? "justify-center" : "gap-3"}`;
+
+    useEffect(() => {
+        if (!tokenInfo?.account?.localAccountId) return;
+
+        const handleNotificationsUpdated = (payload) => {
+            const notifs = payload?.notifications ?? payload;
+            if (!Array.isArray(notifs)) return;
+            setNotifications(notifs);
+        };
+
+        const handleNotificationCreated = (payload) => {
+            const n = payload?.notification ?? payload;
+            if (!n) return;
+            setNotifications((prev) => [n, ...(Array.isArray(prev) ? prev : [])]);
+        };
+
+        socket.on("notifications:updated", handleNotificationsUpdated);
+        socket.on("notification:created", handleNotificationCreated);
+
+        return () => {
+            socket.off("notifications:updated", handleNotificationsUpdated);
+            socket.off("notification:created", handleNotificationCreated);
+        };
+    }, [setNotifications, tokenInfo?.account?.localAccountId]);
 
     return (
         <div ref={containerRef} className="relative">

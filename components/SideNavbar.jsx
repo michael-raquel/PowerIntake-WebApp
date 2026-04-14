@@ -146,7 +146,7 @@ export default function SideNavbar() {
               </span>
             </button>
 
-            {/* <Notification isMobile /> */}
+            <Notification isMobile />
 
             <div className="relative">
               <button
@@ -349,7 +349,7 @@ export default function SideNavbar() {
             )}
           </div>
 
-          {/* <Notification isCollapsed={isCollapsed} /> */}
+          <Notification isCollapsed={isCollapsed} />
 
           <div className="relative">
             <button
