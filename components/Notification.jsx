@@ -244,9 +244,16 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
 
                             {/* Bulk menu */}
                             <div className="relative">
-                                <button type="button" aria-label="Bulk actions"
-                                    onClick={() => { setOpenBulkMenu((p) => !p); setOpenCardMenuId(null); }}
-                                    className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200">
+                                <button
+                                    type="button"
+                                    aria-label="Bulk actions"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenBulkMenu((p) => !p);
+                                        setOpenCardMenuId(null);
+                                    }}
+                                    className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200"
+                                >
                                     <MoreVertical className="h-4 w-4" />
                                 </button>
                                 {openBulkMenu && (
