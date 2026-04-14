@@ -237,10 +237,10 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
                             <p className="text-xs text-gray-400 dark:text-gray-500">{unreadCount} unread</p>
                         </div>
                         <div className="flex items-center gap-1">
-                            <button type="button" onClick={() => refetch()} disabled={loading} aria-label="Refresh notifications"
+                            {/* <button type="button" onClick={() => refetch()} disabled={loading} aria-label="Refresh notifications"
                                 className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200">
                                 <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                            </button>
+                            </button> */}
 
                             {/* Bulk menu */}
                             <div className="relative">
