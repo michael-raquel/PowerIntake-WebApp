@@ -189,26 +189,16 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
     useEffect(() => {
         if (!tokenInfo?.account?.localAccountId) return;
 
-        const handleNotificationsUpdated = (payload) => {
-            const notifs = payload?.notifications ?? payload;
-            if (!Array.isArray(notifs)) return;
-            setNotifications(notifs);
+        const onNotificationsUpdated = () => {
+            refetch();
         };
 
-        const handleNotificationCreated = (payload) => {
-            const n = payload?.notification ?? payload;
-            if (!n) return;
-            setNotifications((prev) => [n, ...(Array.isArray(prev) ? prev : [])]);
-        };
-
-        socket.on("notifications:updated", handleNotificationsUpdated);
-        socket.on("notification:created", handleNotificationCreated);
+        socket.on("notifications:updated", onNotificationsUpdated);
 
         return () => {
-            socket.off("notifications:updated", handleNotificationsUpdated);
-            socket.off("notification:created", handleNotificationCreated);
+            socket.off("notifications:updated", onNotificationsUpdated);
         };
-    }, [setNotifications, tokenInfo?.account?.localAccountId]);
+    }, [tokenInfo?.account?.localAccountId, refetch]);
 
     return (
         <div ref={containerRef} className="relative">
