@@ -297,7 +297,7 @@ const handleReactivate = async () => {
     }
 };
 
-  useEffect(() => {
+useEffect(() => {
     const handleNoteSynced = ({ ticketuuid }) => {
         if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
         setNoteRefreshKey(k => k + 1);
@@ -308,12 +308,26 @@ const handleReactivate = async () => {
         setAttachmentRefreshKey(k => k + 1);
     };
 
-    socket.on("note:synced",       handleNoteSynced);
-    socket.on("attachment:synced", handleAttachmentSynced);
+    const handleNoteDeleted = ({ ticketuuid }) => {
+        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+        setNoteRefreshKey(k => k + 1);
+    };
+
+    const handleAttachmentDeleted = ({ ticketuuid }) => {
+        if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
+        setAttachmentRefreshKey(k => k + 1);
+    };
+
+    socket.on("note:synced",        handleNoteSynced);
+    socket.on("attachment:synced",  handleAttachmentSynced);
+    socket.on("note:deleted",       handleNoteDeleted);      
+    socket.on("attachment:deleted", handleAttachmentDeleted); 
 
     return () => {
-        socket.off("note:synced",       handleNoteSynced);
-        socket.off("attachment:synced", handleAttachmentSynced);
+        socket.off("note:synced",        handleNoteSynced);
+        socket.off("attachment:synced",  handleAttachmentSynced);
+        socket.off("note:deleted",       handleNoteDeleted);       
+        socket.off("attachment:deleted", handleAttachmentDeleted); 
     };
 }, [ticket?.v_ticketuuid]);
 
