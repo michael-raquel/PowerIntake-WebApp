@@ -1,3 +1,10 @@
+# [1.8.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.4...v1.8.0-dev.5) (2026-04-14)
+
+
+### Bug Fixes
+
+* 2249-User login session: Improve MSAL handling on no-consent page ([4371721](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4371721cb8f8108cbbace60198dfda5fc90c3e25))
+
 # [1.8.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.3...v1.8.0-dev.4) (2026-04-14)
 
 
