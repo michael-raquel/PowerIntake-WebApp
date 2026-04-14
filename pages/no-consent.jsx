@@ -1,6 +1,7 @@
+import { useMsal } from "@azure/msal-react";
+import { InteractionStatus } from "@azure/msal-browser";  // ← add this
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useMsal } from "@azure/msal-react";
 import { useEffect } from "react";
 
 const SUPPORT_EMAIL = "support@spartaserv.com";
@@ -211,27 +212,52 @@ function SupportBlock() {
 // COMPONENT
 // ─────────────────────────────────────────────────────────────
 export default function NoConsent() {
-  const { instance } = useMsal();
+  const { instance, accounts, inProgress } = useMsal();  // ← add inProgress
   const router = useRouter();
   const { reason } = router.query;
 
   const scenario = SCENARIOS[reason] ?? DEFAULT_SCENARIO;
 
+  // ── Redirect authenticated users away from this page ────
   useEffect(() => {
+    if (inProgress !== InteractionStatus.None) return;  // wait for MSAL to settle
+    if (!accounts?.[0]) return;                          // no session, stay here
+
+    // Clear stale consent flag so /checking re-verifies the new account
+    sessionStorage.removeItem("consent_verified");
+    router.replace("/checking");
+  }, [accounts, inProgress, router]);
+
+  // ── Clear MSAL state only when truly unauthenticated ────
+  useEffect(() => {
+    if (inProgress !== InteractionStatus.None) return;
+    if (accounts?.[0]) return;  // don't wipe a live session
+
     instance.setActiveAccount(null);
 
     Object.keys(sessionStorage).forEach((key) => {
       if (key.startsWith("msal.")) sessionStorage.removeItem(key);
     });
-
     Object.keys(localStorage).forEach((key) => {
       if (key.startsWith("msal.")) localStorage.removeItem(key);
     });
-  }, [instance]);
+  }, [instance, accounts, inProgress]);
 
   const changeAccount = () =>
-    instance.loginRedirect({ scopes: ["openid", "profile", "User.Read"], prompt: "select_account" });
+    instance.loginRedirect({
+      scopes: ["openid", "profile", "User.Read"],
+      prompt: "select_account",
+      redirectUri: window.location.origin + "/",
+    });
 
+  // ── Show spinner while MSAL is in flight ─────────────────
+  if (inProgress !== InteractionStatus.None) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-violet-500 animate-spin" />
+      </div>
+    );
+  }
   return (
     <>
       <Head>
