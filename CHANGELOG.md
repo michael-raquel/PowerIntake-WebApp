@@ -1,3 +1,10 @@
+# [1.8.0-dev.9](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.8...v1.8.0-dev.9) (2026-04-14)
+
+
+### Bug Fixes
+
+* 2249-User login session: Navigate to home instead of sign-in ([3efea58](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3efea58f29f1cc2aeab15e94084e1a5abb87bb9b))
+
 # [1.8.0-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.7...v1.8.0-dev.8) (2026-04-14)
 
 
