@@ -30,7 +30,7 @@ export default function useAutoSyncDynamics() {
 
       return json; 
     } catch (err) {
-      console.error("[useAutoSyncDynamics] Error:", err);
+      // console.error("[useAutoSyncDynamics] Error:", err);
       setError(err.message);
     } finally {
       setLoading(false);

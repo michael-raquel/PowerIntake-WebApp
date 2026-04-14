@@ -50,7 +50,7 @@ export default function useCreateAttachments() {
 
       return data;
     } catch (err) {
-      console.error('Create attachments error:', err);
+      // console.error('Create attachments error:', err);
       setError(err.message);
       throw err;
     } finally {

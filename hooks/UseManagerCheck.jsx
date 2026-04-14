@@ -51,7 +51,7 @@ export default function useManagerCheck() {
         const result = json.user_manager_check ?? json.v_ismanager ?? json ?? false;
         setIsManager(Boolean(result));
       } catch (err) {
-        console.error("[useManagerCheck] Error:", err);
+        // console.error("[useManagerCheck] Error:", err);
         setError(err.message);
       } finally {
         setLoading(false);

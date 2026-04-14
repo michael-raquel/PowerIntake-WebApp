@@ -69,7 +69,7 @@ export function ThemeProvider({ children }) {
       
       await updateUserSettings(updatedSettings);
     } catch (error) {
-      console.error('ThemeContext - database update failed:', error);
+      //console.error('ThemeContext - database update failed:', error);
       setTheme(resolvedTheme);
     } finally {
       setIsUpdating(false);

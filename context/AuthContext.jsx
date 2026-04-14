@@ -115,7 +115,7 @@ export function AuthProvider({ children }) {
         const expectedAud = msalConfig.auth.clientId;
 
         if (claims?.aud !== expectedAud && claims?.aud !== `api://${expectedAud}`) {
-          console.error("[TOKEN] Wrong token — aud:", claims?.aud);
+          // console.error("[TOKEN] Wrong token — aud:", claims?.aud);
           return;
         }
 
@@ -164,10 +164,10 @@ export function AuthProvider({ children }) {
               },
             });
           } catch (popupErr) {
-            console.error("[TOKEN] Popup failed:", popupErr);
+            // console.error("[TOKEN] Popup failed:", popupErr);
           }
         } else {
-          console.error("[TOKEN] Acquisition failed:", err);
+          // console.error("[TOKEN] Acquisition failed:", err);
         }
       }
     };
@@ -212,7 +212,7 @@ useEffect(() => {
         setIsGlobalAdmin(false);
       }
     } catch (err) {
-      console.warn("[AUTH] Could not get Graph token:", err.errorCode ?? err.message);
+      // console.warn("[AUTH] Could not get Graph token:", err.errorCode ?? err.message);
       setIsGlobalAdmin(false);
     }
   };
@@ -233,13 +233,13 @@ useEffect(() => {
 
         // 403 = tenant not registered — AuthGuard handles redirect
         if (res.status === 403) {
-          console.warn("[LOGIN SYNC] Tenant not registered — AuthGuard will redirect.");
+          // console.warn("[LOGIN SYNC] Tenant not registered — AuthGuard will redirect.");
           return;
         }
 
         // Any other non-2xx — log and bail, don't cascade into res.json()
         if (!res.ok) {
-          console.warn("[LOGIN SYNC] Skipping sync — server returned:", res.status);
+          // console.warn("[LOGIN SYNC] Skipping sync — server returned:", res.status);
           return;
         }
 
@@ -263,7 +263,7 @@ useEffect(() => {
         }
 
       } catch (err) {
-        console.error("[AUTH] syncUser error:", err);
+        // console.error("[AUTH] syncUser error:", err);
       }
     };
 
@@ -287,8 +287,12 @@ useEffect(() => {
 
   // ── Socket error logging ─────────────────────────────────
   useEffect(() => {
-    const onDisconnect   = (reason) => console.log("[WS] socket disconnected:", reason);
-    const onConnectError = (err)    => console.error("[WS] connect_error:", err.message);
+    const onDisconnect   = (reason) => {
+      // console.log("[WS] socket disconnected:", reason);
+    };
+    const onConnectError = (err)    => {
+      // console.error("[WS] connect_error:", err.message);
+    };
 
     socket.on("disconnect",    onDisconnect);
     socket.on("connect_error", onConnectError);

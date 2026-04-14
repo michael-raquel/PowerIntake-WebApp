@@ -51,7 +51,7 @@ export default function useUpdateAttachments() {
 
       return data;
     } catch (err) {
-      console.error('Update attachments error:', err);
+      // console.error('Update attachments error:', err);
       setError(err.message);
       throw err;
     } finally {
