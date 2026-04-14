@@ -229,8 +229,7 @@ export default function NoConsent() {
     });
   }, [instance]);
 
-  const changeAccount = () =>
-    instance.loginRedirect({ scopes: ["openid", "profile", "User.Read"], prompt: "select_account" });
+  const goToRoot = () => router.push("/");
 
   return (
     <>
@@ -292,12 +291,12 @@ export default function NoConsent() {
 
           <div className="border-t border-white/[0.06]" />
 
-          {/* Change account */}
+          {/* Go back to root */}
           <button
-            onClick={changeAccount}
+            onClick={goToRoot}
             className="w-full text-sm text-zinc-600 hover:text-zinc-400 transition-colors"
           >
-            Sign in with a different account
+            Back to home
           </button>
         </div>
 
