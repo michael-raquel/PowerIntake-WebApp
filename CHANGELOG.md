@@ -1,3 +1,10 @@
+# [1.8.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.3...v1.8.0-dev.4) (2026-04-14)
+
+
+### Bug Fixes
+
+* 2249-User login session:  TONIGHT Wait for MSAL interactions before auth flows ([385ef08](https://github.com/michael-raquel/PowerIntake-WebApp/commit/385ef089b8233321256561fd728adb21dc41459a))
+
 # [1.8.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.2...v1.8.0-dev.3) (2026-04-14)
 
 
