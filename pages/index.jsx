@@ -1,29 +1,27 @@
 import { useEffect } from "react";
 import { useRouter } from "next/router";
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
+import { InteractionStatus } from "@azure/msal-browser";
 import { loginRequest } from "@/lib/msalConfig";
 import Image from "next/image";
 
-const getUserRole = (account) => {
-  const roles = account?.idTokenClaims?.roles || [];
-
-  if (roles.includes("SuperAdmin")) return "super-admin";
-  if (roles.includes("SystemAdmin")) return "system-admin";
-  if (roles.includes("Manager")) return "manager";
-  return "user";
-};
-
 export default function Home() {
   const isAuthenticated = useIsAuthenticated();
-  const { instance, accounts } = useMsal();
+  const { instance, accounts, inProgress } = useMsal();
   const router = useRouter();
 
   useEffect(() => {
-    if (isAuthenticated && accounts[0]) {
-      // const role = getUserRole(accounts[0]);sesamplesdssrewaurastestofauratest123devsserbentatogehey
-      router.push(`/home`);
+    // Wait for MSAL to finish processing any redirect/silent flow
+    if (inProgress !== InteractionStatus.None) return;
+    if (!isAuthenticated || !accounts[0]) return;
+
+    const isVerified = sessionStorage.getItem("consent_verified") === "1";
+    if (isVerified) {
+      router.replace("/home");
+    } else {
+      router.replace("/checking");
     }
-  }, [isAuthenticated, accounts, router]);
+  }, [isAuthenticated, accounts, inProgress, router]);
 
   return (
     <div
