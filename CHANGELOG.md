@@ -1,3 +1,10 @@
+# [1.8.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.5...v1.8.0-dev.6) (2026-04-14)
+
+
+### Reverts
+
+* Revert "fix: 2249-User login session: Improve MSAL handling on no-consent page" ([6ba5ea9](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6ba5ea986fdff7643dfe81b098838e3d664d42b6))
+
 # [1.8.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.4...v1.8.0-dev.5) (2026-04-14)
 
 
