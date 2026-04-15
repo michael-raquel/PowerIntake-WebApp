@@ -1,3 +1,10 @@
+# [1.8.0-dev.17](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.16...v1.8.0-dev.17) (2026-04-15)
+
+
+### Bug Fixes
+
+* ST-toast remove ([d50484d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d50484d11163e56746205fc05525aff946350b82))
+
 # [1.8.0-dev.16](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.15...v1.8.0-dev.16) (2026-04-15)
 
 
