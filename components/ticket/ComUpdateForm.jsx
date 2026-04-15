@@ -182,7 +182,7 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated, initialActiv
     );
 
     if (liveTicket?.v_status !== updated.v_status) {
-      toast.info("Ticket Updated", { description: `Status changed to ${updated.v_status}` });
+      // toast.info("Ticket Updated", { description: `Status changed to ${updated.v_status}` });
     }
   }, [ticket?.v_ticketuuid, ticket?.v_title, ticket?.v_description, liveTicket?.v_status]);
 

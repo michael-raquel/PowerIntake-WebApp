@@ -240,15 +240,15 @@ export default function TicketPage() {
 
   const handleOnSynced = useCallback(() => { 
     setPendingSyncUuid(null); 
-    toast.success('Ticket synced to Dynamics successfully'); 
+    // toast.success('Ticket synced to Dynamics successfully'); 
   }, []);
 
   const handleOnSyncFailed = useCallback(() => {
-    toast.warning('Ticket created but Dynamics sync failed');
+    // toast.warning('Ticket created but Dynamics sync failed');
   }, []);
 
   const handleOnDeleted = useCallback(() => {
-    toast.info('A ticket has been removed');
+    // toast.info('A ticket has been removed');
   }, []);
 
   const handleOnUpdated = useCallback(() => {
