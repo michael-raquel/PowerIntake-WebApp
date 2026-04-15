@@ -347,7 +347,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
         }
       }
 
-      toast.success('Ticket submitted successfully!');
+      // toast.success('Ticket submitted successfully!');
       onClose?.();
 
     } catch (err) {
