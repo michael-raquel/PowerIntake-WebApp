@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { StickyNote, Send, Paperclip } from 'lucide-react';
+import { 
+  StickyNote, 
+  Send, 
+  Paperclip, 
+  RotateCcw, 
+  MessageSquare 
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { useFetchNote } from '@/hooks/UseFetchNotes';
 import { useCreateNote } from '@/hooks/UseCreateNotes';
@@ -127,17 +133,22 @@ useEffect(() => {
 
   const getNoteContent = (note) => {
     if (note.v_note === 'File Uploaded') {
-      return '📎 File Uploaded';
+    return (
+      <>
+        <Paperclip className="inline w-4 h-4 mr-1 text-gray-400" />
+        File Uploaded
+      </>
+    );
+    } else if (note.v_note?.startsWith('Ticket reactivated by')) {
+     return (
+      <>
+        <RotateCcw className="inline w-4 h-4 mr-1 text-gray-400" />
+        {note.v_note}
+      </>
+    );
     }
     return note.v_note;
   };
-
-  // const getNoteContent2 = (note) => {
-  //   if (note.v_note === 'File uploaded' && !note.v_createdby) {
-  //     return '📎 File uploaded';
-  //   }
-  //   return note.v_note;
-  // };
 
   const formatMessageTime = (timestamp) => {
     const date    = new Date(timestamp);
