@@ -1,11 +1,4 @@
-## [1.8.3-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.3-dev.1...v1.8.3-dev.2) (2026-04-15)
-
-
-### Bug Fixes
-
-* ST-1997 modify label for file uploaded and ticket reactivate ([735b46c](https://github.com/michael-raquel/PowerIntake-WebApp/commit/735b46c2ce882d9cf4d6ae21547761d00893031d))
-
-## [1.8.3-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.2...v1.8.3-dev.1) (2026-04-15)
+## [1.8.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.2...v1.8.3) (2026-04-15)
 
 
 ### Bug Fixes
