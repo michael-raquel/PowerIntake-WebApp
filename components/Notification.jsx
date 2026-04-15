@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bell, MoreVertical, RefreshCw } from "lucide-react";
+import { BellDot, MoreVertical } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -217,7 +217,7 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
                 : "absolute bottom-full left-0 mb-2 w-[22rem] h-[28rem] z-50 rounded-2xl";
 
     const triggerClass = isDesktopFloating
-        ? "relative flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-600 shadow-md transition-all hover:bg-gray-50 hover:text-gray-800 hover:shadow-lg dark:border-white/[0.12] dark:bg-[#1c1d1f] dark:text-gray-300 dark:hover:bg-[#242526] dark:hover:text-white"
+        ? `group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.03] hover:border-purple-600 hover:bg-purple-600 hover:text-white hover:shadow-md active:scale-[0.98] dark:border-white/[0.12] dark:bg-[#1c1d1f] dark:text-gray-300 dark:hover:border-purple-500 dark:hover:bg-purple-500 dark:hover:text-white ${isOpen ? "!border-purple-600 !bg-purple-600 !text-white !shadow-md dark:!border-purple-500 dark:!bg-purple-500" : ""}`
         : isMobile
             ? "relative flex items-center justify-center rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
             : `w-full flex items-center rounded-lg px-3 py-2.5 transition-colors text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04] ${isCollapsed ? "justify-center" : "gap-3"}`;
@@ -242,22 +242,23 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
             <button type="button"
                 onClick={() => { setIsOpen((p) => !p); setOpenBulkMenu(false); setOpenCardMenuId(null); }}
                 className={triggerClass}
-                title={isDesktopFloating || (isCollapsed && !isMobile) ? "Notifications" : undefined}
+                title={!isDesktopFloating && isCollapsed && !isMobile ? "Notifications" : undefined}
                 aria-label="Notifications">
+                {isDesktopFloating && (
+                    <span
+                        className={`pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 shadow-sm transition-all duration-200 dark:border-white/[0.12] dark:bg-[#1c1d1f] dark:text-gray-200 ${isOpen ? "opacity-0 -translate-x-1" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"}`}
+                    >
+                        Notifications
+                    </span>
+                )}
                 <div className="relative">
-                    <Bell className="h-5 w-5" />
+                    <BellDot className="h-6 w-6" strokeWidth={2.4} />
                     {unreadCount > 0 && (
                         <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-4 text-white">
                             {unreadCount > 99 ? "99+" : unreadCount}
                         </span>
                     )}
                 </div>
-                {isDesktopFloating && (
-                    <div className="min-w-0 text-left leading-tight">
-                        <p className="truncate text-xs font-semibold text-gray-900 dark:text-white">Notifications</p>
-                        <p className="truncate text-[10px] text-gray-500 dark:text-gray-400">{unreadCount} unread</p>
-                    </div>
-                )}
                 {!isMobile && !isCollapsed && !isDesktopFloating && (
                     <div className="min-w-0 flex-1 text-left">
                         <p className="truncate text-sm font-medium text-gray-900 dark:text-white">Notifications</p>

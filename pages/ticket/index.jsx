@@ -6,6 +6,7 @@ import ComTicketTable from '@/components/ticket/ComTicketTable';
 import ComCreateTicket from '@/components/ticket/ComCreateTicket';
 import ComUpdateForm from '@/components/ticket/ComUpdateForm';
 import ComCard from '@/components/ticket/tables/ComCard';
+import Notification from '@/components/Notification';
 import { useAuth } from '@/context/AuthContext';
 import useManagerCheck from '@/hooks/UseManagerCheck';
 import { useFetchTicket } from '@/hooks/UseFetchTicket';
@@ -343,7 +344,7 @@ export default function TicketPage() {
   );
 
   const tabBar = (
-    <div className="flex border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+    <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
       <nav className="flex gap-x-1">
         {tabs.map(({ id, label }) => (
           <button
@@ -358,6 +359,11 @@ export default function TicketPage() {
           </button>
         ))}
       </nav>
+      {!isMobile && (
+        <div className="py-1">
+          <Notification isDesktopFloating />
+        </div>
+      )}
     </div>
   );
 
