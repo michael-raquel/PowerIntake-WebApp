@@ -119,7 +119,7 @@ export default function useDeleteDemoteAdmin({
                 // Ignore 404s. A 404 implies the user is already absent from the group, 
                 // which satisfies the demotion request (often due to Entra ID sync delays).
                 if (res.status === 404) {
-                    console.warn("[demoteAdmin] Received 404 (Not Found). User may already be removed or replication is delayed. Treating as success.");
+                    // console.warn("[demoteAdmin] Received 404 (Not Found). User may already be removed or replication is delayed. Treating as success.");
                 } else {
                     throw new Error(data.error || `Error ${res.status}: ${res.statusText}`);
                 }

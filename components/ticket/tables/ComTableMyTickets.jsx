@@ -278,9 +278,9 @@ export default function ComTableMyTickets({
               />
             ))
           )}
-            {!paginated.length && (
+            {/* {!paginated.length && (
                     <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">No tickets found.</p>
-                  )}
+                  )} */}
         </div>
       </div>
 

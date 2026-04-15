@@ -7,6 +7,7 @@ import { useFetchHomeTicket } from '@/hooks/home/UseFetchHomeTicket';
 import { useRouter } from 'next/navigation';
 import { useFetchHomeManagerTicket } from '@/hooks/home/UseFetchHomeManagerTicket';
 import useManagerCheck from '@/hooks/UseManagerCheck';
+import Notification from '@/components/Notification';
 
 const images = [
   { src: '/homebanner.png', alt: 'Home Banner' },
@@ -322,20 +323,25 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 sm:p-6 relative overflow-hidden">
+        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-4 sm:p-6 relative overflow-hidden md:overflow-visible">
           <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 to-indigo-500 rounded-l-xl" />
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="space-y-1">
               <h2 className="text-base sm:text-lg md:text-2xl font-bold text-gray-900 dark:text-white">Welcome back, <span className="text-purple-600 dark:text-purple-400">{account?.name || 'User'}</span></h2>
               <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-2xl">A quick and efficient way to request assistance. Get the help you need, when you need it.</p>
             </div>
-            <button
-              onClick={() => router.push('/ticket?create=true')}
-              className="self-start sm:self-center inline-flex items-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
-            >
-              Submit Ticket
-              <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
+            <div className="self-start sm:self-center flex items-center gap-2">
+              <div className="hidden md:block relative z-50">
+                <Notification isDesktopFloating />
+              </div>
+              <button
+                onClick={() => router.push('/ticket?create=true')}
+                className="inline-flex items-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
+              >
+                Submit Ticket
+                <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
           </div>
         </div>
 

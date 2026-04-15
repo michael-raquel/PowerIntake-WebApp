@@ -57,7 +57,7 @@ const useSyncUsers = () => {
       const json = await res.json();
       setResult(json);
     } catch (err) {
-      console.error("[useSyncUsers] Error:", err);
+      // console.error("[useSyncUsers] Error:", err);
 
       if (err instanceof TypeError) {
         setError("Network error. Check API base URL, CORS, and server availability.");

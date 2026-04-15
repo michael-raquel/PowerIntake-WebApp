@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bell, MoreVertical, RefreshCw } from "lucide-react";
+import { BellDot, MoreVertical } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -7,12 +7,43 @@ import { useAuth } from "@/context/AuthContext";
 import { useFetchNotification } from "@/hooks/UseFetchNotification";
 import { useUpdateNotificationIsRead } from "@/hooks/UseUpdateNotificationIsRead";
 import { useDeleteNotification } from "@/hooks/UseDeleteNotification";
+import socket from "@/lib/socket";
 
 const formatTime = (ts) => {
     if (!ts) return "Just now";
     const d = new Date(ts);
     if (Number.isNaN(d.getTime())) return "Just now";
     try { return formatDistanceToNow(d, { addSuffix: true }); } catch { return d.toLocaleString(); }
+};
+
+const NOTE_NOTIFICATION_PATTERN = /\bnote(s)?\b|\bcomment(s)?\b/;
+const ATTACHMENT_NOTIFICATION_PATTERN = /\battachment(s)?\b|\bfile\s*(upload|uploaded|delete|deleted|remove|removed)\b|\bimage(s)?\b/;
+
+const getNotificationDetailTab = (notification) => {
+    const descriptor = [
+        notification?.v_message,
+        notification?.v_type,
+        notification?.v_notificationtype,
+        notification?.v_entity,
+        notification?.v_entitytype,
+        notification?.v_action,
+        notification?.v_event,
+        notification?.v_eventtype,
+        notification?.type,
+        notification?.entity,
+        notification?.entityType,
+        notification?.action,
+        notification?.event,
+        notification?.eventType,
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+    if (!descriptor) return null;
+    if (ATTACHMENT_NOTIFICATION_PATTERN.test(descriptor)) return "attachments";
+    if (NOTE_NOTIFICATION_PATTERN.test(descriptor)) return "notes";
+    return null;
 };
 
 const MenuButton = ({ onClick, disabled, className, children }) => (
@@ -24,7 +55,7 @@ const MenuButton = ({ onClick, disabled, className, children }) => (
     </button>
 );
 
-export default function Notification({ isMobile = false, isCollapsed = false }) {
+export default function Notification({ isMobile = false, isCollapsed = false, isDesktopFloating = false }) {
     const router = useRouter();
     const { tokenInfo, userInfo } = useAuth();
 
@@ -75,6 +106,7 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
                 ticketUuid:   n.v_ticketuuid   ? String(n.v_ticketuuid)   : null,
                 ticketNumber: n.v_ticketnumber ? String(n.v_ticketnumber) : null,
                 message:      n.v_message   ?? "Notification",
+                detailTab:    getNotificationDetailTab(n),
                 createdAt:    n.v_createdat ?? null,
                 isRead:       Boolean(n.v_isread),
             }))
@@ -170,20 +202,40 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
         const params = new URLSearchParams();
         if (n.ticketUuid)   params.set("uuid",   n.ticketUuid);
         if (n.ticketNumber) params.set("search", n.ticketNumber);
+        if (n.detailTab)    params.set("detailTab", n.detailTab);
 
         closeMenus();
         router.push(`/ticket?${params.toString()}`);
     }, [closeMenus, modifiedby, patchLocal, router, updateNotificationIsRead, useruuid]);
 
-    const panelClass = isMobile
-        ? "fixed inset-x-3 top-16 bottom-20 z-50 rounded-2xl"
-        : isCollapsed
-            ? "absolute left-full bottom-0 ml-3 w-80 h-[28rem] z-50 rounded-2xl"
-            : "absolute bottom-full left-0 mb-2 w-[22rem] h-[28rem] z-50 rounded-2xl";
+    // Panel is fixed, full-height (100vh), positioned to the LEFT of the trigger button.
+    // `right-[3.5rem]` offsets it just past the button width so it opens beside it.
 
-    const triggerClass = isMobile
-        ? "relative flex items-center justify-center rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
-        : `w-full flex items-center rounded-lg px-3 py-2.5 transition-colors text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04] ${isCollapsed ? "justify-center" : "gap-3"}`;
+const panelClass = isMobile
+    ? "fixed inset-x-3 top-16 bottom-20 z-50 rounded-2xl"
+    : isDesktopFloating
+        ? "absolute right-full mr-2 top-0 w-[22rem] max-w-[calc(100vw-1rem)] h-screen z-[70]"
+        : "fixed top-0 right-[3.5rem] w-[22rem] h-screen z-[70]";
+
+    const triggerClass = isDesktopFloating
+        ? `group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.03] hover:border-purple-600 hover:bg-purple-600 hover:text-white hover:shadow-md active:scale-[0.98] dark:border-white/[0.12] dark:bg-[#1c1d1f] dark:text-gray-300 dark:hover:border-purple-500 dark:hover:bg-purple-500 dark:hover:text-white ${isOpen ? "!border-purple-600 !bg-purple-600 !text-white !shadow-md dark:!border-purple-500 dark:!bg-purple-500" : ""}`
+        : isMobile
+            ? "relative flex items-center justify-center rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
+            : `w-full flex items-center rounded-lg px-3 py-2.5 transition-colors text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04] ${isCollapsed ? "justify-center" : "gap-3"}`;
+
+    useEffect(() => {
+        if (!tokenInfo?.account?.localAccountId) return;
+
+        const onNotificationsUpdated = () => {
+            refetch();
+        };
+
+        socket.on("notifications:updated", onNotificationsUpdated);
+
+        return () => {
+            socket.off("notifications:updated", onNotificationsUpdated);
+        };
+    }, [tokenInfo?.account?.localAccountId, refetch]);
 
     return (
         <div ref={containerRef} className="relative">
@@ -191,17 +243,24 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
             <button type="button"
                 onClick={() => { setIsOpen((p) => !p); setOpenBulkMenu(false); setOpenCardMenuId(null); }}
                 className={triggerClass}
-                title={isCollapsed && !isMobile ? "Notifications" : undefined}
+                title={!isDesktopFloating && isCollapsed && !isMobile ? "Notifications" : undefined}
                 aria-label="Notifications">
+                {isDesktopFloating && (
+                    <span
+                        className={`pointer-events-none absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 shadow-sm transition-all duration-200 dark:border-white/[0.12] dark:bg-[#1c1d1f] dark:text-gray-200 ${isOpen ? "opacity-0 -translate-x-1" : "opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0"}`}
+                    >
+                        Notifications
+                    </span>
+                )}
                 <div className="relative">
-                    <Bell className="h-5 w-5" />
+                    <BellDot className="h-6 w-6" strokeWidth={2.4} />
                     {unreadCount > 0 && (
                         <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-4 text-white">
                             {unreadCount > 99 ? "99+" : unreadCount}
                         </span>
                     )}
                 </div>
-                {!isMobile && !isCollapsed && (
+                {!isMobile && !isCollapsed && !isDesktopFloating && (
                     <div className="min-w-0 flex-1 text-left">
                         <p className="truncate text-sm font-medium text-gray-900 dark:text-white">Notifications</p>
                         <p className="truncate text-xs text-gray-400 dark:text-gray-500">{unreadCount} unread</p>
@@ -222,16 +281,18 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
                             <p className="text-xs text-gray-400 dark:text-gray-500">{unreadCount} unread</p>
                         </div>
                         <div className="flex items-center gap-1">
-                            <button type="button" onClick={() => refetch()} disabled={loading} aria-label="Refresh notifications"
-                                className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200">
-                                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                            </button>
-
                             {/* Bulk menu */}
                             <div className="relative">
-                                <button type="button" aria-label="Bulk actions"
-                                    onClick={() => { setOpenBulkMenu((p) => !p); setOpenCardMenuId(null); }}
-                                    className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200">
+                                <button
+                                    type="button"
+                                    aria-label="Bulk actions"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenBulkMenu((p) => !p);
+                                        setOpenCardMenuId(null);
+                                    }}
+                                    className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200"
+                                >
                                     <MoreVertical className="h-4 w-4" />
                                 </button>
                                 {openBulkMenu && (

@@ -50,7 +50,7 @@ export default function useGetAttachments() {
       setAttachments(data);
       return data;
     } catch (err) {
-      console.error('Get attachments error:', err);
+      // console.error('Get attachments error:', err);
       setError(err.message);
       throw err;
     } finally {

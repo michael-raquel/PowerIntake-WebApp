@@ -31,15 +31,10 @@ export default function MsConsentCallback() {
   const { instance, inProgress } = useMsal();
   const [status, setStatus] = useState("Processing consent...");
   const [error, setError] = useState(null);
-  const [logs, setLogs] = useState([]);
   const hasRun = useRef(false);
 
   const addLog = useCallback((msg) => {
     console.log(`[MS-CONSENT-CALLBACK] ${msg}`);
-    setLogs((prev) => [
-      ...prev,
-      { time: new Date().toLocaleTimeString(), msg },
-    ]);
   }, []);
 
   useEffect(() => {
@@ -123,7 +118,7 @@ export default function MsConsentCallback() {
               addLog(
                 `homeAccountId match: ${account ? account.username : "NOT FOUND"}`,
               );
-              
+
               if (!account) {
                 addLog(
                   `Attempting ssoSilent — loginHint=${parsed.loginHint ?? "none"} | tenantId=${parsed.tenantId ?? "none"}`,
@@ -305,7 +300,7 @@ export default function MsConsentCallback() {
     };
 
     run();
-  }, [router.isReady, router.query, inProgress, addLog]);
+  }, [router.isReady, router.query, inProgress, addLog, instance, router]);
 
   return (
     <>
@@ -358,20 +353,6 @@ export default function MsConsentCallback() {
               <div className="h-10 w-10 rounded-full border-2 border-white/10 border-t-violet-500 animate-spin" />
               <p className="text-sm text-zinc-400">{status}</p>
             </>
-          )}
-
-          {logs.length > 0 && (
-            <div className="w-full mt-2 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 space-y-1 max-h-48 overflow-y-auto">
-              {logs.map((log, i) => (
-                <div
-                  key={i}
-                  className="flex gap-2 text-[10px] font-mono leading-relaxed"
-                >
-                  <span className="text-zinc-600 shrink-0">{log.time}</span>
-                  <span className="text-zinc-400">{log.msg}</span>
-                </div>
-              ))}
-            </div>
           )}
         </div>
 

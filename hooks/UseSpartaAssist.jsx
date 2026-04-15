@@ -249,7 +249,7 @@ export function useSpartaAssistOnce() {
       }
 
     } catch (err) {
-      console.error("[SpartaAssist] Full error:", err);
+      // console.error("[SpartaAssist] Full error:", err);
       setError(err.message || "Could not connect to Sparta Assist.");
     } finally {
       setIsStreaming(false);

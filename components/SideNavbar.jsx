@@ -146,7 +146,7 @@ export default function SideNavbar() {
               </span>
             </button>
 
-            {/* <Notification isMobile /> */}
+            <Notification isMobile />
 
             <div className="relative">
               <button
