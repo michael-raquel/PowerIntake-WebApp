@@ -1,3 +1,24 @@
+## [1.8.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0...v1.8.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* 2249-User login session:  TONIGHT Wait for MSAL interactions before auth flows ([385ef08](https://github.com/michael-raquel/PowerIntake-WebApp/commit/385ef089b8233321256561fd728adb21dc41459a))
+* 2249-User login session: Navigate to home instead of sign-in ([3efea58](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3efea58f29f1cc2aeab15e94084e1a5abb87bb9b))
+* remove lint no ticket number ([86e24c1](https://github.com/michael-raquel/PowerIntake-WebApp/commit/86e24c18c0f26ec6c87e00c2269dc5c26ed946e1))
+* ST-2244 actions from note dynamics should reflect on powerintake realtime ([9d4a1c4](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9d4a1c468dd50f84d2f6d639a604c2387db31770))
+* st-2244-notification ([375cb54](https://github.com/michael-raquel/PowerIntake-WebApp/commit/375cb5442272063995af1b952cc0d78c4cfdeb83))
+* st-2244-notification ([10c39e8](https://github.com/michael-raquel/PowerIntake-WebApp/commit/10c39e89c31d01730ba2e6ab7da7a7a9aa49925c))
+* st-2244-notification ([4e3f4e2](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4e3f4e2cb75784f220fef887fe508cf4673b1244))
+* st-2244-notification ([4ae6458](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4ae6458493c93df4322be177a040142306d6444a))
+* st-2244-notification ([042547b](https://github.com/michael-raquel/PowerIntake-WebApp/commit/042547be39d11ad39a3ce51d91fc63f7885810c8))
+* st-2244-notification ([a110baf](https://github.com/michael-raquel/PowerIntake-WebApp/commit/a110baf00ad012b7b09ab02b4812eb449aa37600))
+* st-2244-notification-issue ([d51b479](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d51b4791ad7adf2550e5eccae7d34399e3d47fc5))
+* st-2252-Duplicate of "No Tickets Found" on Mobile ([e160061](https://github.com/michael-raquel/PowerIntake-WebApp/commit/e160061961df585f981eb199329453523544a667))
+* ST-2262-Hide console logs debugging for all hooks ([2767f0f](https://github.com/michael-raquel/PowerIntake-WebApp/commit/2767f0fecbc1b3e9a71e2d6ae7a5250563e4867f))
+* st-2264-Notification-navigation ([d8f1423](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d8f1423e380515f677d37c6df3f01d4df5c7b4a5))
+* ST-toast remove ([d50484d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d50484d11163e56746205fc05525aff946350b82))
+
 # [1.8.0-dev.20](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.19...v1.8.0-dev.20) (2026-04-15)
 
 
