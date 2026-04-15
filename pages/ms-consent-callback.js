@@ -300,7 +300,7 @@ export default function MsConsentCallback() {
     };
 
     run();
-  }, [router.isReady, router.query, inProgress, addLog]);
+  }, [router.isReady, router.query, inProgress, addLog, instance, router]);
 
   return (
     <>

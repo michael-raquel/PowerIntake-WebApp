@@ -1,5 +1,5 @@
 import "@/styles/globals.css";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { PublicClientApplication, EventType } from "@azure/msal-browser";
 import { MsalProvider } from "@azure/msal-react";
 import { msalConfig } from "@/lib/msalConfig";
@@ -63,13 +63,8 @@ const routeRoleMap = {
 function AppContent({ Component, pageProps }) {
   const router = useRouter();
   const { spartaAssistEnabled } = useSpartaAssist();
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
-
-  const isPublicPage = mounted
-    ? noSidebarPages.includes(router.pathname)
-    : true;
+  const isPublicPage = noSidebarPages.includes(router.pathname);
   const showSidebar = !isPublicPage;
   const requiredRoles = routeRoleMap[router.pathname] ?? [];
 
