@@ -78,7 +78,17 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
     const [openCardMenuId, setOpenCardMenuId] = useState(null);
     const [isBulkLoading,  setIsBulkLoading]  = useState(false); 
     const [loadingItemId,  setLoadingItemId]  = useState(null);  
+    const [desktopPanelRight, setDesktopPanelRight] = useState(56);
     const containerRef = useRef(null);
+
+    const updateDesktopPanelRight = useCallback(() => {
+        if (!isDesktopFloating || !containerRef.current) return;
+        const triggerRect = containerRef.current.getBoundingClientRect();
+        const triggerGap = 8;
+        const fallbackRight = 56;
+        const nextRight = Math.max(triggerGap, Math.round(window.innerWidth - triggerRect.left + triggerGap));
+        setDesktopPanelRight(Number.isFinite(nextRight) ? nextRight : fallbackRight);
+    }, [isDesktopFloating]);
 
     const closeMenus = useCallback(() => {
         setIsOpen(false);
@@ -96,6 +106,17 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
             document.removeEventListener("keydown",   onEscape);
         };
     }, [closeMenus]);
+
+    useEffect(() => {
+        if (!isDesktopFloating || !isOpen) return;
+
+        updateDesktopPanelRight();
+        window.addEventListener("resize", updateDesktopPanelRight);
+
+        return () => {
+            window.removeEventListener("resize", updateDesktopPanelRight);
+        };
+    }, [isDesktopFloating, isOpen, updateDesktopPanelRight]);
 
     //useEffect(() => { if (isOpen && useruuid) refetch(); }, [isOpen, refetch, useruuid]);
 
@@ -214,8 +235,13 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
 const panelClass = isMobile
     ? "fixed inset-x-3 top-16 bottom-20 z-50 rounded-2xl"
     : isDesktopFloating
-        ? "absolute right-full mr-2 top-0 w-[22rem] max-w-[calc(100vw-1rem)] h-screen z-[70]"
+        ? "fixed top-0 bottom-0 w-[22rem] max-w-[calc(100vw-1rem)] z-[70]"
         : "fixed top-0 right-[3.5rem] w-[22rem] h-screen z-[70]";
+
+    const panelStyle = {
+        boxShadow: "0 14px 40px rgba(0,0,0,0.18)",
+        ...(isDesktopFloating ? { right: `${desktopPanelRight}px` } : {}),
+    };
 
     const triggerClass = isDesktopFloating
         ? `group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.03] hover:border-purple-600 hover:bg-purple-600 hover:text-white hover:shadow-md active:scale-[0.98] dark:border-white/[0.12] dark:bg-[#1c1d1f] dark:text-gray-300 dark:hover:border-purple-500 dark:hover:bg-purple-500 dark:hover:text-white ${isOpen ? "!border-purple-600 !bg-purple-600 !text-white !shadow-md dark:!border-purple-500 dark:!bg-purple-500" : ""}`
@@ -241,7 +267,12 @@ const panelClass = isMobile
         <div ref={containerRef} className="relative">
             {/* Trigger */}
             <button type="button"
-                onClick={() => { setIsOpen((p) => !p); setOpenBulkMenu(false); setOpenCardMenuId(null); }}
+                onClick={() => {
+                    if (isDesktopFloating) updateDesktopPanelRight();
+                    setIsOpen((p) => !p);
+                    setOpenBulkMenu(false);
+                    setOpenCardMenuId(null);
+                }}
                 className={triggerClass}
                 title={!isDesktopFloating && isCollapsed && !isMobile ? "Notifications" : undefined}
                 aria-label="Notifications">
@@ -271,7 +302,7 @@ const panelClass = isMobile
             {/* Panel — clicking anywhere inside closes any open submenu */}
             {isOpen && (
                 <div className={`flex flex-col overflow-hidden border border-gray-100 bg-white shadow-2xl dark:border-white/[0.08] dark:bg-[#242526] ${panelClass}`}
-                    style={{ boxShadow: "0 14px 40px rgba(0,0,0,0.18)" }}
+                    style={panelStyle}
                     onClick={() => { setOpenCardMenuId(null); setOpenBulkMenu(false); }}>
 
                     {/* Header */}
