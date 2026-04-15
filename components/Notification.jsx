@@ -16,6 +16,36 @@ const formatTime = (ts) => {
     try { return formatDistanceToNow(d, { addSuffix: true }); } catch { return d.toLocaleString(); }
 };
 
+const NOTE_NOTIFICATION_PATTERN = /\bnote(s)?\b|\bcomment(s)?\b/;
+const ATTACHMENT_NOTIFICATION_PATTERN = /\battachment(s)?\b|\bfile\s*(upload|uploaded|delete|deleted|remove|removed)\b|\bimage(s)?\b/;
+
+const getNotificationDetailTab = (notification) => {
+    const descriptor = [
+        notification?.v_message,
+        notification?.v_type,
+        notification?.v_notificationtype,
+        notification?.v_entity,
+        notification?.v_entitytype,
+        notification?.v_action,
+        notification?.v_event,
+        notification?.v_eventtype,
+        notification?.type,
+        notification?.entity,
+        notification?.entityType,
+        notification?.action,
+        notification?.event,
+        notification?.eventType,
+    ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+    if (!descriptor) return null;
+    if (ATTACHMENT_NOTIFICATION_PATTERN.test(descriptor)) return "attachments";
+    if (NOTE_NOTIFICATION_PATTERN.test(descriptor)) return "notes";
+    return null;
+};
+
 const MenuButton = ({ onClick, disabled, className, children }) => (
     <button type="button"
         onClick={(e) => { e.stopPropagation(); onClick?.(e); }}
@@ -76,6 +106,7 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
                 ticketUuid:   n.v_ticketuuid   ? String(n.v_ticketuuid)   : null,
                 ticketNumber: n.v_ticketnumber ? String(n.v_ticketnumber) : null,
                 message:      n.v_message   ?? "Notification",
+                detailTab:    getNotificationDetailTab(n),
                 createdAt:    n.v_createdat ?? null,
                 isRead:       Boolean(n.v_isread),
             }))
@@ -171,6 +202,7 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
         const params = new URLSearchParams();
         if (n.ticketUuid)   params.set("uuid",   n.ticketUuid);
         if (n.ticketNumber) params.set("search", n.ticketNumber);
+        if (n.detailTab)    params.set("detailTab", n.detailTab);
 
         closeMenus();
         router.push(`/ticket?${params.toString()}`);

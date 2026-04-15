@@ -36,6 +36,7 @@ const FOOTER_LINKS = [
 ];
 
 const VALID_TABS = new Set(['my-client', 'my-company', 'my-team', 'my-ticket']);
+const VALID_DETAIL_TABS = new Set(['notes', 'attachments']);
 const TEXT_INPUT_FILTERS = new Set(['Client', 'Manager']);
 
 export default function TicketPage() {
@@ -51,6 +52,7 @@ export default function TicketPage() {
 
   const initialUuid = searchParams.get('uuid') || null;
   const initialTab = searchParams.get('tab') || null;
+  const initialDetailTab = searchParams.get('detailTab') || null;
   const initialSearch = searchParams.get('search') || '';
 
   const [isMobile, setIsMobile] = useState(false);
@@ -69,7 +71,13 @@ export default function TicketPage() {
   const [userRowsPerPage, setUserRowsPerPage] = useState(null);
 
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [selectedTicketTab, setSelectedTicketTab] = useState(
+    initialDetailTab && VALID_DETAIL_TABS.has(initialDetailTab) ? initialDetailTab : null
+  );
   const pendingUuid = useRef(initialUuid);
+  const pendingDetailTab = useRef(
+    initialDetailTab && VALID_DETAIL_TABS.has(initialDetailTab) ? initialDetailTab : null
+  );
   const tableContainerRef = useRef(null);
 
   const { userSettings } = useFetchUserSettings({ entrauserid: userId });
@@ -179,15 +187,18 @@ export default function TicketPage() {
   }, []);
 
   const handleTicketSelect = useCallback((ticket) => {
+    setSelectedTicketTab(null);
     setSelectedTicket(ticket);
   }, []);
 
   const handleDialogClose = useCallback(() => {
+    setSelectedTicketTab(null);
     setSelectedTicket(null);
   }, []);
 
   const handleTicketUpdated = useCallback(() => {
     setRefreshKey(k => k + 1);
+    setSelectedTicketTab(null);
     setSelectedTicket(null);
   }, []);
 
@@ -248,13 +259,27 @@ export default function TicketPage() {
   }, [initialHideCompleted]);
 
   useEffect(() => {
+    const uuidParam = searchParams.get('uuid');
+    const detailTabParam = searchParams.get('detailTab');
+
+    if (!uuidParam) return;
+
+    pendingUuid.current = uuidParam;
+    pendingDetailTab.current = detailTabParam && VALID_DETAIL_TABS.has(detailTabParam)
+      ? detailTabParam
+      : null;
+  }, [searchParams]);
+
+  useEffect(() => {
     if (!pendingUuid.current || isLoading || !tickets.length) return;
     const match = tickets.find(t => t.v_ticketuuid === pendingUuid.current);
     if (match) {
+      setSelectedTicketTab(pendingDetailTab.current);
       setSelectedTicket(match);
       pendingUuid.current = null;
+      pendingDetailTab.current = null;
     }
-  }, [tickets, isLoading]);
+  }, [tickets, isLoading, searchParams]);
 
   useEffect(() => {
     const param = searchParams.get('search');
@@ -264,7 +289,7 @@ export default function TicketPage() {
   }, [searchParams, searchValue]);
 
   useEffect(() => {
-    const hasParams = searchParams.get('create') || searchParams.get('uuid') || searchParams.get('tab') || searchParams.get('search');
+    const hasParams = searchParams.get('create') || searchParams.get('uuid') || searchParams.get('tab') || searchParams.get('search') || searchParams.get('detailTab');
     if (hasParams) router.replace('/ticket', undefined, { shallow: true });
   }, [router, searchParams]);
 
@@ -526,6 +551,7 @@ export default function TicketPage() {
         {selectedTicket && (
           <ComUpdateForm
             ticket={selectedTicket}
+            initialActiveTab={selectedTicketTab}
             onClose={handleDialogClose}
             onUpdated={handleTicketUpdated}
           />
@@ -565,6 +591,7 @@ export default function TicketPage() {
       {selectedTicket && (
         <ComUpdateForm
           ticket={selectedTicket}
+          initialActiveTab={selectedTicketTab}
           onClose={handleDialogClose}
           onUpdated={handleTicketUpdated}
         />

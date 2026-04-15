@@ -98,7 +98,7 @@ const stripScheduleFromDescription = (description) => {
   return index !== -1 ? description.slice(0, index) : description;
 };
 
-export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
+export default function ComUpdateForm({ ticket, onClose, onUpdated, initialActiveTab = null }) {
   const { account } = useAuth();
   const { updateTicket, loading: updateLoading } = useUpdateTicket({ account });
   const { reactivateTicket, loading: reactivateLoading } = useReactivateTicket();
@@ -129,6 +129,12 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated }) {
       toTime: call.v_endtime?.slice(0, 5) || '17:00',
     }));
   });
+
+  useEffect(() => {
+    if (!initialActiveTab || !TABS.some((tab) => tab.id === initialActiveTab)) return;
+    setActiveTab(initialActiveTab);
+    setPanelOpen(true);
+  }, [initialActiveTab, ticket?.v_ticketuuid]);
 
   const original = useMemo(() => {
     if (!ticket) return null;
