@@ -1,3 +1,10 @@
+## [1.8.2-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.2-dev.1...v1.8.2-dev.2) (2026-04-15)
+
+
+### Bug Fixes
+
+* toast remove no ticket ([fbf8abf](https://github.com/michael-raquel/PowerIntake-WebApp/commit/fbf8abf33be399eb960330c898fbd1543585d44d))
+
 ## [1.8.2-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.1...v1.8.2-dev.1) (2026-04-15)
 
 
