@@ -1,3 +1,10 @@
+# [1.8.0-dev.20](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.19...v1.8.0-dev.20) (2026-04-15)
+
+
+### Bug Fixes
+
+* remove lint no ticket number ([86e24c1](https://github.com/michael-raquel/PowerIntake-WebApp/commit/86e24c18c0f26ec6c87e00c2269dc5c26ed946e1))
+
 # [1.8.0-dev.19](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.18...v1.8.0-dev.19) (2026-04-15)
 
 
