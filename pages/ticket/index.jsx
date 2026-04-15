@@ -79,6 +79,7 @@ export default function TicketPage() {
   const pendingDetailTab = useRef(
     initialDetailTab && VALID_DETAIL_TABS.has(initialDetailTab) ? initialDetailTab : null
   );
+  const pendingRefreshForUuid = useRef(null);
   const tableContainerRef = useRef(null);
 
   const { userSettings } = useFetchUserSettings({ entrauserid: userId });
@@ -136,7 +137,7 @@ export default function TicketPage() {
     return { enabled: true, scope: 'my-ticket', entrauserid: userId };
   }, [userId, safeTab, tokenInfo?.account?.tenantId]);
 
-  const { tickets = [], isLoading } = useFetchTicket({ ...ticketQuery, refreshKey });
+  const { tickets = [], loading: isLoading } = useFetchTicket({ ...ticketQuery, refreshKey });
 
   const handleTabChange = useCallback((id) => {
     setActiveTab(id);
@@ -263,12 +264,20 @@ export default function TicketPage() {
     const uuidParam = searchParams.get('uuid');
     const detailTabParam = searchParams.get('detailTab');
 
-    if (!uuidParam) return;
+    if (!uuidParam) {
+      pendingRefreshForUuid.current = null;
+      return;
+    }
 
     pendingUuid.current = uuidParam;
     pendingDetailTab.current = detailTabParam && VALID_DETAIL_TABS.has(detailTabParam)
       ? detailTabParam
       : null;
+
+    if (pendingRefreshForUuid.current !== uuidParam) {
+      pendingRefreshForUuid.current = uuidParam;
+      setRefreshKey((k) => k + 1);
+    }
   }, [searchParams]);
 
   useEffect(() => {
@@ -280,7 +289,7 @@ export default function TicketPage() {
       pendingUuid.current = null;
       pendingDetailTab.current = null;
     }
-  }, [tickets, isLoading, searchParams]);
+  }, [tickets, isLoading]);
 
   useEffect(() => {
     const param = searchParams.get('search');
