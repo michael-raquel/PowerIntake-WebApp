@@ -55,7 +55,7 @@ const MenuButton = ({ onClick, disabled, className, children }) => (
     </button>
 );
 
-export default function Notification({ isMobile = false, isCollapsed = false }) {
+export default function Notification({ isMobile = false, isCollapsed = false, isDesktopFloating = false }) {
     const router = useRouter();
     const { tokenInfo, userInfo } = useAuth();
 
@@ -208,15 +208,19 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
         router.push(`/ticket?${params.toString()}`);
     }, [closeMenus, modifiedby, patchLocal, router, updateNotificationIsRead, useruuid]);
 
-    const panelClass = isMobile
-        ? "fixed inset-x-3 top-16 bottom-20 z-50 rounded-2xl"
-        : isCollapsed
-            ? "absolute left-full bottom-0 ml-3 w-80 h-[28rem] z-50 rounded-2xl"
-            : "absolute bottom-full left-0 mb-2 w-[22rem] h-[28rem] z-50 rounded-2xl";
+    const panelClass = isDesktopFloating
+        ? "absolute right-0 top-12 w-[22rem] h-[28rem] z-[70] rounded-sm"
+        : isMobile
+            ? "fixed inset-x-3 top-16 bottom-20 z-50 rounded-2xl"
+            : isCollapsed
+                ? "absolute left-full bottom-0 ml-3 w-80 h-[28rem] z-50 rounded-2xl"
+                : "absolute bottom-full left-0 mb-2 w-[22rem] h-[28rem] z-50 rounded-2xl";
 
-    const triggerClass = isMobile
-        ? "relative flex items-center justify-center rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
-        : `w-full flex items-center rounded-lg px-3 py-2.5 transition-colors text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04] ${isCollapsed ? "justify-center" : "gap-3"}`;
+    const triggerClass = isDesktopFloating
+        ? "relative flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-gray-600 shadow-md transition-all hover:bg-gray-50 hover:text-gray-800 hover:shadow-lg dark:border-white/[0.12] dark:bg-[#1c1d1f] dark:text-gray-300 dark:hover:bg-[#242526] dark:hover:text-white"
+        : isMobile
+            ? "relative flex items-center justify-center rounded-lg p-1.5 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.06] dark:hover:text-white"
+            : `w-full flex items-center rounded-lg px-3 py-2.5 transition-colors text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-white/[0.04] ${isCollapsed ? "justify-center" : "gap-3"}`;
 
     useEffect(() => {
         if (!tokenInfo?.account?.localAccountId) return;
@@ -238,7 +242,7 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
             <button type="button"
                 onClick={() => { setIsOpen((p) => !p); setOpenBulkMenu(false); setOpenCardMenuId(null); }}
                 className={triggerClass}
-                title={isCollapsed && !isMobile ? "Notifications" : undefined}
+                title={isDesktopFloating || (isCollapsed && !isMobile) ? "Notifications" : undefined}
                 aria-label="Notifications">
                 <div className="relative">
                     <Bell className="h-5 w-5" />
@@ -248,7 +252,13 @@ export default function Notification({ isMobile = false, isCollapsed = false }) 
                         </span>
                     )}
                 </div>
-                {!isMobile && !isCollapsed && (
+                {isDesktopFloating && (
+                    <div className="min-w-0 text-left leading-tight">
+                        <p className="truncate text-xs font-semibold text-gray-900 dark:text-white">Notifications</p>
+                        <p className="truncate text-[10px] text-gray-500 dark:text-gray-400">{unreadCount} unread</p>
+                    </div>
+                )}
+                {!isMobile && !isCollapsed && !isDesktopFloating && (
                     <div className="min-w-0 flex-1 text-left">
                         <p className="truncate text-sm font-medium text-gray-900 dark:text-white">Notifications</p>
                         <p className="truncate text-xs text-gray-400 dark:text-gray-500">{unreadCount} unread</p>
