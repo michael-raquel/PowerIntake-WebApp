@@ -265,7 +265,7 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
                     </div>
                 )}
             </button>
-
+//fix
             {/* Panel — clicking anywhere inside closes any open submenu */}
             {isOpen && (
                 <div className={`flex flex-col overflow-hidden border border-gray-100 bg-white shadow-2xl dark:border-white/[0.08] dark:bg-[#242526] ${panelClass}`}
