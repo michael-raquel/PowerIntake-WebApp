@@ -1,3 +1,10 @@
+# [1.8.0-dev.13](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.12...v1.8.0-dev.13) (2026-04-15)
+
+
+### Bug Fixes
+
+* st-2264-Notification-navigation ([d8f1423](https://github.com/michael-raquel/PowerIntake-WebApp/commit/d8f1423e380515f677d37c6df3f01d4df5c7b4a5))
+
 # [1.8.0-dev.12](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.0-dev.11...v1.8.0-dev.12) (2026-04-14)
 
 
