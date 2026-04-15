@@ -208,13 +208,14 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
         router.push(`/ticket?${params.toString()}`);
     }, [closeMenus, modifiedby, patchLocal, router, updateNotificationIsRead, useruuid]);
 
-    const panelClass = isDesktopFloating
-        ? "absolute right-0 top-12 w-[22rem] h-[28rem] z-[70] rounded-sm"
-        : isMobile
-            ? "fixed inset-x-3 top-16 bottom-20 z-50 rounded-2xl"
-            : isCollapsed
-                ? "absolute left-full bottom-0 ml-3 w-80 h-[28rem] z-50 rounded-2xl"
-                : "absolute bottom-full left-0 mb-2 w-[22rem] h-[28rem] z-50 rounded-2xl";
+    // Panel is fixed, full-height (100vh), positioned to the LEFT of the trigger button.
+    // `right-[3.5rem]` offsets it just past the button width so it opens beside it.
+
+const panelClass = isMobile
+    ? "fixed inset-x-3 top-16 bottom-20 z-50 rounded-2xl"
+    : isDesktopFloating
+        ? "absolute right-full mr-2 top-0 w-[22rem] max-w-[calc(100vw-1rem)] h-screen z-[70]"
+        : "fixed top-0 right-[3.5rem] w-[22rem] h-screen z-[70]";
 
     const triggerClass = isDesktopFloating
         ? `group relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 shadow-sm transition-all duration-200 ease-out hover:-translate-y-0.5 hover:scale-[1.03] hover:border-purple-600 hover:bg-purple-600 hover:text-white hover:shadow-md active:scale-[0.98] dark:border-white/[0.12] dark:bg-[#1c1d1f] dark:text-gray-300 dark:hover:border-purple-500 dark:hover:bg-purple-500 dark:hover:text-white ${isOpen ? "!border-purple-600 !bg-purple-600 !text-white !shadow-md dark:!border-purple-500 dark:!bg-purple-500" : ""}`
@@ -266,6 +267,7 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
                     </div>
                 )}
             </button>
+
             {/* Panel — clicking anywhere inside closes any open submenu */}
             {isOpen && (
                 <div className={`flex flex-col overflow-hidden border border-gray-100 bg-white shadow-2xl dark:border-white/[0.08] dark:bg-[#242526] ${panelClass}`}
@@ -279,11 +281,6 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
                             <p className="text-xs text-gray-400 dark:text-gray-500">{unreadCount} unread</p>
                         </div>
                         <div className="flex items-center gap-1">
-                            {/* <button type="button" onClick={() => refetch()} disabled={loading} aria-label="Refresh notifications"
-                                className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-white/[0.08] dark:hover:text-gray-200">
-                                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-                            </button> */}
-
                             {/* Bulk menu */}
                             <div className="relative">
                                 <button

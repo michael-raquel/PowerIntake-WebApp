@@ -79,12 +79,16 @@ export default function ComTimelineView({ ticket }) {
     );
   }
 
+  const orderedTimeline = [...timeline].sort(
+    (a, b) => new Date(b.v_createdat) - new Date(a.v_createdat)
+  );
+
   return (
     <div className="relative pl-2">
-      {timeline.map((s, idx) => {
+      {orderedTimeline.map((s, idx) => {
         const style   = STATUS_STYLES[s.v_status] || defaultStyle;
         const Icon    = style.icon;
-        const isLast  = idx === timeline.length - 1;
+        const isLast  = idx === orderedTimeline.length - 1;
         const isNew = s.v_status === 'New';
         const isReactivated = s.v_status === 'Reactivated';
 

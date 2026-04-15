@@ -18,6 +18,8 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true, refreshKe
 
   const messagesEndRef = useRef(null);
   const textareaRef    = useRef(null);
+  const containerRef = useRef(null);  
+  const shouldAutoScrollRef = useRef(true);
 
   const [newNote, setNewNote]         = useState('');
   const [isComposing, setIsComposing] = useState(false);
@@ -32,8 +34,23 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true, refreshKe
   );
 
   useEffect(() => {
+  const container = containerRef.current;
+  if (!container) return;
+
+  const handleScroll = () => {
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    shouldAutoScrollRef.current = distanceFromBottom < 96;
+  };
+
+  container.addEventListener('scroll', handleScroll);
+  return () => container.removeEventListener('scroll', handleScroll);
+}, []);
+
+useEffect(() => {
+  if (shouldAutoScrollRef.current) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [allNotes]);
+  }
+}, [allNotes]);
 
   const handleSubmit = async () => {
     if (!newNote.trim() || !id || isSubmitting) return;
@@ -150,7 +167,7 @@ export default function ComNotes({ ticket, ticketUuid, canEdit = true, refreshKe
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-900 rounded-lg overflow-hidden">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {error && (
           <div className="text-sm text-red-400 dark:text-red-500 text-center py-2">
             Failed to load messages
