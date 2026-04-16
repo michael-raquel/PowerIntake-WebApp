@@ -1,3 +1,10 @@
+## [1.8.4-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.7...v1.8.4-dev.8) (2026-04-16)
+
+
+### Bug Fixes
+
+* ST-2267-Updated the condition of submit button disable of PowerSuiteAI ([4792be1](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4792be12ed818584c65e95429ba0ab78213e722b))
+
 ## [1.8.4-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.6...v1.8.4-dev.7) (2026-04-16)
 
 
