@@ -1,3 +1,10 @@
+## [1.8.4-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.3...v1.8.4-dev.4) (2026-04-16)
+
+
+### Bug Fixes
+
+* notification PWA on app icon ([6803f90](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6803f908f3cfcd19dd55b9f63b70e7309c26ab7b))
+
 ## [1.8.4-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.2...v1.8.4-dev.3) (2026-04-16)
 
 
