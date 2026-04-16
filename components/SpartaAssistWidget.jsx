@@ -6,7 +6,9 @@ const OMNICHANNEL_WIDGET_ID = "Microsoft_Omnichannel_LCWidget";
 const OMNICHANNEL_WIDGET_SRC =
   "https://oc-cdn-ocprod.azureedge.net/livechatwidget/scripts/LiveChatBootstrapper.js";
 const OMNICHANNEL_WIDGET_STYLE_ID = "sparta-omnichannel-widget-offset-style";
-const OMNICHANNEL_DARK_STYLE_ID = "sparta-omnichannel-widget-dark-style";
+const OMNICHANNEL_WIDGET_ROOT_ID = "sparta-widget-root";
+const OMNICHANNEL_ISOLATION_STYLE_ID =
+  "sparta-omnichannel-widget-isolation-style";
 const OMNICHANNEL_WIDGET_BOTTOM_VAR = "--sparta-omnichannel-widget-bottom";
 const OMNICHANNEL_WIDGET_MANAGED_ATTR = "data-sparta-omnichannel-managed";
 const MOBILE_BREAKPOINT = 768;
@@ -14,15 +16,25 @@ const MOBILE_NAV_HEIGHT = 64;
 const MOBILE_EDGE_GAP = 16;
 const DEFAULT_EDGE_GAP = 45;
 
-const WIDGET_SELECTOR = [
-  'iframe[src*="omnichannelengagementhub"]',
-  'iframe[src*="livechatwidget"]',
-  '[id*="omnichannel"]',
-  '[class*="omnichannel"]',
-  '[id*="lcw"]',
-  '[class*="lcw"]',
+const OMNICHANNEL_CONTAINER_SELECTOR = [
+  'div[id^="Microsoft_Omnichannel"]',
+  'div[id*="Microsoft_Omnichannel"]',
+  'div[id*="omnichannel"]',
+  'div[class*="omnichannel"]',
+  'div[id*="lcw"]',
+  'div[class*="lcw"]',
   '[data-id*="lcw"]',
   '[data-testid*="lcw"]',
+].join(",");
+
+const OMNICHANNEL_IFRAME_SELECTOR = [
+  'iframe[src*="omnichannelengagementhub"]',
+  'iframe[src*="livechatwidget"]',
+].join(",");
+
+const WIDGET_SELECTOR = [
+  OMNICHANNEL_IFRAME_SELECTOR,
+  OMNICHANNEL_CONTAINER_SELECTOR,
 ].join(",");
 
 function getWidgetBottomOffset(hasMobileBottomNav) {
@@ -41,33 +53,56 @@ function ensureWidgetOffsetStyle() {
   document.head.appendChild(style);
 }
 
-function ensureWidgetDarkModeStyle() {
-  if (document.getElementById(OMNICHANNEL_DARK_STYLE_ID)) return;
+function ensureWidgetIsolationStyle() {
+  if (document.getElementById(OMNICHANNEL_ISOLATION_STYLE_ID)) return;
   const style = document.createElement("style");
-  style.id = OMNICHANNEL_DARK_STYLE_ID;
-  // Target the fixed-position wrapper divs injected by the widget that get a
-  // white background. In light mode this is invisible; in dark mode it shows
-  // as a white square behind the circular chat button.
-  // We leave the button's own backgroundColor (#ffffff set via ensureLcwCallback)
-  // intact — only the transparent wrapper containers are reset.
+  style.id = OMNICHANNEL_ISOLATION_STYLE_ID;
   style.textContent = `
-    .dark [id*="lcw"],
-    .dark [class*="lcw"],
-    .dark [id*="omnichannel"],
-    .dark [class*="omnichannel"],
-    .dark [data-id*="lcw"],
-    .dark [data-testid*="lcw"] {
+    #${OMNICHANNEL_WIDGET_ROOT_ID},
+    #${OMNICHANNEL_WIDGET_ROOT_ID} * {
+      color-scheme: light !important;
+    }
+    #${OMNICHANNEL_WIDGET_ROOT_ID} :where(${OMNICHANNEL_CONTAINER_SELECTOR}),
+    #${OMNICHANNEL_WIDGET_ROOT_ID} :where(${OMNICHANNEL_IFRAME_SELECTOR}) {
       background-color: transparent !important;
+      background: transparent !important;
       box-shadow: none !important;
     }
-    /* Catch the outermost fixed wrapper the widget injects with inline styles */
-    .dark div[style*="position: fixed"][style*="bottom"],
-    .dark div[style*="position:fixed"][style*="bottom"] {
-      background-color: transparent !important;
-      box-shadow: none !important;
+    #${OMNICHANNEL_WIDGET_ROOT_ID} :where(${OMNICHANNEL_IFRAME_SELECTOR}) {
+      color-scheme: light !important;
     }
   `;
   document.head.appendChild(style);
+}
+
+function ensureWidgetRoot() {
+  let root = document.getElementById(OMNICHANNEL_WIDGET_ROOT_ID);
+  if (!root) {
+    root = document.createElement("div");
+    root.id = OMNICHANNEL_WIDGET_ROOT_ID;
+    document.body.appendChild(root);
+  }
+  return root;
+}
+
+function applyWidgetAppearanceOverrides() {
+  const root = ensureWidgetRoot();
+  root.style.setProperty("color-scheme", "light", "important");
+  root.style.setProperty("background", "transparent", "important");
+  root.style.setProperty("background-color", "transparent", "important");
+
+  const targets = document.querySelectorAll(WIDGET_SELECTOR);
+  targets.forEach((node) => {
+    if (!(node instanceof HTMLElement)) return;
+
+    if (!node.closest(`#${OMNICHANNEL_WIDGET_ROOT_ID}`)) {
+      root.appendChild(node);
+    }
+
+    node.style.setProperty("color-scheme", "light", "important");
+    node.style.setProperty("background", "transparent", "important");
+    node.style.setProperty("background-color", "transparent", "important");
+  });
 }
 
 function setWidgetBottomVariable(hasMobileBottomNav) {
@@ -120,7 +155,8 @@ function teardownWidget() {
       if (node instanceof HTMLElement) node.remove();
     });
 
-  document.getElementById(OMNICHANNEL_DARK_STYLE_ID)?.remove();
+  document.getElementById(OMNICHANNEL_ISOLATION_STYLE_ID)?.remove();
+  document.getElementById(OMNICHANNEL_WIDGET_ROOT_ID)?.remove();
   document.documentElement.style.removeProperty(OMNICHANNEL_WIDGET_BOTTOM_VAR);
 }
 
@@ -158,36 +194,48 @@ function ensureLcwCallback() {
   };
 }
 
-export default function SpartaAssistWidget({ hasMobileBottomNav = false, userEmail = "" }) {
+export default function SpartaAssistWidget({
+  hasMobileBottomNav = false,
+  userEmail = "",
+}) {
   useEffect(() => {
     if (userEmail) window.__lcwContextEmail = userEmail;
   }, [userEmail]);
 
   useEffect(() => {
     ensureWidgetOffsetStyle();
-    ensureWidgetDarkModeStyle();
+    ensureWidgetIsolationStyle();
+    ensureWidgetRoot();
 
-    const syncPosition = () => {
+    const syncWidget = () => {
       setWidgetBottomVariable(hasMobileBottomNav);
+      applyWidgetAppearanceOverrides();
       applyWidgetBottomOffset(hasMobileBottomNav);
     };
 
-    syncPosition();
+    syncWidget();
 
-    const observer = new MutationObserver(syncPosition);
-    observer.observe(document.body, { childList: true, subtree: true });
+    const widgetObserver = new MutationObserver(syncWidget);
+    widgetObserver.observe(document.body, { childList: true, subtree: true });
 
-    window.addEventListener("resize", syncPosition);
-    window.addEventListener("orientationchange", syncPosition);
+    const themeObserver = new MutationObserver(syncWidget);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "data-theme", "style"],
+    });
+
+    window.addEventListener("resize", syncWidget);
+    window.addEventListener("orientationchange", syncWidget);
 
     const script = document.getElementById(OMNICHANNEL_WIDGET_ID);
-    script?.addEventListener("load", syncPosition);
+    script?.addEventListener("load", syncWidget);
 
     return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", syncPosition);
-      window.removeEventListener("orientationchange", syncPosition);
-      script?.removeEventListener("load", syncPosition);
+      widgetObserver.disconnect();
+      themeObserver.disconnect();
+      window.removeEventListener("resize", syncWidget);
+      window.removeEventListener("orientationchange", syncWidget);
+      script?.removeEventListener("load", syncWidget);
     };
   }, [hasMobileBottomNav]);
 
@@ -208,18 +256,28 @@ export default function SpartaAssistWidget({ hasMobileBottomNav = false, userEma
 
     if (!document.getElementById(OMNICHANNEL_WIDGET_ID)) {
       ensureLcwCallback();
+      const root = ensureWidgetRoot();
 
       const script = document.createElement("script");
       script.id = OMNICHANNEL_WIDGET_ID;
       script.src = OMNICHANNEL_WIDGET_SRC;
       script.async = true;
-      script.setAttribute("data-app-id", "cc334317-af40-40dc-85e5-edb227d50bb0");
+      script.setAttribute(
+        "data-app-id",
+        "cc334317-af40-40dc-85e5-edb227d50bb0",
+      );
       script.setAttribute("data-lcw-version", "prod");
-      script.setAttribute("data-org-id", "0789a0af-1312-ee11-a66d-0022482ab00a");
-      script.setAttribute("data-org-url", "https://m-0789a0af-1312-ee11-a66d-0022482ab00a.us.omnichannelengagementhub.com");
+      script.setAttribute(
+        "data-org-id",
+        "0789a0af-1312-ee11-a66d-0022482ab00a",
+      );
+      script.setAttribute(
+        "data-org-url",
+        "https://m-0789a0af-1312-ee11-a66d-0022482ab00a.us.omnichannelengagementhub.com",
+      );
       script.setAttribute("data-customization-callback", "lcw");
 
-      document.body.appendChild(script);
+      root.appendChild(script);
     }
 
     return () => {

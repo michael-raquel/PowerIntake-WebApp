@@ -103,6 +103,41 @@ body {
   overflow-x: hidden;
 }
 
+#sparta-widget-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483646;
+  pointer-events: none;
+  isolation: isolate;
+  color-scheme: light !important;
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+#sparta-widget-root > * {
+  pointer-events: auto;
+}
+
+#sparta-widget-root,
+#sparta-widget-root * {
+  color-scheme: light !important;
+}
+
+#sparta-widget-root
+  :is(
+    div[id^="Microsoft_Omnichannel"],
+    div[id*="Microsoft_Omnichannel"],
+    div[id*="omnichannel"],
+    div[class*="omnichannel"],
+    div[id*="lcw"],
+    div[class*="lcw"],
+    iframe[src*="omnichannelengagementhub"],
+    iframe[src*="livechatwidget"]
+  ) {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
 .dark {
   --background: oklch(0.129 0.042 264.695);
   --foreground: oklch(0.984 0.003 247.858);
