@@ -1,3 +1,10 @@
+## [1.8.4-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.1...v1.8.4-dev.2) (2026-04-16)
+
+
+### Bug Fixes
+
+* ST Increase Logo Size ([340133d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/340133dddb06fa96d71661b0840a7d51ae8b92a9))
+
 ## [1.8.4-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.3...v1.8.4-dev.1) (2026-04-15)
 
 
