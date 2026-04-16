@@ -5,6 +5,13 @@ import { useEffect } from "react";
 const OMNICHANNEL_WIDGET_ID = "Microsoft_Omnichannel_LCWidget";
 const OMNICHANNEL_WIDGET_SRC =
   "https://oc-cdn-ocprod.azureedge.net/livechatwidget/scripts/LiveChatBootstrapper.js";
+const OMNICHANNEL_WIDGET_FALLBACK_SRC =
+  "https://ocprodocprodnamgs.blob.core.windows.net/livechatwidget/scripts/LiveChatBootstrapper.js";
+const OMNICHANNEL_WIDGET_APP_ID = "c82548f3-ee31-4f2a-b1ed-615e9aa7aaae";
+const OMNICHANNEL_WIDGET_LCW_VERSION = "prod";
+const OMNICHANNEL_WIDGET_ORG_ID = "0789a0af-1312-ee11-a66d-0022482ab00a";
+const OMNICHANNEL_WIDGET_ORG_URL =
+  "https://m-0789a0af-1312-ee11-a66d-0022482ab00a.us.omnichannelengagementhub.com";
 const OMNICHANNEL_WIDGET_STYLE_ID = "sparta-omnichannel-widget-offset-style";
 const OMNICHANNEL_DARK_STYLE_ID = "sparta-omnichannel-widget-dark-style";
 const OMNICHANNEL_WIDGET_BOTTOM_VAR = "--sparta-omnichannel-widget-bottom";
@@ -158,6 +165,23 @@ function ensureLcwCallback() {
   };
 }
 
+function applyOmnichannelScriptAttributes(script) {
+  script.setAttribute("data-app-id", OMNICHANNEL_WIDGET_APP_ID);
+  script.setAttribute("data-lcw-version", OMNICHANNEL_WIDGET_LCW_VERSION);
+  script.setAttribute("data-org-id", OMNICHANNEL_WIDGET_ORG_ID);
+  script.setAttribute("data-org-url", OMNICHANNEL_WIDGET_ORG_URL);
+  script.setAttribute("data-customization-callback", "lcw");
+}
+
+function createOmnichannelScript(src) {
+  const script = document.createElement("script");
+  script.id = OMNICHANNEL_WIDGET_ID;
+  script.src = src;
+  script.async = true;
+  applyOmnichannelScriptAttributes(script);
+  return script;
+}
+
 export default function SpartaAssistWidget({ hasMobileBottomNav = false, userEmail = "" }) {
   useEffect(() => {
     if (userEmail) window.__lcwContextEmail = userEmail;
@@ -209,15 +233,14 @@ export default function SpartaAssistWidget({ hasMobileBottomNav = false, userEma
     if (!document.getElementById(OMNICHANNEL_WIDGET_ID)) {
       ensureLcwCallback();
 
-      const script = document.createElement("script");
-      script.id = OMNICHANNEL_WIDGET_ID;
-      script.src = OMNICHANNEL_WIDGET_SRC;
-      script.async = true;
-      script.setAttribute("data-app-id", "cc334317-af40-40dc-85e5-edb227d50bb0");
-      script.setAttribute("data-lcw-version", "prod");
-      script.setAttribute("data-org-id", "0789a0af-1312-ee11-a66d-0022482ab00a");
-      script.setAttribute("data-org-url", "https://m-0789a0af-1312-ee11-a66d-0022482ab00a.us.omnichannelengagementhub.com");
-      script.setAttribute("data-customization-callback", "lcw");
+      const script = createOmnichannelScript(OMNICHANNEL_WIDGET_SRC);
+      script.onerror = () => {
+        script.parentNode?.removeChild(script);
+        const fallbackScript = createOmnichannelScript(
+          OMNICHANNEL_WIDGET_FALLBACK_SRC,
+        );
+        document.body.appendChild(fallbackScript);
+      };
 
       document.body.appendChild(script);
     }
