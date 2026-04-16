@@ -1,3 +1,10 @@
+## [1.8.4-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.2...v1.8.4-dev.3) (2026-04-16)
+
+
+### Bug Fixes
+
+* ST-2266-Cutting of row count drop down ([9691b6e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9691b6efc643892e28f08cd6501db622fd9ff170))
+
 ## [1.8.4-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.1...v1.8.4-dev.2) (2026-04-16)
 
 
