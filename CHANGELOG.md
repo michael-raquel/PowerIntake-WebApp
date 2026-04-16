@@ -1,3 +1,10 @@
+## [1.8.4-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.6...v1.8.4-dev.7) (2026-04-16)
+
+
+### Bug Fixes
+
+* ST-2267-When user click thumbs up, enable the user to submit the ticket ([7f1bbc4](https://github.com/michael-raquel/PowerIntake-WebApp/commit/7f1bbc47509b78f1302cb01d83aa5983ffff4068))
+
 ## [1.8.4-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.5...v1.8.4-dev.6) (2026-04-16)
 
 
