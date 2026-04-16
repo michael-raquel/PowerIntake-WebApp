@@ -6,6 +6,7 @@ const OMNICHANNEL_WIDGET_ID = "Microsoft_Omnichannel_LCWidget";
 const OMNICHANNEL_WIDGET_SRC =
   "https://oc-cdn-ocprod.azureedge.net/livechatwidget/scripts/LiveChatBootstrapper.js";
 const OMNICHANNEL_WIDGET_STYLE_ID = "sparta-omnichannel-widget-offset-style";
+const OMNICHANNEL_DARK_STYLE_ID = "sparta-omnichannel-widget-dark-style";
 const OMNICHANNEL_WIDGET_BOTTOM_VAR = "--sparta-omnichannel-widget-bottom";
 const OMNICHANNEL_WIDGET_MANAGED_ATTR = "data-sparta-omnichannel-managed";
 const MOBILE_BREAKPOINT = 768;
@@ -24,45 +25,6 @@ const WIDGET_SELECTOR = [
   '[data-testid*="lcw"]',
 ].join(",");
 
-const WHITE_RE =
-  /^(white|#fff(fff)?|rgb\(255,\s*255,\s*255\)|rgba\(255,\s*255,\s*255,\s*(?:1|0?\.\d+)\))$/i;
-
-function isWhite(value) {
-  return WHITE_RE.test(value?.trim());
-}
-
-function stripWhiteFromNode(node) {
-  if (!(node instanceof HTMLElement)) return;
-  const s = node.style;
-  const c = window.getComputedStyle(node);
-
-  // Keep host-shell visuals stable across app theme toggles.
-  s.borderColor = "transparent";
-  s.borderWidth = "0";
-  s.border = "0";
-  s.outlineColor = "transparent";
-  s.outline = "none";
-  s.boxShadow = "none";
-  s.colorScheme = "light";
-
-  if (isWhite(c.backgroundColor)) s.backgroundColor = "transparent";
-}
-
-function stripWhiteFromWidgetTree() {
-  document.querySelectorAll(WIDGET_SELECTOR).forEach((root) => {
-    // Walk up to fixed ancestor
-    let current = root;
-    let depth = 0;
-    while (current && current !== document.body && depth < 8) {
-      stripWhiteFromNode(current);
-      current = current.parentElement;
-      depth++;
-    }
-    // Walk all descendants
-    root.querySelectorAll("*").forEach(stripWhiteFromNode);
-  });
-}
-
 function getWidgetBottomOffset(hasMobileBottomNav) {
   const shouldLiftForMobileNav =
     hasMobileBottomNav && window.innerWidth <= MOBILE_BREAKPOINT;
@@ -75,13 +37,34 @@ function ensureWidgetOffsetStyle() {
   if (document.getElementById(OMNICHANNEL_WIDGET_STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = OMNICHANNEL_WIDGET_STYLE_ID;
+  style.textContent = `${WIDGET_SELECTOR} { bottom: var(${OMNICHANNEL_WIDGET_BOTTOM_VAR}, ${DEFAULT_EDGE_GAP}px) !important; }`;
+  document.head.appendChild(style);
+}
+
+function ensureWidgetDarkModeStyle() {
+  if (document.getElementById(OMNICHANNEL_DARK_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = OMNICHANNEL_DARK_STYLE_ID;
+  // Target the fixed-position wrapper divs injected by the widget that get a
+  // white background. In light mode this is invisible; in dark mode it shows
+  // as a white square behind the circular chat button.
+  // We leave the button's own backgroundColor (#ffffff set via ensureLcwCallback)
+  // intact — only the transparent wrapper containers are reset.
   style.textContent = `
-    ${WIDGET_SELECTOR} {
-      bottom: var(${OMNICHANNEL_WIDGET_BOTTOM_VAR}, ${DEFAULT_EDGE_GAP}px) !important;
-      border: 0 !important;
-      outline: none !important;
+    .dark [id*="lcw"],
+    .dark [class*="lcw"],
+    .dark [id*="omnichannel"],
+    .dark [class*="omnichannel"],
+    .dark [data-id*="lcw"],
+    .dark [data-testid*="lcw"] {
+      background-color: transparent !important;
       box-shadow: none !important;
-      color-scheme: light !important;
+    }
+    /* Catch the outermost fixed wrapper the widget injects with inline styles */
+    .dark div[style*="position: fixed"][style*="bottom"],
+    .dark div[style*="position:fixed"][style*="bottom"] {
+      background-color: transparent !important;
+      box-shadow: none !important;
     }
   `;
   document.head.appendChild(style);
@@ -102,8 +85,6 @@ function applyWidgetBottomOffset(hasMobileBottomNav) {
 
   nodes.forEach((node) => {
     if (!(node instanceof HTMLElement)) return;
-    node.setAttribute(OMNICHANNEL_WIDGET_MANAGED_ATTR, "1");
-
     let current = node;
     let depth = 0;
 
@@ -139,6 +120,7 @@ function teardownWidget() {
       if (node instanceof HTMLElement) node.remove();
     });
 
+  document.getElementById(OMNICHANNEL_DARK_STYLE_ID)?.remove();
   document.documentElement.style.removeProperty(OMNICHANNEL_WIDGET_BOTTOM_VAR);
 }
 
@@ -159,17 +141,13 @@ function ensureLcwCallback() {
             height: "60px",
             cursor: "pointer",
             borderRadius: "50%",
-            border: "0",
             borderWidth: "0",
-            borderColor: "transparent",
-            outline: "none",
-            boxShadow: "none",
             backgroundImage:
               "url('https://dev-portal.spartaserv.com/img/sparta-icon.png')",
             backgroundSize: "contain",
             backgroundPosition: "center",
             backgroundRepeat: "no-repeat",
-            backgroundColor: "transparent",
+            backgroundColor: "#ffffff",
           },
           chatButtonTextContainerStyleProps: {
             display: "none",
@@ -187,41 +165,29 @@ export default function SpartaAssistWidget({ hasMobileBottomNav = false, userEma
 
   useEffect(() => {
     ensureWidgetOffsetStyle();
+    ensureWidgetDarkModeStyle();
 
-    const sync = () => {
+    const syncPosition = () => {
       setWidgetBottomVariable(hasMobileBottomNav);
       applyWidgetBottomOffset(hasMobileBottomNav);
-      stripWhiteFromWidgetTree();
     };
 
-    sync();
+    syncPosition();
 
-    const observer = new MutationObserver(sync);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["style", "class"],
-    });
+    const observer = new MutationObserver(syncPosition);
+    observer.observe(document.body, { childList: true, subtree: true });
 
-    const themeObserver = new MutationObserver(sync);
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["class", "style", "data-theme"],
-    });
-
-    window.addEventListener("resize", sync);
-    window.addEventListener("orientationchange", sync);
+    window.addEventListener("resize", syncPosition);
+    window.addEventListener("orientationchange", syncPosition);
 
     const script = document.getElementById(OMNICHANNEL_WIDGET_ID);
-    script?.addEventListener("load", sync);
+    script?.addEventListener("load", syncPosition);
 
     return () => {
       observer.disconnect();
-      themeObserver.disconnect();
-      window.removeEventListener("resize", sync);
-      window.removeEventListener("orientationchange", sync);
-      script?.removeEventListener("load", sync);
+      window.removeEventListener("resize", syncPosition);
+      window.removeEventListener("orientationchange", syncPosition);
+      script?.removeEventListener("load", syncPosition);
     };
   }, [hasMobileBottomNav]);
 
