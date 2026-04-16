@@ -129,48 +129,52 @@ export default function ComTimelineView({ ticket }) {
 
             <div className="flex-1 min-w-0">
               <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className={cn('text-sm font-semibold', style.color)}>
-                      {s.v_status}
-                    </span>
-                    {hasRemarks && (
-                      <button
-                        type="button"
-                        onClick={() => toggleRemarks(s.v_ticketstatusid)}
-                        aria-label={isRemarksOpen ? 'Hide remarks' : 'Show remarks'}
-                        title={isRemarksOpen ? 'Hide remarks' : 'Show remarks'}
-                        className="inline-flex items-center justify-center text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-                      >
-                        <BadgeInfo className="w-4.5 h-4.5" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1.5 sm:ml-auto text-xs text-gray-500 dark:text-gray-400">
-                    <Clock className="w-3 h-3" />
-                    <span>{format(new Date(s.v_createdat), 'MMM d, yyyy')}</span>
-                    <span className="text-gray-400 dark:text-gray-500">•</span>
-                    <span>{format(new Date(s.v_createdat), 'hh:mm a')}</span>
-                  </div>
-                </div>
+                <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span
+      className={cn("block min-w-0 flex-1 truncate text-sm font-semibold", style.color)}
+      title={s.v_status}
+    >
+      {s.v_status}
+    </span>
+    {hasRemarks && (
+      <button
+        type="button"
+        onClick={() => toggleRemarks(s.v_ticketstatusid)}
+        aria-label={isRemarksOpen ? "Hide remarks" : "Show remarks"}
+        title={isRemarksOpen ? "Hide remarks" : "Show remarks"}
+        className="inline-flex shrink-0 items-center justify-center text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+      >
+        <BadgeInfo className="w-4.5 h-4.5" />
+      </button>
+    )}
+  </div>
 
-                {hasRemarks && (
-                  <div
-                    className={cn(
-                      'overflow-hidden transition-all duration-300 ease-out',
-                      isRemarksOpen ? 'mb-3 max-h-96 opacity-100' : 'max-h-0 opacity-0'
-                    )}
-                  >
-                    <div className="rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800/40">
-                      <div className="flex items-center gap-1.5">
-                       
-                      </div>
-                      <p className="mt-1 text-xs italic leading-relaxed text-gray-600 dark:text-gray-300 break-words">
-                        {s.v_remarks}
-                      </p>
-                    </div>
-                  </div>
-                )}
+  <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 sm:ml-auto">
+    <Clock className="w-3 h-3" />
+    <span>{format(new Date(s.v_createdat), "MMM d, yyyy")}</span>
+    <span className="text-gray-400 dark:text-gray-500">•</span>
+    <span>{format(new Date(s.v_createdat), "hh:mm a")}</span>
+  </div>
+</div>
+
+{hasRemarks && (
+  <div
+    className={cn(
+      'overflow-hidden transition-all duration-300 ease-out',
+      isRemarksOpen ? 'mb-3 max-h-96 opacity-100' : 'max-h-0 opacity-0'
+    )}
+  >
+    <div className="rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800/40">
+      <div className="flex items-center gap-1.5">
+        
+      </div>
+      <p className="mt-1 text-xs italic leading-relaxed text-gray-600 dark:text-gray-300 break-words">
+        {s.v_remarks}
+      </p>
+    </div>
+  </div>
+)}
 {person && (
   <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
       {isNew ? (
