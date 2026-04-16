@@ -18,6 +18,7 @@ const formatTime = (ts) => {
 
 const NOTE_NOTIFICATION_PATTERN = /\bnote(s)?\b|\bcomment(s)?\b/;
 const ATTACHMENT_NOTIFICATION_PATTERN = /\battachment(s)?\b|\bfile\s*(upload|uploaded|delete|deleted|remove|removed)\b|\bimage(s)?\b/;
+const NOTIFICATION_UNREAD_COUNT_EVENT = "powerintake:notification-unread-count";
 
 const getNotificationDetailTab = (notification) => {
     const descriptor = [
@@ -139,6 +140,25 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
     const hasNotifications = items.length > 0;
     const hasUnread        = unreadCount > 0;
 
+    const broadcastUnreadCount = useCallback((nextUnreadCount) => {
+        if (typeof window === "undefined") return;
+
+        const normalizedCount = Number(nextUnreadCount);
+        const unreadCountValue = Number.isFinite(normalizedCount)
+            ? Math.max(0, Math.floor(normalizedCount))
+            : 0;
+
+        window.dispatchEvent(
+            new CustomEvent(NOTIFICATION_UNREAD_COUNT_EVENT, {
+                detail: { unreadCount: unreadCountValue },
+            }),
+        );
+    }, []);
+
+    useEffect(() => {
+        broadcastUnreadCount(unreadCount);
+    }, [broadcastUnreadCount, unreadCount]);
+
     const patchLocal    = useCallback((id, isRead) =>
         setNotifications((prev) => prev.map((n) =>
             String(n.v_notificationuuid) === id ? { ...n, v_isread: isRead } : n
@@ -154,59 +174,67 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
 
     const handleMarkOne = useCallback(async (id, isRead) => {
         if (!id || !useruuid || !modifiedby) return;
+        const previousNotifications = notifications;
         setLoadingItemId(id);
+        patchLocal(id, isRead);
+        setOpenCardMenuId(null);
         try {
             await updateNotificationIsRead({ useruuid, isread: isRead, modifiedby, notificationuuid: id });
-            patchLocal(id, isRead);
-            setOpenCardMenuId(null);
         } catch (err) {
+            setNotifications(previousNotifications);
             toast.error(err.message || "Failed to update notification");
         } finally {
             setLoadingItemId(null);
         }
-    }, [modifiedby, patchLocal, updateNotificationIsRead, useruuid]);
+    }, [modifiedby, notifications, patchLocal, setNotifications, updateNotificationIsRead, useruuid]);
 
     const handleDeleteOne = useCallback(async (id) => {
         if (!id || !useruuid || !modifiedby) return;
+        const previousNotifications = notifications;
         setLoadingItemId(id);
+        removeLocal(id);
+        setOpenCardMenuId(null);
         try {
             await deleteNotification({ useruuid, deletedby: modifiedby, notificationuuid: id });
-            removeLocal(id);
-            setOpenCardMenuId(null);
         } catch (err) {
+            setNotifications(previousNotifications);
             toast.error(err.message || "Failed to delete notification");
         } finally {
             setLoadingItemId(null);
         }
-    }, [modifiedby, deleteNotification, removeLocal, useruuid]);
+    }, [modifiedby, deleteNotification, notifications, removeLocal, setNotifications, useruuid]);
 
     const handleMarkAll = useCallback(async (isRead) => {
         if (!hasNotifications || !useruuid || !modifiedby) return;
+        const previousNotifications = notifications;
         setIsBulkLoading(true);
+        patchAllLocal(isRead);
+        setOpenBulkMenu(false);
         try {
             await updateNotificationIsRead({ useruuid, isread: isRead, modifiedby, notificationuuid: null });
-            patchAllLocal(isRead);
-            setOpenBulkMenu(false);
         } catch (err) {
+            setNotifications(previousNotifications);
             toast.error(err.message || "Failed to update notifications");
         } finally {
             setIsBulkLoading(false);
         }
-    }, [modifiedby, hasNotifications, patchAllLocal, updateNotificationIsRead, useruuid]);
+    }, [modifiedby, hasNotifications, notifications, patchAllLocal, setNotifications, updateNotificationIsRead, useruuid]);
 
     const handleDeleteAll = useCallback(async () => {
         if (!hasNotifications || !useruuid || !modifiedby) return;
+        const previousNotifications = notifications;
         setIsBulkLoading(true);
+        setNotifications([]);
+        setOpenBulkMenu(false);
         try {
             await deleteNotification({ useruuid, deletedby: modifiedby, notificationuuid: null });
-            setNotifications([]);
-            setOpenBulkMenu(false);
         } catch (err) {
+            setNotifications(previousNotifications);
             toast.error(err.message || "Failed to delete notifications");
         } finally {
             setIsBulkLoading(false);
         }
-    }, [modifiedby, deleteNotification, hasNotifications, setNotifications, useruuid]);
+    }, [modifiedby, deleteNotification, hasNotifications, notifications, setNotifications, useruuid]);
 
     const handleNotificationClick = useCallback((n) => {
         if (!n?.ticketUuid && !n?.ticketNumber) return;
@@ -286,7 +314,7 @@ const panelClass = isMobile
                 <div className="relative">
                     <BellDot className="h-6 w-6" strokeWidth={2.4} />
                     {unreadCount > 0 && (
-                        <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-4 text-white">
+                        <span className="absolute -right-1.5 -top-1.5 inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-medium leading-4 text-white">
                             {unreadCount > 99 ? "99+" : unreadCount}
                         </span>
                     )}

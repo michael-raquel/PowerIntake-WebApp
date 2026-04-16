@@ -1,7 +1,7 @@
 import "@/styles/globals.css";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { PublicClientApplication, EventType } from "@azure/msal-browser";
-import { MsalProvider } from "@azure/msal-react";
+import { MsalProvider, useMsal } from "@azure/msal-react";
 import { msalConfig } from "@/lib/msalConfig";
 import { useRouter } from "next/router";
 import dynamic from "next/dynamic";
@@ -60,6 +60,12 @@ const routeRoleMap = {
   "/tenant": ["SuperAdmin", "Admin"],
 };
 
+function SpartaAssistWidgetWithEmail({ hasMobileBottomNav }) {
+  const { accounts } = useMsal();
+  const email = accounts[0]?.username ?? "";
+  return <SpartaAssistWidget hasMobileBottomNav={hasMobileBottomNav} userEmail={email} />;
+}
+
 function AppContent({ Component, pageProps }) {
   const router = useRouter();
   const { spartaAssistEnabled } = useSpartaAssist();
@@ -101,7 +107,7 @@ function AppContent({ Component, pageProps }) {
           <>
             <Component {...pageProps} />
             {shouldShowWidget && (
-              <SpartaAssistWidget hasMobileBottomNav={showSidebar} />
+              <SpartaAssistWidgetWithEmail hasMobileBottomNav={showSidebar} />
             )}
           </>
         </AuthGuard>

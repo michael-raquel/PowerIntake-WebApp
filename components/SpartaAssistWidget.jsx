@@ -5,16 +5,21 @@ import { useEffect } from "react";
 const OMNICHANNEL_WIDGET_ID = "Microsoft_Omnichannel_LCWidget";
 const OMNICHANNEL_WIDGET_SRC =
   "https://oc-cdn-ocprod.azureedge.net/livechatwidget/scripts/LiveChatBootstrapper.js";
+const OMNICHANNEL_WIDGET_FALLBACK_SRC =
+  "https://ocprodocprodnamgs.blob.core.windows.net/livechatwidget/scripts/LiveChatBootstrapper.js";
+const OMNICHANNEL_WIDGET_APP_ID = "c82548f3-ee31-4f2a-b1ed-615e9aa7aaae";
+const OMNICHANNEL_WIDGET_LCW_VERSION = "prod";
+const OMNICHANNEL_WIDGET_ORG_ID = "0789a0af-1312-ee11-a66d-0022482ab00a";
+const OMNICHANNEL_WIDGET_ORG_URL =
+  "https://m-0789a0af-1312-ee11-a66d-0022482ab00a.us.omnichannelengagementhub.com";
 const OMNICHANNEL_WIDGET_STYLE_ID = "sparta-omnichannel-widget-offset-style";
+const OMNICHANNEL_DARK_STYLE_ID = "sparta-omnichannel-widget-dark-style";
 const OMNICHANNEL_WIDGET_BOTTOM_VAR = "--sparta-omnichannel-widget-bottom";
 const OMNICHANNEL_WIDGET_MANAGED_ATTR = "data-sparta-omnichannel-managed";
-const OMNICHANNEL_WIDGET_MOBILE_SIZED_ATTR =
-  "data-sparta-omnichannel-mobile-sized";
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_NAV_HEIGHT = 64;
-const MOBILE_EDGE_GAP = 12;
-const DEFAULT_EDGE_GAP = 16;
-const MOBILE_LAUNCHER_SIZE = 42;
+const MOBILE_EDGE_GAP = 16;
+const DEFAULT_EDGE_GAP = 45;
 
 const WIDGET_SELECTOR = [
   'iframe[src*="omnichannelengagementhub"]',
@@ -36,13 +41,39 @@ function getWidgetBottomOffset(hasMobileBottomNav) {
 }
 
 function ensureWidgetOffsetStyle() {
-  if (document.getElementById(OMNICHANNEL_WIDGET_STYLE_ID)) {
-    return;
-  }
-
+  if (document.getElementById(OMNICHANNEL_WIDGET_STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = OMNICHANNEL_WIDGET_STYLE_ID;
   style.textContent = `${WIDGET_SELECTOR} { bottom: var(${OMNICHANNEL_WIDGET_BOTTOM_VAR}, ${DEFAULT_EDGE_GAP}px) !important; }`;
+  document.head.appendChild(style);
+}
+
+function ensureWidgetDarkModeStyle() {
+  if (document.getElementById(OMNICHANNEL_DARK_STYLE_ID)) return;
+  const style = document.createElement("style");
+  style.id = OMNICHANNEL_DARK_STYLE_ID;
+  // Target the fixed-position wrapper divs injected by the widget that get a
+  // white background. In light mode this is invisible; in dark mode it shows
+  // as a white square behind the circular chat button.
+  // We leave the button's own backgroundColor (#ffffff set via ensureLcwCallback)
+  // intact — only the transparent wrapper containers are reset.
+  style.textContent = `
+    .dark [id*="lcw"],
+    .dark [class*="lcw"],
+    .dark [id*="omnichannel"],
+    .dark [class*="omnichannel"],
+    .dark [data-id*="lcw"],
+    .dark [data-testid*="lcw"] {
+      background-color: transparent !important;
+      box-shadow: none !important;
+    }
+    /* Catch the outermost fixed wrapper the widget injects with inline styles */
+    .dark div[style*="position: fixed"][style*="bottom"],
+    .dark div[style*="position:fixed"][style*="bottom"] {
+      background-color: transparent !important;
+      box-shadow: none !important;
+    }
+  `;
   document.head.appendChild(style);
 }
 
@@ -54,66 +85,24 @@ function setWidgetBottomVariable(hasMobileBottomNav) {
   );
 }
 
-function applyMobileLauncherSizing(node) {
-  if (!(node instanceof HTMLElement)) return;
-
-  const isMobile = window.innerWidth <= MOBILE_BREAKPOINT;
-  const rect = node.getBoundingClientRect();
-  const isLauncherCandidate =
-    rect.width >= 34 &&
-    rect.width <= 100 &&
-    rect.height >= 34 &&
-    rect.height <= 100 &&
-    Math.abs(rect.width - rect.height) <= 18;
-
-  if (isMobile && isLauncherCandidate) {
-    const size = `${MOBILE_LAUNCHER_SIZE}px`;
-    node.style.setProperty("width", size, "important");
-    node.style.setProperty("height", size, "important");
-    node.style.setProperty("min-width", size, "important");
-    node.style.setProperty("min-height", size, "important");
-    node.style.setProperty("max-width", size, "important");
-    node.style.setProperty("max-height", size, "important");
-    node.style.setProperty("border-radius", "9999px", "important");
-    node.setAttribute(OMNICHANNEL_WIDGET_MOBILE_SIZED_ATTR, "1");
-    return;
-  }
-
-  if (node.getAttribute(OMNICHANNEL_WIDGET_MOBILE_SIZED_ATTR) === "1") {
-    node.style.removeProperty("width");
-    node.style.removeProperty("height");
-    node.style.removeProperty("min-width");
-    node.style.removeProperty("min-height");
-    node.style.removeProperty("max-width");
-    node.style.removeProperty("max-height");
-    node.style.removeProperty("border-radius");
-    node.removeAttribute(OMNICHANNEL_WIDGET_MOBILE_SIZED_ATTR);
-  }
-}
-
 function applyWidgetBottomOffset(hasMobileBottomNav) {
   const offset = getWidgetBottomOffset(hasMobileBottomNav);
-
   const nodes = document.querySelectorAll(WIDGET_SELECTOR);
   const visited = new Set();
 
   nodes.forEach((node) => {
     if (!(node instanceof HTMLElement)) return;
-
     let current = node;
     let depth = 0;
 
     while (current && current !== document.body && depth < 5) {
       if (visited.has(current)) break;
-
       const computed = window.getComputedStyle(current);
       if (computed.position === "fixed") {
         current.style.bottom = `${offset}px`;
         current.setAttribute(OMNICHANNEL_WIDGET_MANAGED_ATTR, "1");
-        applyMobileLauncherSizing(current);
         visited.add(current);
       }
-
       current = current.parentElement;
       depth += 1;
     }
@@ -124,30 +113,83 @@ function teardownWidget() {
   const script = document.getElementById(OMNICHANNEL_WIDGET_ID);
   script?.remove();
 
-  const managedNodes = document.querySelectorAll(
-    `[${OMNICHANNEL_WIDGET_MANAGED_ATTR}="1"]`,
-  );
-  managedNodes.forEach((node) => {
-    if (node instanceof HTMLElement) {
-      node.remove();
-    }
-  });
+  document
+    .querySelectorAll(`[${OMNICHANNEL_WIDGET_MANAGED_ATTR}="1"]`)
+    .forEach((node) => {
+      if (node instanceof HTMLElement) node.remove();
+    });
 
-  const widgetIframes = document.querySelectorAll(
-    'iframe[src*="omnichannelengagementhub"], iframe[src*="livechatwidget"]',
-  );
-  widgetIframes.forEach((node) => {
-    if (node instanceof HTMLElement) {
-      node.remove();
-    }
-  });
+  document
+    .querySelectorAll(
+      'iframe[src*="omnichannelengagementhub"], iframe[src*="livechatwidget"]',
+    )
+    .forEach((node) => {
+      if (node instanceof HTMLElement) node.remove();
+    });
 
+  document.getElementById(OMNICHANNEL_DARK_STYLE_ID)?.remove();
   document.documentElement.style.removeProperty(OMNICHANNEL_WIDGET_BOTTOM_VAR);
 }
 
-export default function SpartaAssistWidget({ hasMobileBottomNav = false }) {
+function ensureLcwCallback() {
+  if (typeof window.lcw === "function") return;
+  window.lcw = function () {
+    return {
+      chatButtonProps: {
+        controlProps: {
+          hideChatTextContainer: true,
+          titleText: "",
+          subtitleText: "",
+        },
+        styleProps: {
+          generalStyleProps: {
+            minWidth: "60px",
+            width: "60px",
+            height: "60px",
+            cursor: "pointer",
+            borderRadius: "50%",
+            borderWidth: "0",
+            backgroundImage:
+              "url('https://dev-portal.spartaserv.com/img/sparta-icon.png')",
+            backgroundSize: "contain",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            backgroundColor: "#ffffff",
+          },
+          chatButtonTextContainerStyleProps: {
+            display: "none",
+          },
+        },
+      },
+    };
+  };
+}
+
+function applyOmnichannelScriptAttributes(script) {
+  script.setAttribute("data-app-id", OMNICHANNEL_WIDGET_APP_ID);
+  script.setAttribute("data-lcw-version", OMNICHANNEL_WIDGET_LCW_VERSION);
+  script.setAttribute("data-org-id", OMNICHANNEL_WIDGET_ORG_ID);
+  script.setAttribute("data-org-url", OMNICHANNEL_WIDGET_ORG_URL);
+  script.setAttribute("data-customization-callback", "lcw");
+}
+
+function createOmnichannelScript(src) {
+  const script = document.createElement("script");
+  script.id = OMNICHANNEL_WIDGET_ID;
+  script.src = src;
+  script.async = true;
+  applyOmnichannelScriptAttributes(script);
+  return script;
+}
+
+export default function SpartaAssistWidget({ hasMobileBottomNav = false, userEmail = "" }) {
+  useEffect(() => {
+    if (userEmail) window.__lcwContextEmail = userEmail;
+  }, [userEmail]);
+
   useEffect(() => {
     ensureWidgetOffsetStyle();
+    ensureWidgetDarkModeStyle();
 
     const syncPosition = () => {
       setWidgetBottomVariable(hasMobileBottomNav);
@@ -174,29 +216,37 @@ export default function SpartaAssistWidget({ hasMobileBottomNav = false }) {
   }, [hasMobileBottomNav]);
 
   useEffect(() => {
+    const onLcwReady = () => {
+      const email = window.__lcwContextEmail || "";
+      if (email) {
+        window.Microsoft?.Omnichannel?.LiveChatWidget?.SDK?.setContextProvider(
+          () => ({
+            loggedInEmail: email,
+            authenticatedUserId: email,
+          }),
+        );
+      }
+    };
+
+    window.addEventListener("lcw:ready", onLcwReady);
+
     if (!document.getElementById(OMNICHANNEL_WIDGET_ID)) {
-      const script = document.createElement("script");
-      script.id = OMNICHANNEL_WIDGET_ID;
-      script.src = OMNICHANNEL_WIDGET_SRC;
-      script.async = true;
-      script.setAttribute(
-        "data-app-id",
-        "866addcc-5961-436b-8970-4e9e7720027c",
-      );
-      script.setAttribute("data-lcw-version", "prod");
-      script.setAttribute(
-        "data-org-id",
-        "45e594ab-bb72-ee11-8bc5-6045bd003e36",
-      );
-      script.setAttribute(
-        "data-org-url",
-        "https://m-45e594ab-bb72-ee11-8bc5-6045bd003e36.us.omnichannelengagementhub.com",
-      );
+      ensureLcwCallback();
+
+      const script = createOmnichannelScript(OMNICHANNEL_WIDGET_SRC);
+      script.onerror = () => {
+        script.parentNode?.removeChild(script);
+        const fallbackScript = createOmnichannelScript(
+          OMNICHANNEL_WIDGET_FALLBACK_SRC,
+        );
+        document.body.appendChild(fallbackScript);
+      };
 
       document.body.appendChild(script);
     }
 
     return () => {
+      window.removeEventListener("lcw:ready", onLcwReady);
       teardownWidget();
     };
   }, []);

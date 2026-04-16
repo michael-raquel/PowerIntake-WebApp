@@ -310,10 +310,10 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
   const handleSubmit = async () => {
     if (!validateAll()) return;
-    if (suggestion && feedbackChoice !== "down") {
-      toast.error("Please select thumbs down feedback before submitting.");
-      return;
-    }
+    // if (suggestion && feedbackChoice !== "down") {
+    //   toast.error("Please select thumbs down feedback before submitting.");
+    //   return;
+    // }
     setSubmitting(true);
 
     try {
@@ -336,7 +336,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
         location: callLocation,
       });
 
-      if (feedbackChoice === "down" && feedbackLogId && ticketuuid) {
+      if (feedbackLogId && ticketuuid) {
         try {
           await updatePowerSuiteAILogsTicketId({
             powersuiteailogsuuid: feedbackLogId,
@@ -357,7 +357,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   };
 
   const isFeedbackBusy = feedbackSubmitting || deleteSubmitting || updateSubmitting || submitting || aiLoading;
-  const isSubmitDisabled = submitting || aiLoading || (suggestion && feedbackChoice !== "down");
+  const isSubmitDisabled = submitting || aiLoading;
 
   const handleFeedback = async (feedbackType) => {
     if (!suggestion || isFeedbackBusy || feedbackChoice) return;
@@ -383,11 +383,12 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
   const handleClearFeedback = async () => {
     if (!feedbackLogId || feedbackSubmitting || deleteSubmitting) return;
+    const logId = feedbackLogId;
+    setFeedbackChoice(null);
+    setFeedbackLogId(null);
 
     try {
-      await deletePowerSuiteAILog(feedbackLogId);
-      setFeedbackChoice(null);
-      setFeedbackLogId(null);
+      await deletePowerSuiteAILog(logId);
     } catch (err) {
     }
   };

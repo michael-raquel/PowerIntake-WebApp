@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, Clock, XCircle, User, UserCog, RefreshCw } from 'lucide-react';
-import { useEffect } from 'react';
+import { CheckCircle2, Clock, XCircle, User, UserCog, RefreshCw, BadgeInfo } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useFetchTimeline } from '@/hooks/UseFetchTicketTechnician';
 import socket from "@/lib/socket";
 
@@ -39,6 +39,7 @@ const defaultStyle = {
 export default function ComTimelineView({ ticket }) {
   const ticketuuid = ticket?.v_ticketuuid;
   const { timeline, loading, error, fetchTimeline } = useFetchTimeline(ticketuuid);
+  const [openRemarks, setOpenRemarks] = useState({});
 
   useEffect(() => {
     if (!ticketuuid) return;
@@ -83,6 +84,13 @@ export default function ComTimelineView({ ticket }) {
     (a, b) => new Date(b.v_createdat) - new Date(a.v_createdat)
   );
 
+  const toggleRemarks = (statusId) => {
+    setOpenRemarks((prev) => ({
+      ...prev,
+      [statusId]: !prev[statusId],
+    }));
+  };
+
   return (
     <div className="relative pl-2">
       {orderedTimeline.map((s, idx) => {
@@ -91,6 +99,8 @@ export default function ComTimelineView({ ticket }) {
         const isLast  = idx === orderedTimeline.length - 1;
         const isNew = s.v_status === 'New';
         const isReactivated = s.v_status === 'Reactivated';
+        const hasRemarks = Boolean(s.v_remarks?.trim());
+        const isRemarksOpen = Boolean(openRemarks[s.v_ticketstatusid]);
 
         const person = isNew 
             ? ticket?.v_username 
@@ -119,31 +129,50 @@ export default function ComTimelineView({ ticket }) {
 
             <div className="flex-1 min-w-0">
               <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                  <div className="flex items-center gap-2">
-                    <span className={cn('text-sm font-semibold', style.color)}>
-                      {s.v_status}
-                    </span>
-                    <span className="text-xs text-gray-400 dark:text-gray-500">
-                      {format(new Date(s.v_createdat), 'MMM d, yyyy')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                    <Clock className="w-3 h-3" />
-                    <span>{format(new Date(s.v_createdat), 'hh:mm a')}</span>
-                  </div>
-                </div>
+                <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+      className={cn("block min-w-0 max-w-[11rem] truncate text-sm font-semibold sm:max-w-[14rem] md:max-w-[18rem] lg:max-w-[24rem]", style.color)}
+      title={s.v_status}
+    >
+      {s.v_status}
+    </span>
+    {hasRemarks && (
+      <button
+        type="button"
+        onClick={() => toggleRemarks(s.v_ticketstatusid)}
+        aria-label={isRemarksOpen ? "Hide remarks" : "Show remarks"}
+        title={isRemarksOpen ? "Hide remarks" : "Show remarks"}
+        className="inline-flex shrink-0 items-center justify-center text-gray-400 transition-colors hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+      >
+        <BadgeInfo className="w-4.5 h-4.5" />
+      </button>
+    )}
+  </div>
 
-             {s.v_remarks?.trim() && (
-  <div className="mb-3 rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800/40">
-    <div className="flex items-center gap-1.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-        Remarks
+  <div className="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400 sm:ml-auto">
+    <Clock className="w-3 h-3" />
+    <span>{format(new Date(s.v_createdat), "MMM d, yyyy")}</span>
+    <span className="text-gray-400 dark:text-gray-500">•</span>
+    <span>{format(new Date(s.v_createdat), "hh:mm a")}</span>
+  </div>
+</div>
+
+{hasRemarks && (
+  <div
+    className={cn(
+      'overflow-hidden transition-all duration-300 ease-out',
+      isRemarksOpen ? 'mb-3 max-h-96 opacity-100' : 'max-h-0 opacity-0'
+    )}
+  >
+    <div className="rounded-lg border border-gray-200 bg-gray-50/80 px-3 py-2.5 dark:border-gray-700 dark:bg-gray-800/40">
+      <div className="flex items-center gap-1.5">
+        
+      </div>
+      <p className="mt-1 text-xs italic leading-relaxed text-gray-600 dark:text-gray-300 break-words">
+        {s.v_remarks}
       </p>
     </div>
-    <p className="mt-1 text-xs italic leading-relaxed text-gray-600 dark:text-gray-300 break-words">
-      {s.v_remarks}
-    </p>
   </div>
 )}
 {person && (

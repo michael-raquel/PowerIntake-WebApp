@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { loginRequest } from "@/lib/msalConfig";
 import dynamic from "next/dynamic";
+import AppNotificationBadgeSync from "@/components/AppNotificationBadgeSync";
 
 const SideNavbar = dynamic(() => import("@/components/SideNavbar"), {
   ssr: false,
@@ -72,6 +73,7 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   // ── Verified: render full layout ──────────────────────────
   return (
     <div className="flex h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300 w-full">
+      <AppNotificationBadgeSync />
       {showSidebar && <SideNavbar />}
       <main className="flex-1 min-h-0 overflow-y-auto">
         {showSidebar && <div className="md:hidden h-14" />}

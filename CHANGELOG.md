@@ -1,4 +1,81 @@
-## [1.8.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.3...v1.8.4) (2026-04-15)
+# [1.9.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0-dev.3...v1.9.0-dev.4) (2026-04-16)
+
+
+### Bug Fixes
+
+* timeline icon information ([37bff32](https://github.com/michael-raquel/PowerIntake-WebApp/commit/37bff32c6a267c7473c39ec28c38e5ffedb328f7))
+
+# [1.9.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0-dev.2...v1.9.0-dev.3) (2026-04-16)
+
+
+### Bug Fixes
+
+* 2256 : Added Chat Widget with personal design ([514afa3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/514afa3318276447e7961c5342b981120404b1f0))
+
+# [1.9.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0-dev.1...v1.9.0-dev.2) (2026-04-16)
+
+
+### Bug Fixes
+
+* Timeline UI overflow ([37cfc83](https://github.com/michael-raquel/PowerIntake-WebApp/commit/37cfc839790b0744343e2243527a59cccdc8063e))
+
+# [1.9.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.8...v1.9.0-dev.1) (2026-04-16)
+
+
+### Features
+
+* 2089 : Format and display release timestamps consistently ([1f1aae5](https://github.com/michael-raquel/PowerIntake-WebApp/commit/1f1aae595c348228a61317dac0ed18f03d60e9d6))
+
+## [1.8.4-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.7...v1.8.4-dev.8) (2026-04-16)
+
+
+### Bug Fixes
+
+* ST-2267-Updated the condition of submit button disable of PowerSuiteAI ([4792be1](https://github.com/michael-raquel/PowerIntake-WebApp/commit/4792be12ed818584c65e95429ba0ab78213e722b))
+
+## [1.8.4-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.6...v1.8.4-dev.7) (2026-04-16)
+
+
+### Bug Fixes
+
+* ST-2267-When user click thumbs up, enable the user to submit the ticket ([7f1bbc4](https://github.com/michael-raquel/PowerIntake-WebApp/commit/7f1bbc47509b78f1302cb01d83aa5983ffff4068))
+
+## [1.8.4-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.5...v1.8.4-dev.6) (2026-04-16)
+
+
+### Bug Fixes
+
+* st-2244-notification padding full ([1ad71ec](https://github.com/michael-raquel/PowerIntake-WebApp/commit/1ad71ecfcc8a39ea14098744f5554edec9581b43))
+
+## [1.8.4-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.4...v1.8.4-dev.5) (2026-04-16)
+
+
+### Bug Fixes
+
+* notification PWA BADGE ([0a169dc](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0a169dc6ecb3e962b8e3ce049a9fc146c083d687))
+
+## [1.8.4-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.3...v1.8.4-dev.4) (2026-04-16)
+
+
+### Bug Fixes
+
+* notification PWA on app icon ([6803f90](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6803f908f3cfcd19dd55b9f63b70e7309c26ab7b))
+
+## [1.8.4-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.2...v1.8.4-dev.3) (2026-04-16)
+
+
+### Bug Fixes
+
+* ST-2266-Cutting of row count drop down ([9691b6e](https://github.com/michael-raquel/PowerIntake-WebApp/commit/9691b6efc643892e28f08cd6501db622fd9ff170))
+
+## [1.8.4-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.1...v1.8.4-dev.2) (2026-04-16)
+
+
+### Bug Fixes
+
+* ST Increase Logo Size ([340133d](https://github.com/michael-raquel/PowerIntake-WebApp/commit/340133dddb06fa96d71661b0840a7d51ae8b92a9))
+
+## [1.8.4-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.3...v1.8.4-dev.1) (2026-04-15)
 
 
 ### Bug Fixes
