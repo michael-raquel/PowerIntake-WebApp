@@ -141,6 +141,20 @@ body {
   * {
     @apply border-border outline-ring/50;
   }
+
+  /* Keep omnichannel host elements isolated from app theme border/ring styles. */
+  [data-sparta-omnichannel-managed="1"],
+  [data-sparta-omnichannel-managed="1"] *,
+  iframe[src*="omnichannelengagementhub"],
+  iframe[src*="livechatwidget"] {
+    border: 0 !important;
+    border-color: transparent !important;
+    outline: none !important;
+    outline-color: transparent !important;
+    box-shadow: none !important;
+    color-scheme: light !important;
+  }
+
   body {
     @apply bg-background text-foreground;
   }
