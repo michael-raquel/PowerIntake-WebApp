@@ -9,7 +9,6 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useMsal } from "@azure/msal-react";
 import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
-import SpartaAssistWidget from "../components/SpartaAssistWidget"; // adjust path as needed
 
 const SpartaAssistContext = createContext(null);
 
@@ -42,7 +41,10 @@ export function SpartaAssistProvider({ children }) {
       return str === "true" || str === "1";
     };
 
-    setTimeout(() => setSpartaAssistEnabled(parseBool(settings.v_spartaassist)), 0);
+    setTimeout(
+      () => setSpartaAssistEnabled(parseBool(settings.v_spartaassist)),
+      0,
+    );
   }, [entrauserid, userSettings, loading]);
 
   // Set email globally before widget mounts so lcw:ready always has it
@@ -60,9 +62,6 @@ export function SpartaAssistProvider({ children }) {
       value={{ spartaAssistEnabled, updateSpartaAssist, userEmail }}
     >
       {children}
-      {spartaAssistEnabled === true && (
-        <SpartaAssistWidget userEmail={userEmail} />
-      )}
     </SpartaAssistContext.Provider>
   );
 }
