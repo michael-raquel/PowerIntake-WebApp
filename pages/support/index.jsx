@@ -173,13 +173,12 @@ export default function SupportRoute() {
                             {card.version}
                           </p>
                           <p className="mt-1 text-xs text-gray-600 dark:text-gray-400">
-                            {card.release}
+                            {card.timestamp
+                              ? `Released ${new Date(card.timestamp).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" })} ${new Date(card.timestamp).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
+                              : card.release
+                                ? `Released ${card.release}`
+                                : ""}
                           </p>
-                          {card.timestamp && (
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-500">
-                              {new Date(card.timestamp).toLocaleString()}
-                            </p>
-                          )}
                         </div>
                       )
                     }
