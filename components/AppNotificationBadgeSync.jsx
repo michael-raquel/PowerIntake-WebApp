@@ -132,7 +132,7 @@ export default function AppNotificationBadgeSync() {
 
       if (typeof document === "undefined") return;
 
-      const baseTitle = stripTitleBadgePrefix(document.title);
+      const baseTitle = stripTitleBadgePrefix(document.title).trim() || "Power Intake";
       if (safeUnreadCount > 0) {
         const titleCount =
           safeUnreadCount > MAX_BADGE_COUNT
