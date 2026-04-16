@@ -1,3 +1,10 @@
+# [1.9.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.8...v1.9.0-dev.1) (2026-04-16)
+
+
+### Features
+
+* 2089 : Format and display release timestamps consistently ([1f1aae5](https://github.com/michael-raquel/PowerIntake-WebApp/commit/1f1aae595c348228a61317dac0ed18f03d60e9d6))
+
 ## [1.8.4-dev.8](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.7...v1.8.4-dev.8) (2026-04-16)
 
 
