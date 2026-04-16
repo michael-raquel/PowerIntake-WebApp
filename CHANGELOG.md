@@ -1,3 +1,10 @@
+## [1.8.4-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.4...v1.8.4-dev.5) (2026-04-16)
+
+
+### Bug Fixes
+
+* notification PWA BADGE ([0a169dc](https://github.com/michael-raquel/PowerIntake-WebApp/commit/0a169dc6ecb3e962b8e3ce049a9fc146c083d687))
+
 ## [1.8.4-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.3...v1.8.4-dev.4) (2026-04-16)
 
 
