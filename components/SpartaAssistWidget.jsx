@@ -20,10 +20,13 @@ const MOBILE_BREAKPOINT = 768;
 const MOBILE_NAV_HEIGHT = 64;
 const MOBILE_EDGE_GAP = 16;
 const DEFAULT_EDGE_GAP = 45;
+const POSITION_SYNC_BURST_MS = 1500;
+const POSITION_SYNC_INTERVAL_MS = 120;
+const WIDGET_IFRAME_SELECTOR =
+  'iframe[src*="omnichannelengagementhub"], iframe[src*="livechatwidget"]';
 
 const WIDGET_SELECTOR = [
-  'iframe[src*="omnichannelengagementhub"]',
-  'iframe[src*="livechatwidget"]',
+  WIDGET_IFRAME_SELECTOR,
   '[id*="omnichannel"]',
   '[class*="omnichannel"]',
   '[id*="lcw"]',
@@ -52,29 +55,25 @@ function ensureWidgetDarkModeStyle() {
   if (document.getElementById(OMNICHANNEL_DARK_STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = OMNICHANNEL_DARK_STYLE_ID;
-  // Target the fixed-position wrapper divs injected by the widget that get a
-  // white background. In light mode this is invisible; in dark mode it shows
-  // as a white square behind the circular chat button.
-  // We leave the button's own backgroundColor (#ffffff set via ensureLcwCallback)
-  // intact — only the transparent wrapper containers are reset.
   style.textContent = `
-    .dark [id*="lcw"],
-    .dark [class*="lcw"],
-    .dark [id*="omnichannel"],
-    .dark [class*="omnichannel"],
-    .dark [data-id*="lcw"],
-    .dark [data-testid*="lcw"] {
-      background-color: transparent !important;
-      box-shadow: none !important;
+    ${WIDGET_SELECTOR} {
+      color-scheme: light;
     }
-    /* Catch the outermost fixed wrapper the widget injects with inline styles */
-    .dark div[style*="position: fixed"][style*="bottom"],
-    .dark div[style*="position:fixed"][style*="bottom"] {
+    ${WIDGET_IFRAME_SELECTOR} {
       background-color: transparent !important;
+      border: 0 !important;
       box-shadow: none !important;
     }
   `;
   document.head.appendChild(style);
+}
+
+function applyWidgetIsolationStyles(node) {
+  node.style.setProperty("background", "transparent", "important");
+  node.style.setProperty("background-color", "transparent", "important");
+  node.style.setProperty("box-shadow", "none", "important");
+  node.style.setProperty("border", "0", "important");
+  node.style.setProperty("color-scheme", "light");
 }
 
 function setWidgetBottomVariable(hasMobileBottomNav) {
@@ -92,6 +91,9 @@ function applyWidgetBottomOffset(hasMobileBottomNav) {
 
   nodes.forEach((node) => {
     if (!(node instanceof HTMLElement)) return;
+    if (node.tagName === "IFRAME") {
+      applyWidgetIsolationStyles(node);
+    }
     let current = node;
     let depth = 0;
 
@@ -100,6 +102,7 @@ function applyWidgetBottomOffset(hasMobileBottomNav) {
       const computed = window.getComputedStyle(current);
       if (computed.position === "fixed") {
         current.style.bottom = `${offset}px`;
+        applyWidgetIsolationStyles(current);
         current.setAttribute(OMNICHANNEL_WIDGET_MANAGED_ATTR, "1");
         visited.add(current);
       }
@@ -182,7 +185,10 @@ function createOmnichannelScript(src) {
   return script;
 }
 
-export default function SpartaAssistWidget({ hasMobileBottomNav = false, userEmail = "" }) {
+export default function SpartaAssistWidget({
+  hasMobileBottomNav = false,
+  userEmail = "",
+}) {
   useEffect(() => {
     if (userEmail) window.__lcwContextEmail = userEmail;
   }, [userEmail]);
@@ -191,27 +197,58 @@ export default function SpartaAssistWidget({ hasMobileBottomNav = false, userEma
     ensureWidgetOffsetStyle();
     ensureWidgetDarkModeStyle();
 
+    let burstEnd = 0;
+    let intervalId = null;
+    let rafId = 0;
+
     const syncPosition = () => {
       setWidgetBottomVariable(hasMobileBottomNav);
       applyWidgetBottomOffset(hasMobileBottomNav);
     };
 
-    syncPosition();
+    const startSyncBurst = () => {
+      burstEnd = Date.now() + POSITION_SYNC_BURST_MS;
+      syncPosition();
 
-    const observer = new MutationObserver(syncPosition);
-    observer.observe(document.body, { childList: true, subtree: true });
+      if (intervalId !== null) return;
+      intervalId = window.setInterval(() => {
+        syncPosition();
+        if (Date.now() > burstEnd) {
+          window.clearInterval(intervalId);
+          intervalId = null;
+        }
+      }, POSITION_SYNC_INTERVAL_MS);
+    };
 
-    window.addEventListener("resize", syncPosition);
-    window.addEventListener("orientationchange", syncPosition);
+    const scheduleSync = () => {
+      if (rafId) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = 0;
+        startSyncBurst();
+      });
+    };
 
-    const script = document.getElementById(OMNICHANNEL_WIDGET_ID);
-    script?.addEventListener("load", syncPosition);
+    scheduleSync();
+
+    const observer = new MutationObserver(scheduleSync);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class"],
+    });
+
+    window.addEventListener("resize", scheduleSync);
+    window.addEventListener("orientationchange", scheduleSync);
+    window.addEventListener("lcw:ready", scheduleSync);
 
     return () => {
       observer.disconnect();
-      window.removeEventListener("resize", syncPosition);
-      window.removeEventListener("orientationchange", syncPosition);
-      script?.removeEventListener("load", syncPosition);
+      window.removeEventListener("resize", scheduleSync);
+      window.removeEventListener("orientationchange", scheduleSync);
+      window.removeEventListener("lcw:ready", scheduleSync);
+      if (intervalId !== null) window.clearInterval(intervalId);
+      if (rafId) window.cancelAnimationFrame(rafId);
     };
   }, [hasMobileBottomNav]);
 
