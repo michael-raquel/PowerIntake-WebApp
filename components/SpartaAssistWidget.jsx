@@ -20,10 +20,11 @@ const MOBILE_BREAKPOINT = 768;
 const MOBILE_NAV_HEIGHT = 64;
 const MOBILE_EDGE_GAP = 16;
 const DEFAULT_EDGE_GAP = 45;
+const WIDGET_IFRAME_SELECTOR =
+  'iframe[src*="omnichannelengagementhub"], iframe[src*="livechatwidget"]';
 
 const WIDGET_SELECTOR = [
-  'iframe[src*="omnichannelengagementhub"]',
-  'iframe[src*="livechatwidget"]',
+  WIDGET_IFRAME_SELECTOR,
   '[id*="omnichannel"]',
   '[class*="omnichannel"]',
   '[id*="lcw"]',
@@ -52,29 +53,25 @@ function ensureWidgetDarkModeStyle() {
   if (document.getElementById(OMNICHANNEL_DARK_STYLE_ID)) return;
   const style = document.createElement("style");
   style.id = OMNICHANNEL_DARK_STYLE_ID;
-  // Target the fixed-position wrapper divs injected by the widget that get a
-  // white background. In light mode this is invisible; in dark mode it shows
-  // as a white square behind the circular chat button.
-  // We leave the button's own backgroundColor (#ffffff set via ensureLcwCallback)
-  // intact — only the transparent wrapper containers are reset.
   style.textContent = `
-    .dark [id*="lcw"],
-    .dark [class*="lcw"],
-    .dark [id*="omnichannel"],
-    .dark [class*="omnichannel"],
-    .dark [data-id*="lcw"],
-    .dark [data-testid*="lcw"] {
-      background-color: transparent !important;
-      box-shadow: none !important;
+    ${WIDGET_SELECTOR} {
+      color-scheme: light;
     }
-    /* Catch the outermost fixed wrapper the widget injects with inline styles */
-    .dark div[style*="position: fixed"][style*="bottom"],
-    .dark div[style*="position:fixed"][style*="bottom"] {
+    ${WIDGET_IFRAME_SELECTOR} {
       background-color: transparent !important;
+      border: 0 !important;
       box-shadow: none !important;
     }
   `;
   document.head.appendChild(style);
+}
+
+function applyWidgetIsolationStyles(node) {
+  node.style.setProperty("background", "transparent", "important");
+  node.style.setProperty("background-color", "transparent", "important");
+  node.style.setProperty("box-shadow", "none", "important");
+  node.style.setProperty("border", "0", "important");
+  node.style.setProperty("color-scheme", "light");
 }
 
 function setWidgetBottomVariable(hasMobileBottomNav) {
@@ -92,6 +89,9 @@ function applyWidgetBottomOffset(hasMobileBottomNav) {
 
   nodes.forEach((node) => {
     if (!(node instanceof HTMLElement)) return;
+    if (node.tagName === "IFRAME") {
+      applyWidgetIsolationStyles(node);
+    }
     let current = node;
     let depth = 0;
 
@@ -100,6 +100,7 @@ function applyWidgetBottomOffset(hasMobileBottomNav) {
       const computed = window.getComputedStyle(current);
       if (computed.position === "fixed") {
         current.style.bottom = `${offset}px`;
+        applyWidgetIsolationStyles(current);
         current.setAttribute(OMNICHANNEL_WIDGET_MANAGED_ATTR, "1");
         visited.add(current);
       }
