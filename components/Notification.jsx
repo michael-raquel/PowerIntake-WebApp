@@ -263,7 +263,7 @@ export default function Notification({ isMobile = false, isCollapsed = false, is
 const panelClass = isMobile
     ? "fixed inset-x-3 top-16 bottom-20 z-50 rounded-2xl"
     : isDesktopFloating
-        ? "fixed top-1 bottom-1 w-[22rem] max-w-[calc(100vw-1rem)] z-[70]"
+        ? "fixed top-0 bottom-0 w-[22rem] max-w-[calc(100vw-1rem)] z-[70]"
         : "fixed top-0 right-[3.5rem] w-[22rem] h-screen z-[70]";
 
     const panelStyle = {
