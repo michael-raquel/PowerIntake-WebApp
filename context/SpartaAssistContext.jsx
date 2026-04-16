@@ -1,4 +1,3 @@
-// context/SpartaAssistContext.jsx
 import {
   createContext,
   useContext,
@@ -10,18 +9,21 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useMsal } from "@azure/msal-react";
 import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
+import SpartaAssistWidget from "../components/SpartaAssistWidget"; // adjust path as needed
 
 const SpartaAssistContext = createContext(null);
 
 export function SpartaAssistProvider({ children }) {
   const { account } = useAuth();
   const { accounts } = useMsal();
-  const [spartaAssistEnabled, setSpartaAssistEnabled] = useState(null); // null = loading
+  const [spartaAssistEnabled, setSpartaAssistEnabled] = useState(null);
 
   const entrauserid = useMemo(
     () => account?.localAccountId || accounts?.[0]?.localAccountId || "",
     [account?.localAccountId, accounts],
   );
+
+  const userEmail = account?.username || accounts?.[0]?.username || "";
 
   const { userSettings, loading } = useFetchUserSettings({ entrauserid });
 
@@ -43,16 +45,24 @@ export function SpartaAssistProvider({ children }) {
     setTimeout(() => setSpartaAssistEnabled(parseBool(settings.v_spartaassist)), 0);
   }, [entrauserid, userSettings, loading]);
 
-  // Called by SettingsPage on toggle — instant UI update, no refetch needed
+  // Set email globally before widget mounts so lcw:ready always has it
+  useEffect(() => {
+    if (!userEmail) return;
+    window.__lcwContextEmail = userEmail;
+  }, [userEmail]);
+
   const updateSpartaAssist = useCallback((value) => {
     setSpartaAssistEnabled(!!value);
   }, []);
 
   return (
     <SpartaAssistContext.Provider
-      value={{ spartaAssistEnabled, updateSpartaAssist }}
+      value={{ spartaAssistEnabled, updateSpartaAssist, userEmail }}
     >
       {children}
+      {spartaAssistEnabled === true && (
+        <SpartaAssistWidget userEmail={userEmail} />
+      )}
     </SpartaAssistContext.Provider>
   );
 }
