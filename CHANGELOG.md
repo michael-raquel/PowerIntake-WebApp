@@ -1,3 +1,10 @@
+# [1.9.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0-dev.3...v1.9.0-dev.4) (2026-04-16)
+
+
+### Bug Fixes
+
+* timeline icon information ([37bff32](https://github.com/michael-raquel/PowerIntake-WebApp/commit/37bff32c6a267c7473c39ec28c38e5ffedb328f7))
+
 # [1.9.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0-dev.2...v1.9.0-dev.3) (2026-04-16)
 
 
