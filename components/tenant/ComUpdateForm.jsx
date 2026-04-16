@@ -202,7 +202,7 @@ export default function ComUpdateForm({
         isconsented: formData.isconsented,
         isapproved: formData.isapproved,
       });
-      toast.success("Tenant updated successfully.");
+      // toast.success("Tenant updated successfully.");
       onUpdated?.(result?.tenantuuid || tenantUuid);
       if (!inline) onClose?.();
     } catch (err) {
