@@ -1,4 +1,4 @@
-## [1.9.1-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0...v1.9.1-dev.1) (2026-04-16)
+## [1.9.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0...v1.9.1) (2026-04-16)
 
 
 ### Bug Fixes
