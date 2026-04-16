@@ -1,3 +1,10 @@
+## [1.8.4-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.5...v1.8.4-dev.6) (2026-04-16)
+
+
+### Bug Fixes
+
+* st-2244-notification padding full ([1ad71ec](https://github.com/michael-raquel/PowerIntake-WebApp/commit/1ad71ecfcc8a39ea14098744f5554edec9581b43))
+
 ## [1.8.4-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.4...v1.8.4-dev.5) (2026-04-16)
 
 
