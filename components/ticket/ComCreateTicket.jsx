@@ -256,7 +256,6 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   const [submitting, setSubmitting] = useState(false);
   const [feedbackChoice, setFeedbackChoice] = useState(null);
   const [feedbackLogId, setFeedbackLogId] = useState(null);
-  const [feedbackCleared, setFeedbackCleared] = useState(false);
   const fileInputRef = useRef(null);
   const fieldRefs = useRef({});
   const { askAssist, loading: aiLoading, suggestion, isStreaming, error: aiError, clear: clearSuggestion } = useSpartaAssistOnce();
@@ -311,8 +310,6 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
   const handleSubmit = async () => {
     if (!validateAll()) return;
-    if (suggestion && !feedbackLogId) return;
-    if (feedbackCleared) return;
     // if (suggestion && feedbackChoice !== "down") {
     //   toast.error("Please select thumbs down feedback before submitting.");
     //   return;
@@ -360,13 +357,12 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   };
 
   const isFeedbackBusy = feedbackSubmitting || deleteSubmitting || updateSubmitting || submitting || aiLoading;
-  const isSubmitDisabled = submitting || aiLoading || feedbackCleared || (suggestion && !feedbackLogId);
+  const isSubmitDisabled = submitting || aiLoading;
 
   const handleFeedback = async (feedbackType) => {
     if (!suggestion || isFeedbackBusy || feedbackChoice) return;
 
     try {
-      setFeedbackCleared(false);
       setFeedbackChoice(feedbackType);
 
       const data = await submitFeedback({
@@ -388,7 +384,6 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
   const handleClearFeedback = async () => {
     if (!feedbackLogId || feedbackSubmitting || deleteSubmitting) return;
     const logId = feedbackLogId;
-    setFeedbackCleared(true);
     setFeedbackChoice(null);
     setFeedbackLogId(null);
 
@@ -467,7 +462,6 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                    onClick={() => {
                      setFeedbackChoice(null);
                      setFeedbackLogId(null);
-                     setFeedbackCleared(false);
                      askAssist(formData.title, formData.description);
                    }}
                     disabled={aiLoading || submitting || formData.description.length > 1000}
@@ -771,7 +765,6 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                     clearSuggestion();
                     setFeedbackChoice(null);
                     setFeedbackLogId(null);
-                    setFeedbackCleared(false);
                   }}
                   disabled={submitting}
                   className="bg-white text-gray-900 border-gray-300 hover:bg-gray-100
