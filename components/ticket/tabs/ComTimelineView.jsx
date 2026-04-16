@@ -130,9 +130,9 @@ export default function ComTimelineView({ ticket }) {
             <div className="flex-1 min-w-0">
               <div className="bg-white dark:bg-gray-900/50 rounded-xl p-4 border border-gray-100 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex flex-col gap-2 mb-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
                     <span
-      className={cn("block min-w-0 flex-1 truncate text-sm font-semibold", style.color)}
+      className={cn("block min-w-0 max-w-[11rem] truncate text-sm font-semibold sm:max-w-[14rem] md:max-w-[18rem] lg:max-w-[24rem]", style.color)}
       title={s.v_status}
     >
       {s.v_status}
