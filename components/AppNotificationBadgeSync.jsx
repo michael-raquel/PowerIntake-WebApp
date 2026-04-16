@@ -1,12 +1,19 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useFetchNotification } from "@/hooks/UseFetchNotification";
 import socket from "@/lib/socket";
 
 const MAX_BADGE_COUNT = 99;
 const TITLE_BADGE_PREFIX_PATTERN = /^\(\d+\+?\)\s*/;
+const NOTIFICATION_UNREAD_COUNT_EVENT = "powerintake:notification-unread-count";
 
 const stripTitleBadgePrefix = (title = "") => title.replace(TITLE_BADGE_PREFIX_PATTERN, "");
+
+const normalizeUnreadCount = (value) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 0;
+  return Math.max(0, Math.floor(parsed));
+};
 
 const isReadValue = (value) => {
   if (typeof value === "boolean") return value;
@@ -44,6 +51,30 @@ export default function AppNotificationBadgeSync() {
       ),
     [notifications],
   );
+
+  const [liveUnreadCount, setLiveUnreadCount] = useState(null);
+
+  useEffect(() => {
+    setLiveUnreadCount(unreadCount);
+  }, [unreadCount]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onUnreadCountUpdated = (event) => {
+      const eventUnreadCount = event?.detail?.unreadCount;
+      if (eventUnreadCount === undefined || eventUnreadCount === null) return;
+      setLiveUnreadCount(normalizeUnreadCount(eventUnreadCount));
+    };
+
+    window.addEventListener(NOTIFICATION_UNREAD_COUNT_EVENT, onUnreadCountUpdated);
+
+    return () => {
+      window.removeEventListener(NOTIFICATION_UNREAD_COUNT_EVENT, onUnreadCountUpdated);
+    };
+  }, []);
+
+  const effectiveUnreadCount = liveUnreadCount ?? unreadCount;
 
   useEffect(() => {
     if (!useruuid) return;
@@ -84,7 +115,7 @@ export default function AppNotificationBadgeSync() {
     if (typeof window === "undefined") return;
 
     const syncBadge = async () => {
-      const safeUnreadCount = Math.max(0, unreadCount);
+      const safeUnreadCount = Math.max(0, effectiveUnreadCount);
       const badgeCount = Math.min(safeUnreadCount, MAX_BADGE_COUNT);
 
       try {
@@ -114,7 +145,7 @@ export default function AppNotificationBadgeSync() {
     };
 
     syncBadge();
-  }, [unreadCount]);
+  }, [effectiveUnreadCount]);
 
   useEffect(() => {
     return () => {
