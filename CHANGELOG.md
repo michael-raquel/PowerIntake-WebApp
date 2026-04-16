@@ -1,3 +1,10 @@
+# [1.9.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0-dev.2...v1.9.0-dev.3) (2026-04-16)
+
+
+### Bug Fixes
+
+* 2256 : Added Chat Widget with personal design ([514afa3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/514afa3318276447e7961c5342b981120404b1f0))
+
 # [1.9.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0-dev.1...v1.9.0-dev.2) (2026-04-16)
 
 
