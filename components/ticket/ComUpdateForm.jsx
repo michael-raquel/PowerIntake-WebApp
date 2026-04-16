@@ -291,9 +291,9 @@ const handleReactivate = async () => {
 
     try {
         await reactivateTicket({ ticketuuid: ticket.v_ticketuuid, createdby: account?.localAccountId });
-        toast.success("Ticket Reactivated", {
-            description: `Ticket ${liveTicket.v_ticketnumber} has been reactivated successfully`
-        });
+        // toast.success("Ticket Reactivated", {
+        //     description: `Ticket ${liveTicket.v_ticketnumber} has been reactivated successfully`
+        // });
         onUpdated?.(ticket.v_ticketuuid ); 
         onClose?.();
     } catch (error) {
