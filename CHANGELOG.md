@@ -1,3 +1,10 @@
+# [1.9.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0-dev.1...v1.9.0-dev.2) (2026-04-16)
+
+
+### Bug Fixes
+
+* Timeline UI overflow ([37cfc83](https://github.com/michael-raquel/PowerIntake-WebApp/commit/37cfc839790b0744343e2243527a59cccdc8063e))
+
 # [1.9.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.8.4-dev.8...v1.9.0-dev.1) (2026-04-16)
 
 
