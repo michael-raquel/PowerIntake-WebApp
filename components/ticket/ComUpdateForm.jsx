@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { X, StickyNote, ChevronLeft, User, CalendarCheck, Paperclip, GitBranch, Plus, Calendar as CalendarIcon, RefreshCw } from 'lucide-react';
+import { X, StickyNote, ChevronLeft, User, CalendarCheck, Paperclip, GitBranch, Plus, Calendar as CalendarIcon, RefreshCw, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import ComUserInformation from './tabs/ComUserInformtaion';
 import ComClosureDate from './tabs/ComClosureDate';
 import ComAttachment from './tabs/ComAttachment';
 import ComTimelineView from './tabs/ComTimelineView';
+import ComTicketFeedback from './tabs/ComTicketFeedback';
 import socket from "@/lib/socket";
 
 const TABS = [
@@ -26,6 +27,7 @@ const TABS = [
   { id: 'closure', icon: CalendarCheck, label: 'Resolution' },
   { id: 'attachments', icon: Paperclip, label: 'Attachments' },
   { id: 'timeline', icon: GitBranch, label: 'Timeline' },
+  { id: 'feedback', icon: Star, label: 'Feedback' },
 ];
 
 const STATUS_COLORS = {
@@ -108,6 +110,16 @@ export default function ComUpdateForm({ ticket, onClose, onUpdated, initialActiv
   
   const [liveTicket, setLiveTicket] = useState(ticket);
   useEffect(() => { setLiveTicket(ticket); }, [ticket]);
+
+  const [ticketFeedback, setTicketFeedback] = useState({
+    rating: 0,
+    message: "",
+    submitted: false,
+    updatedAt: null,
+  });
+  useEffect(() => {
+    setTicketFeedback({ rating: 0, message: "", submitted: false, updatedAt: null });
+  }, [ticket?.v_ticketuuid]);
 
   const [activeTab, setActiveTab] = useState(null);
   const [panelOpen, setPanelOpen] = useState(false);
@@ -303,6 +315,11 @@ const handleReactivate = async () => {
     }
 };
 
+const handleOpenFeedback = () => {
+  setActiveTab('feedback');
+  setPanelOpen(true);
+};
+
 useEffect(() => {
     const handleNoteSynced = ({ ticketuuid }) => {
         if (String(ticketuuid) !== String(ticket?.v_ticketuuid)) return;
@@ -368,6 +385,15 @@ if (!ticket) return null;
   </div>
 
   <div className="flex items-center justify-start sm:justify-end gap-2">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleOpenFeedback}
+      className="gap-2 border-violet-200 text-violet-700 hover:bg-violet-50 dark:border-violet-700 dark:text-violet-200 dark:hover:bg-violet-950/30"
+    >
+      <Star className="w-3.5 h-3.5" />
+      Add Feedback
+    </Button>
     {canReactivate && (
       <Button
         variant="outline"
@@ -558,6 +584,14 @@ if (!ticket) return null;
                     onChange={setAttachments} canEdit={canEditAttachments} createdby={ticket.v_entrauserid} modifiedby={account?.localAccountId} refreshKey={attachmentRefreshKey} />
                 )}
                 {activeTab === 'timeline' && <ComTimelineView ticket={liveTicket} />}
+                                {activeTab === 'feedback'    && (
+                  <ComTicketFeedback
+                    feedback={ticketFeedback}
+                    onFeedbackChange={(updates) =>
+                      setTicketFeedback((prev) => ({ ...prev, ...updates }))
+                    }
+                  />
+                )}
               </div>
             </div>
           )}

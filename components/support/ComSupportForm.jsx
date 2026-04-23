@@ -36,7 +36,7 @@ export default function ComSupportForm({ open, onClose }) {
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-			<div className="w-full max-w-2xl rounded-2xl bg-white shadow-xl dark:bg-gray-900">
+			<div className="w-full max-w-[95vw] md:max-w-[80vw] lg:max-w-[70vw] xl:max-w-[60vw] 2xl:max-w-[50vw] rounded-2xl bg-white shadow-xl dark:bg-gray-900">
 				<div className="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-800">
 					<div className="flex items-center gap-3">
 						<span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-violet-600 dark:bg-violet-900/40 dark:text-violet-300">

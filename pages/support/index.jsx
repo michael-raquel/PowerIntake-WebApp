@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import {
   Mail,
   MessageSquare,
@@ -15,24 +16,18 @@ import ComCard, {
   learnMoreCards,
 } from "@/components/support/ComCard";
 import ComSupportForm from "@/components/support/ComSupportForm";
-import ComFeedbackForm from "@/components/support/ComFeedbackForm";
 
 const supportIcons = [Mail, MessageSquare, PhoneCall];
 const learnMoreIcons = [BookOpen, Info];
 
 export default function SupportRoute() {
   const [supportOpen, setSupportOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   return (
     <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
       <ComSupportForm
         open={supportOpen}
         onClose={() => setSupportOpen(false)}
-      />
-      <ComFeedbackForm
-        open={feedbackOpen}
-        onClose={() => setFeedbackOpen(false)}
       />
 
       <div className="flex flex-col gap-4 flex-1">
@@ -84,19 +79,27 @@ export default function SupportRoute() {
                     iconBg={card.iconBg}
                     footer={
                       card.cta ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (card.title === "Email Support")
-                              setSupportOpen(true);
-                            if (card.title === "Give Feedback")
-                              setFeedbackOpen(true);
-                          }}
-                          className="inline-flex items-center justify-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
-                        >
-                          {card.cta}
-                          <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                        </button>
+                        card.title === "Feedback" ? (
+                          <Link
+                            href="/support/feedback"
+                            className="inline-flex items-center justify-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
+                          >
+                            {card.cta}
+                            <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </Link>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (card.title === "Email Support")
+                                setSupportOpen(true);
+                            }}
+                            className="inline-flex items-center justify-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
+                          >
+                            {card.cta}
+                            <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                        )
                       ) : (
                         <div className="rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-center dark:border-orange-900/50 dark:bg-orange-950/40">
                           <div className="flex gap-4 justify-center">
