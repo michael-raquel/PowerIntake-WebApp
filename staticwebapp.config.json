@@ -12,6 +12,7 @@
   "globalHeaders": {
     "Content-Security-Policy": "frame-ancestors 'self' https://teams.microsoft.com https://*.teams.microsoft.com https://teams.live.com https://*.skype.com",
     "X-Content-Type-Options": "nosniff",
-    "X-XSS-Protection": "1; mode=block"
+    "X-XSS-Protection": "1; mode=block",
+    "X-Frame-Options": ""
   }
 }
