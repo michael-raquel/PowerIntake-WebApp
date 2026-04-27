@@ -1,3 +1,10 @@
+# [1.10.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.1...v1.10.0-dev.2) (2026-04-27)
+
+
+### Reverts
+
+* Revert "feat: 2260-Teams-Store add Microsoft Teams SSO support and fix iframe authentication flow" ([71c0052](https://github.com/michael-raquel/PowerIntake-WebApp/commit/71c0052aca3cbc0e897c552ce3ac9574a01f5db7))
+
 # [1.10.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.1...v1.10.0-dev.1) (2026-04-27)
 
 
