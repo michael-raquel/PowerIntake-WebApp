@@ -1,0 +1,48 @@
+{
+  "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.19/MicrosoftTeams.schema.json",
+  "manifestVersion": "1.19",
+  "version": "1.0.0",
+  "id": "1d2c4b3e-4f2a-4a4b-9b84-1a2e6f1f6a3b",
+  "packageName": "com.spartaserv.powerintake",
+  "developer": {
+    "name": "Sparta Services, LLC",
+    "websiteUrl": "https://www.spartaserv.com",
+    "privacyUrl": "https://www.spartaserv.com/privacy-policy",
+    "termsOfUseUrl": "https://www.spartaserv.com/terms-conditions"
+  },
+  "name": {
+    "short": "Power Intake",
+    "full": "Power Intake"
+  },
+  "description": {
+    "short": "Power Intake ticketing and support portal.",
+    "full": "Power Intake is a ticketing and support portal for Sparta Services customers."
+  },
+  "icons": {
+    "outline": "icons/outline.png",
+    "color": "icons/color.png"
+  },
+  "accentColor": "#0f172a",
+  "staticTabs": [
+    {
+      "entityId": "power-intake",
+      "name": "Power Intake",
+      "contentUrl": "https://powerintake.spartaserv.com",
+      "websiteUrl": "https://powerintake.spartaserv.com",
+      "scopes": ["personal"]
+    }
+  ],
+  "permissions": ["identity"],
+  "validDomains": [
+    "powerintake.spartaserv.com",
+    "dev.powerintake.spartaserv.com",
+    "green-meadow-05e702e10.1.azurestaticapps.net",
+    "green-meadow-05e702e10-uat.centralus.1.azurestaticapps.net",
+    "green-meadow-05e702e10-dev.centralus.1.azurestaticapps.net",
+    "powerintake.azurewebsites.net"
+  ],
+  "webApplicationInfo": {
+    "id": "6ccf8b01-7af5-497b-9e23-45a92d68a226",
+    "resource": "api://6ccf8b01-7af5-497b-9e23-45a92d68a226"
+  }
+}
