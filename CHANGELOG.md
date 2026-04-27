@@ -1,3 +1,10 @@
+# [1.10.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.4...v1.10.0-dev.5) (2026-04-27)
+
+
+### Reverts
+
+* Revert "Implementation of 1st Teams App Compatibility" ([afffdb3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/afffdb3d06fa02f7179cd75f36d8dc8c81993520))
+
 # [1.10.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.3...v1.10.0-dev.4) (2026-04-27)
 
 
