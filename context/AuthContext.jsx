@@ -101,79 +101,30 @@ export function AuthProvider({ children }) {
     };
   }, [profilePhotoUrl]);
   
-// ── Your API token ──────────────────────────────────────
-useEffect(() => {
-  if (!account) return;
+  // ── Your API token ──────────────────────────────────────
+  useEffect(() => {
+    if (!account) return;
 
-  const acquire = async () => {
-    try {
-      const response    = await instance.acquireTokenSilent({ ...apiRequest, account });
-      const token       = response.accessToken;
-      const idToken     = response.idToken;
-      const claims      = decodeJwt(token);
-      const expectedAud = msalConfig.auth.clientId;
-
-      if (claims?.aud !== expectedAud && claims?.aud !== `api://${expectedAud}`) return;
-
-      setAccessToken(token);
-      setTokenInfo({
-        accessToken: token,
-        idToken,
-        expiresOn:   response.expiresOn?.toString(),
-        scopes:      response.scopes,
-        account: {
-          name:           response.account.name,
-          username:       response.account.username,
-          localAccountId: response.account.localAccountId,
-          tenantId:       response.account.tenantId,
-          environment:    response.account.environment,
-          roles:          claims?.roles ?? [],
-        },
-      });
-    } catch (err) {
-      if (!(err instanceof InteractionRequiredAuthError)) return;
-
-      // In Teams: re-fetch from Teams SDK instead of popup (popup is blocked)
+    const acquire = async () => {
       try {
-        const { isRunningInTeams, getTeamsClientToken } = await import("@/lib/teamsAuth");
-        const inTeams = await isRunningInTeams();
+        const response    = await instance.acquireTokenSilent({ ...apiRequest, account });
+        const token       = response.accessToken;
+        const idToken     = response.idToken;
+        const claims      = decodeJwt(token);
+        const expectedAud = msalConfig.auth.clientId;
 
-        if (inTeams) {
-          const freshToken = await getTeamsClientToken();
-          const claims     = decodeJwt(freshToken);
-          if (!claims) return;
-
-          setAccessToken(freshToken);
-          setTokenInfo({
-            accessToken: freshToken,
-            idToken:     freshToken,
-            expiresOn:   new Date((claims.exp ?? 0) * 1000).toString(),
-            scopes:      apiRequest.scopes,
-            account: {
-              name:           claims.name           ?? account.name,
-              username:       claims.preferred_username ?? claims.upn ?? account.username,
-              localAccountId: claims.oid             ?? account.localAccountId,
-              tenantId:       claims.tid             ?? account.tenantId,
-              environment:    account.environment,
-              roles:          claims.roles           ?? [],
-            },
-          });
+        if (claims?.aud !== expectedAud && claims?.aud !== `api://${expectedAud}`) {
+          // console.error("[TOKEN] Wrong token — aud:", claims?.aud);
           return;
         }
-      } catch {
-        // Teams token fetch failed — fall through to popup
-      }
 
-      // Normal browser: popup is fine
-      try {
-        const response = await instance.acquireTokenPopup({ ...apiRequest, account });
-        const token    = response.accessToken;
-        const claims   = decodeJwt(token);
+        // console.log("[AUTH] Access Token (silent):", token);
+        // console.log("[AUTH] ID Token (silent):", idToken);
 
         setAccessToken(token);
         setTokenInfo({
           accessToken: token,
-          idToken:     response.idToken,
+          idToken,
           expiresOn:   response.expiresOn?.toString(),
           scopes:      response.scopes,
           account: {
@@ -185,14 +136,43 @@ useEffect(() => {
             roles:          claims?.roles ?? [],
           },
         });
-      } catch {
-        // popup failed silently
-      }
-    }
-  };
+      } catch (err) {
+        if (err instanceof InteractionRequiredAuthError) {
+          try {
+            const response = await instance.acquireTokenPopup({ ...apiRequest, account });
+            const token    = response.accessToken;
+            const idToken  = response.idToken;
+            const claims   = decodeJwt(token);
 
-  acquire();
-}, [account, instance]);
+            // console.log("[AUTH] Access Token (popup):", token);
+            // console.log("[AUTH] ID Token (popup):", idToken);
+
+            setAccessToken(token);
+            setTokenInfo({
+              accessToken: token,
+              idToken,
+              expiresOn:   response.expiresOn?.toString(),
+              scopes:      response.scopes,
+              account: {
+                name:           response.account.name,
+                username:       response.account.username,
+                localAccountId: response.account.localAccountId,
+                tenantId:       response.account.tenantId,
+                environment:    response.account.environment,
+                roles:          claims?.roles ?? [],
+              },
+            });
+          } catch (popupErr) {
+            // console.error("[TOKEN] Popup failed:", popupErr);
+          }
+        } else {
+          // console.error("[TOKEN] Acquisition failed:", err);
+        }
+      }
+    };
+
+    acquire();
+  }, [account, instance]);
 
  // ── Graph token — only for wids / Global Admin check ────
 useEffect(() => {
