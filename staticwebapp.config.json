@@ -8,9 +8,5 @@
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": ["/sw.js", "/manifest.json", "/icons/*"]
-  },
-  "globalHeaders": {
-    "Content-Security-Policy": "frame-ancestors 'self' https://teams.microsoft.com https://*.teams.microsoft.com https://*.skype.com",
-    "X-Frame-Options": "ALLOW-FROM https://teams.microsoft.com"
   }
 }
