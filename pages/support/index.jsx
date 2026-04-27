@@ -17,12 +17,19 @@ import ComCard, {
 import ComSupportForm from "@/components/support/ComSupportForm";
 import ComFeedbackForm from "@/components/support/ComFeedbackForm";
 
+import dynamic from "next/dynamic";
+const ComCallSupportForm = dynamic(
+  () => import("@/components/support/ComCallSupportForm"),
+  { ssr: false }
+);
+
 const supportIcons = [Mail, MessageSquare, PhoneCall];
 const learnMoreIcons = [BookOpen, Info];
 
 export default function SupportRoute() {
   const [supportOpen, setSupportOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [callOpen, setCallOpen] = useState(false); 
 
   return (
     <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
@@ -35,6 +42,11 @@ export default function SupportRoute() {
         onClose={() => setFeedbackOpen(false)}
       />
 
+     <ComCallSupportForm                          
+        open={callOpen}
+        onClose={() => setCallOpen(false)}
+      />
+      
       <div className="flex flex-col gap-4 flex-1">
         <div className="px-4 bg-gradient-to-l from-pink-500 to-violet-800 rounded-xl py-5 flex-shrink-0 shadow-md">
           <div className="flex items-center justify-between">
@@ -98,7 +110,7 @@ export default function SupportRoute() {
                           <ArrowUpRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       ) : (
-                        <div className="rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-center dark:border-orange-900/50 dark:bg-orange-950/40">
+                       <div className="rounded-xl border border-orange-100 bg-orange-50 px-4 py-3 text-center dark:border-orange-900/50 dark:bg-orange-950/40">
                           <div className="flex gap-4 justify-center">
                             {card.telephone && (
                               <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -123,6 +135,15 @@ export default function SupportRoute() {
                           <p className="mt-1 text-[11px] text-gray-500 dark:text-gray-500">
                             Available 24/7, after regular business hours.
                           </p>
+
+                          <button
+                            type="button"
+                            onClick={() => setCallOpen(true)}
+                            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600 hover:bg-purple-700 px-3 py-2 text-xs font-semibold text-white transition-all"
+                          >
+                            <PhoneCall className="h-3.5 w-3.5" />
+                            Call Now
+                          </button>
                         </div>
                       )
                     }
