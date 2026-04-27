@@ -84,13 +84,12 @@ export function AuthProvider({ children }) {
       const blob = await photoRes.blob();
       const url = URL.createObjectURL(blob);
 
-      if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl);
       setProfilePhotoUrl(url);
       return url;
     } catch (err) {
       return null;
     }
-  }, [account, instance, profilePhotoUrl]);
+  }, [account, instance]);
 
   useEffect(() => {
     fetchProfilePhoto();

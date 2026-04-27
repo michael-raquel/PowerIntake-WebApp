@@ -1,3 +1,43 @@
+# [1.10.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.4...v1.10.0-dev.5) (2026-04-27)
+
+
+### Reverts
+
+* Revert "Implementation of 1st Teams App Compatibility" ([afffdb3](https://github.com/michael-raquel/PowerIntake-WebApp/commit/afffdb3d06fa02f7179cd75f36d8dc8c81993520))
+
+# [1.10.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.3...v1.10.0-dev.4) (2026-04-27)
+
+
+### Bug Fixes
+
+* updated the profile pic in the auth context ([030ef28](https://github.com/michael-raquel/PowerIntake-WebApp/commit/030ef282590f8650f10349087583d7356d249738))
+
+
+### Features
+
+* ST-2140 click to call functionality ([6767821](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6767821a1e261633bca9ca3138665338c2b69df5))
+
+# [1.10.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.2...v1.10.0-dev.3) (2026-04-27)
+
+
+### Reverts
+
+* Revert "2260: add a Microsoft Expansion" ([3b26320](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3b2632069263850d79727cc7d0a71937b402315a))
+
+# [1.10.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.1...v1.10.0-dev.2) (2026-04-27)
+
+
+### Reverts
+
+* Revert "feat: 2260-Teams-Store add Microsoft Teams SSO support and fix iframe authentication flow" ([71c0052](https://github.com/michael-raquel/PowerIntake-WebApp/commit/71c0052aca3cbc0e897c552ce3ac9574a01f5db7))
+
+# [1.10.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.1...v1.10.0-dev.1) (2026-04-27)
+
+
+### Features
+
+* 2260-Teams-Store add Microsoft Teams SSO support and fix iframe authentication flow ([ed61eaa](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ed61eaaf8a380b62ff784e3659b4895f44e5d52e))
+
 ## [1.9.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0...v1.9.1) (2026-04-16)
 
 
