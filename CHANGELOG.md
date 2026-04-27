@@ -1,3 +1,15 @@
+# [1.10.0-dev.4](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.3...v1.10.0-dev.4) (2026-04-27)
+
+
+### Bug Fixes
+
+* updated the profile pic in the auth context ([030ef28](https://github.com/michael-raquel/PowerIntake-WebApp/commit/030ef282590f8650f10349087583d7356d249738))
+
+
+### Features
+
+* ST-2140 click to call functionality ([6767821](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6767821a1e261633bca9ca3138665338c2b69df5))
+
 # [1.10.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.2...v1.10.0-dev.3) (2026-04-27)
 
 
