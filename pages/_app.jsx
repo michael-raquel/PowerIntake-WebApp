@@ -94,6 +94,24 @@ function AppContent({ Component, pageProps }) {
     }
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || window.self === window.top) {
+      return;
+    }
+
+    // Initialize the Teams SDK when the app is running inside a Teams iframe.
+    const initTeams = async () => {
+      try {
+        const { app } = await import("@microsoft/teams-js");
+        await app.initialize();
+      } catch {
+        // Ignore initialization errors outside Teams.
+      }
+    };
+
+    void initTeams();
+  }, []);
+
   const shouldShowWidget = spartaAssistEnabled === true && !isPublicPage;
 
   return (
