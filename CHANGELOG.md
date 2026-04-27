@@ -1,3 +1,10 @@
+# [1.10.0-dev.3](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.2...v1.10.0-dev.3) (2026-04-27)
+
+
+### Reverts
+
+* Revert "2260: add a Microsoft Expansion" ([3b26320](https://github.com/michael-raquel/PowerIntake-WebApp/commit/3b2632069263850d79727cc7d0a71937b402315a))
+
 # [1.10.0-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.1...v1.10.0-dev.2) (2026-04-27)
 
 
