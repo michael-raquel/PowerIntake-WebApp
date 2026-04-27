@@ -1,9 +1,8 @@
-import Head from "next/head";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { loginRequest } from "@/lib/msalConfig";
-import { isRunningInTeams, getTeamsClientToken } from "@/lib/teamsAuth";
+import { isRunningInTeams, bootstrapTeamsMsal } from "@/lib/teamsAuth";
 import Image from "next/image";
 
 export default function Home() {
@@ -13,17 +12,15 @@ export default function Home() {
   const [teamsChecked, setTeamsChecked] = useState(false);
   const [inTeams, setInTeams] = useState(false);
   const [teamsError, setTeamsError] = useState(null);
-  // null = trying ssoSilent, true = ssoSilent failed, need user gesture
-  const [needsUserGesture, setNeedsUserGesture] = useState(false);
-  const [loginHint, setLoginHint] = useState(null);
-  const [popupLoading, setPopupLoading] = useState(false);
 
+  // Already authenticated → go home
   useEffect(() => {
     if (isAuthenticated && accounts[0]) {
       router.push("/home");
     }
   }, [isAuthenticated, accounts, router]);
 
+  // Teams bootstrap — runs once, no popups, no redirects
   useEffect(() => {
     if (isAuthenticated) return;
 
@@ -40,21 +37,13 @@ export default function Home() {
       if (!cancelled) setInTeams(true);
 
       try {
-        const teamsToken = await getTeamsClientToken();
-        const payload = JSON.parse(atob(teamsToken.split(".")[1]));
-        const hint =
-          payload.preferred_username || payload.upn || payload.unique_name;
-
-        if (!hint) throw new Error("No loginHint in Teams token");
-        if (!cancelled) setLoginHint(hint);
-
-        // ssoSilent requires no user gesture — try this first
-        await instance.ssoSilent({ ...loginRequest, loginHint: hint });
-        // If we get here, MSAL cache is populated and isAuthenticated flips
-      } catch (ssoErr) {
-        console.warn("[TeamsAuth] ssoSilent failed:", ssoErr.errorCode);
-        // Can't auto-popup without a user gesture — surface a button instead
-        if (!cancelled) setNeedsUserGesture(true);
+        // This is entirely silent — no popup, no redirect
+        // Uses Teams' existing AAD session to populate MSAL cache
+        await bootstrapTeamsMsal(instance, loginRequest);
+        // After this, isAuthenticated flips true → useEffect above → /home
+      } catch (err) {
+        console.error("[TeamsAuth] Silent bootstrap failed:", err);
+        if (!cancelled) setTeamsError(err.message || "Teams sign-in failed");
       } finally {
         if (!cancelled) setTeamsChecked(true);
       }
@@ -65,23 +54,6 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Called by the "Sign in" button in Teams — has a user gesture, popup is allowed
-  const handleTeamsPopupLogin = async () => {
-    setPopupLoading(true);
-    setTeamsError(null);
-    try {
-      await instance.loginPopup({
-        ...loginRequest,
-        ...(loginHint ? { loginHint } : {}),
-      });
-      // isAuthenticated will flip → useEffect above pushes to /home
-    } catch (err) {
-      console.error("[TeamsAuth] loginPopup failed:", err);
-      setTeamsError(err.message || "Sign-in failed. Please try again.");
-      setPopupLoading(false);
-    }
-  };
-
   // ── Teams: detecting ─────────────────────────────────────
   if (!teamsChecked) {
     return (
@@ -91,8 +63,8 @@ export default function Home() {
     );
   }
 
-  // ── Teams: ssoSilent succeeded but isAuthenticated hasn't flipped yet ──
-  if (inTeams && !needsUserGesture && !teamsError) {
+  // ── Teams: bootstrapping (ssoSilent in flight) ───────────
+  if (inTeams && !teamsError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-3">
         <div className="h-8 w-8 rounded-full border-2 border-white/10 border-t-violet-500 animate-spin" />
@@ -101,41 +73,21 @@ export default function Home() {
     );
   }
 
-  // ── Teams: ssoSilent failed — must use a button to trigger popup ─────
-  if (inTeams && needsUserGesture) {
+  // ── Teams: error (ssoSilent failed — rare, means AAD session is gone) ──
+  if (inTeams && teamsError) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-5 px-6">
-        <Image src="/powerintakelogo.png" alt="Power Intake" width={40} height={40} className="drop-shadow-lg" />
-        <div className="text-center space-y-1">
-          <h2 className="text-white text-base font-semibold">Welcome to Power Intake</h2>
-          <p className="text-zinc-500 text-sm">Sign in with your Microsoft account to continue.</p>
-        </div>
-        {teamsError && (
-          <p className="text-red-400 text-xs text-center max-w-xs">{teamsError}</p>
-        )}
-        <button
-          onClick={handleTeamsPopupLogin}
-          disabled={popupLoading}
-          className="flex items-center gap-3 px-5 py-3 rounded-xl bg-white text-slate-800 text-sm font-semibold shadow-md hover:bg-slate-50 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          {popupLoading ? (
-            <div className="h-4 w-4 rounded-full border-2 border-slate-300 border-t-slate-700 animate-spin" />
-          ) : (
-            <span className="grid h-5 w-5 grid-cols-2 grid-rows-2 gap-[2px]">
-              <span className="rounded-[1px] bg-[#f25022]" />
-              <span className="rounded-[1px] bg-[#7fba00]" />
-              <span className="rounded-[1px] bg-[#00a4ef]" />
-              <span className="rounded-[1px] bg-[#ffb900]" />
-            </span>
-          )}
-          {popupLoading ? "Signing in..." : "Sign in with Microsoft"}
-        </button>
-        <p className="text-zinc-700 text-xs">Secured by Microsoft Identity</p>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-4 px-6">
+        <Image src="/powerintakelogo.png" alt="Power Intake" width={40} height={40} />
+        <p className="text-red-400 text-sm text-center">Sign-in failed.</p>
+        <p className="text-zinc-600 text-xs text-center max-w-xs">{teamsError}</p>
+        <p className="text-zinc-700 text-xs text-center">
+          Please close and reopen the app in Teams, or contact your administrator.
+        </p>
       </div>
     );
   }
 
-  // ── Normal browser landing page (unchanged) ──────────────
+  // ── Normal browser landing page ───────────────────────────
   return (
     <div
       className="relative min-h-screen bg-cover bg-center bg-no-repeat"
@@ -144,14 +96,7 @@ export default function Home() {
       <div className="absolute inset-0 bg-gradient-to-br from-black/80 via-slate-950/70 to-violet-950/60" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(139,92,246,0.15)_0%,_transparent_60%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(15,23,42,0.8)_0%,_transparent_70%)]" />
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
-      />
+      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
 
       <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-10">
         <div className="flex items-center gap-2.5">
@@ -213,7 +158,7 @@ export default function Home() {
                   </div>
                   <button
                     onClick={() => instance.loginRedirect({ ...loginRequest, prompt: "select_account" })}
-                    className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-md transition-all duration-200 hover:bg-slate-50 hover:shadow-lg hover:shadow-white/10 active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-900"
+                    className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-md transition-all duration-200 hover:bg-slate-50 hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-900"
                   >
                     <span className="grid h-5 w-5 grid-cols-2 grid-rows-2 gap-[2px] flex-shrink-0">
                       <span className="rounded-[1px] bg-[#f25022]" />
