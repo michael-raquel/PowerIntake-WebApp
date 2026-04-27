@@ -1,3 +1,10 @@
+# [1.10.0-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.1...v1.10.0-dev.1) (2026-04-27)
+
+
+### Features
+
+* 2260-Teams-Store add Microsoft Teams SSO support and fix iframe authentication flow ([ed61eaa](https://github.com/michael-raquel/PowerIntake-WebApp/commit/ed61eaaf8a380b62ff784e3659b4895f44e5d52e))
+
 ## [1.9.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.0...v1.9.1) (2026-04-16)
 
 
