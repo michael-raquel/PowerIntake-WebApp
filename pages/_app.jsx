@@ -17,12 +17,21 @@ const SpartaAssistWidget = dynamic(() => import("@/components/SpartaAssistWidget
 
 const msalInstance = new PublicClientApplication(msalConfig);
 
+// ── Intercept MSAL redirect result BEFORE MsalProvider consumes it ──────────
+// MsalProvider calls handleRedirectPromise internally on mount. By the time
+// any page component mounts and runs its own useEffect, the redirect result
+// is already consumed and gone from MSAL's internal state.
+//
+// We register an event callback here — before MsalProvider initializes —
+// so we can capture the account from the LOGIN_SUCCESS event and store it
+// in sessionStorage. The ms-consent-callback page reads it from there.
 msalInstance.addEventCallback((event) => {
   if (
     event.eventType === EventType.LOGIN_SUCCESS &&
     event.payload?.account
   ) {
     const account = event.payload.account;
+    console.log("[MSAL EVENT] LOGIN_SUCCESS — capturing account for consent callback:", account.username);
     sessionStorage.setItem(
       "msal_consent_account",
       JSON.stringify({
@@ -77,27 +86,26 @@ function AppContent({ Component, pageProps }) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       const clarityId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
-      if (clarityId) Clarity.init(clarityId);
+      if (clarityId) {
+        Clarity.init(clarityId);
+      } else {
+        console.warn("Clarity ID is missing (NEXT_PUBLIC_CLARITY_PROJECT_ID)");
+      }
     }
   }, []);
 
-  // ── Teams SDK initialization ─────────────────────────────
-  // Initialize early so Teams context is available to AuthGuard.
-  // This is intentionally non-blocking — failure is silently swallowed
-  // since the app also runs outside Teams.
   useEffect(() => {
-    if (typeof window === "undefined" || window.self === window.top) return;
+    if (typeof window === "undefined" || window.self === window.top) {
+      return;
+    }
 
+    // Initialize the Teams SDK when the app is running inside a Teams iframe.
     const initTeams = async () => {
       try {
         const { app } = await import("@microsoft/teams-js");
         await app.initialize();
-        console.log("[Teams] SDK initialized");
-
-        // Notify Teams that the app is ready (removes loading indicator)
-        app.notifySuccess();
       } catch {
-        // Silently ignore — not running inside Teams
+        // Ignore initialization errors outside Teams.
       }
     };
 
