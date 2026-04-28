@@ -95,7 +95,7 @@ function AppContent({ Component, pageProps }) {
         console.log("[Teams] SDK initialized");
 
         // Notify Teams that the app is ready (removes loading indicator)
-        //app.notifySuccess();
+        app.notifySuccess();
       } catch {
         // Silently ignore — not running inside Teams
       }
