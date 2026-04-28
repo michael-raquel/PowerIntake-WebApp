@@ -10,7 +10,14 @@ import { InteractionStatus } from "@azure/msal-browser";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
 import { loginRequest, apiRequest } from "@/lib/msalConfig";
-import { isRunningInTeams, bootstrapTeamsMsal } from "@/lib/teamsAuth";
+import {
+  isRunningInTeams,
+  bootstrapTeamsMsal,
+  getTeamsAuthLogs,
+  subscribeTeamsAuthLogs,
+  logTeamsAuthInfo,
+  logTeamsAuthError,
+} from "@/lib/teamsAuth";
 import dynamic from "next/dynamic";
 import AppNotificationBadgeSync from "@/components/AppNotificationBadgeSync";
 
@@ -25,6 +32,18 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   const [teamsChecked, setTeamsChecked]   = useState(false);
   const [teamsAuthError, setTeamsAuthError] = useState(null);
   const [debugInfo, setDebugInfo]         = useState(null); // dev-mode only
+  const [authLogs, setAuthLogs]           = useState(() => getTeamsAuthLogs());
+
+  useEffect(() => {
+    setAuthLogs(getTeamsAuthLogs());
+    const unsubscribe = subscribeTeamsAuthLogs((snapshot) => {
+      setAuthLogs(snapshot);
+    });
+
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, []);
 
   // ── Teams SSO bootstrap ──────────────────────────────────────────────────
   useEffect(() => {
@@ -34,10 +53,10 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
     let cancelled = false;
 
     const tryTeamsAuth = async () => {
-      console.log("[AuthGuard] Checking Teams environment…");
+      logTeamsAuthInfo("[AuthGuard] Checking Teams environment…");
 
       const inTeams = await isRunningInTeams();
-      console.log("[AuthGuard] isRunningInTeams →", inTeams);
+      logTeamsAuthInfo("[AuthGuard] isRunningInTeams →", inTeams);
 
       if (!inTeams) {
         if (!cancelled) setTeamsChecked(true);
@@ -45,19 +64,19 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
       }
 
       if (isAuthenticated) {
-        console.log("[AuthGuard] Already authenticated — skipping bootstrap");
+        logTeamsAuthInfo("[AuthGuard] Already authenticated — skipping bootstrap");
         if (!cancelled) setTeamsChecked(true);
         return;
       }
 
-      console.log("[AuthGuard] In Teams, not authenticated — running bootstrapTeamsMsal…");
+      logTeamsAuthInfo("[AuthGuard] In Teams, not authenticated — running bootstrapTeamsMsal…");
 
       try {
         await bootstrapTeamsMsal(instance, loginRequest);
-        console.log("[AuthGuard] ✅ bootstrapTeamsMsal completed");
+        logTeamsAuthInfo("[AuthGuard] ✅ bootstrapTeamsMsal completed");
       } catch (err) {
         const msg = err?.message ?? "Teams authentication failed";
-        console.error("[AuthGuard] ❌ bootstrapTeamsMsal threw:", msg);
+        logTeamsAuthError("[AuthGuard] ❌ bootstrapTeamsMsal threw:", msg);
 
         // Collect debug info for the error screen
         if (!cancelled) {
@@ -88,7 +107,7 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
 
     isRunningInTeams().then((inTeams) => {
       if (!inTeams) {
-        console.log("[AuthGuard] Not in Teams — redirecting to loginRedirect");
+        logTeamsAuthInfo("[AuthGuard] Not in Teams — redirecting to loginRedirect");
         instance.loginRedirect(loginRequest);
       }
     });
@@ -103,7 +122,7 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
     if (isVerified) {
       setTimeout(() => setVerified(true), 0);
     } else {
-      console.log("[AuthGuard] consent_verified not set — routing to /checking");
+      logTeamsAuthInfo("[AuthGuard] consent_verified not set — routing to /checking");
       router.replace("/checking");
     }
   }, [isAuthenticated, inProgress, router]);
@@ -120,6 +139,15 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
       router.replace("/unauthorized");
     }
   }, [isAuthenticated, verified, requiredRoles, hasRequiredRole, router]);
+
+  const formatLogData = (data) => {
+    if (!data) return "";
+    try {
+      return JSON.stringify(data);
+    } catch {
+      return String(data);
+    }
+  };
 
   // ── Shared loading screen ─────────────────────────────────────────────────
   const loadingScreen = (message) => (
@@ -171,6 +199,36 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
             <pre className="mt-2 text-left text-[9px] text-zinc-600 bg-zinc-900 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
               {JSON.stringify(debugInfo, null, 2)}
             </pre>
+          </details>
+        )}
+
+        {authLogs.length > 0 && (
+          <details className="w-full">
+            <summary className="text-zinc-700 text-[10px] cursor-pointer hover:text-zinc-500 transition-colors">
+              Show auth logs
+            </summary>
+            <div className="mt-2 max-h-60 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 text-left text-[9px] text-zinc-500 space-y-1">
+              {authLogs.map((entry, index) => (
+                <div key={`${entry.ts}-${index}`} className="flex gap-2 whitespace-pre-wrap break-all">
+                  <span className="text-zinc-700">{entry.ts}</span>
+                  <span
+                    className={
+                      entry.level === "error"
+                        ? "text-red-400"
+                        : entry.level === "warn"
+                          ? "text-yellow-400"
+                          : "text-emerald-400"
+                    }
+                  >
+                    {String(entry.level ?? "info").toUpperCase()}
+                  </span>
+                  <span className="text-zinc-400">{entry.message}</span>
+                  {entry.data ? (
+                    <span className="text-zinc-600">{formatLogData(entry.data)}</span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
           </details>
         )}
 
