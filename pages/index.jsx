@@ -2,7 +2,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { loginRequest } from "@/lib/msalConfig";
-import { isRunningInTeams, bootstrapTeamsMsal } from "@/lib/teamsAuth";
+import {
+  isRunningInTeams,
+  bootstrapTeamsMsal,
+  getTeamsAuthLogs,
+  subscribeTeamsAuthLogs,
+  logTeamsAuthInfo,
+  logTeamsAuthError,
+} from "@/lib/teamsAuth";
 import Image from "next/image";
 
 export default function Home() {
@@ -12,6 +19,18 @@ export default function Home() {
   const [teamsChecked, setTeamsChecked] = useState(false);
   const [inTeams, setInTeams] = useState(false);
   const [teamsError, setTeamsError] = useState(null);
+  const [authLogs, setAuthLogs] = useState(() => getTeamsAuthLogs());
+
+  useEffect(() => {
+    setAuthLogs(getTeamsAuthLogs());
+    const unsubscribe = subscribeTeamsAuthLogs((snapshot) => {
+      setAuthLogs(snapshot);
+    });
+
+    return () => {
+      if (typeof unsubscribe === "function") unsubscribe();
+    };
+  }, []);
 
   // Already authenticated → go home
   useEffect(() => {
@@ -28,6 +47,7 @@ export default function Home() {
 
     const bootstrap = async () => {
       const inTeamsEnv = await isRunningInTeams();
+      logTeamsAuthInfo("[Home] isRunningInTeams ->", inTeamsEnv);
 
       if (!inTeamsEnv) {
         if (!cancelled) setTeamsChecked(true);
@@ -42,7 +62,7 @@ export default function Home() {
         await bootstrapTeamsMsal(instance, loginRequest);
         // After this, isAuthenticated flips true → useEffect above → /home
       } catch (err) {
-        console.error("[TeamsAuth] Silent bootstrap failed:", err);
+        logTeamsAuthError("[TeamsAuth] Silent bootstrap failed:", err);
         if (!cancelled) setTeamsError(err.message || "Teams sign-in failed");
       } finally {
         if (!cancelled) setTeamsChecked(true);
@@ -53,6 +73,15 @@ export default function Home() {
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const formatLogData = (data) => {
+    if (!data) return "";
+    try {
+      return JSON.stringify(data);
+    } catch {
+      return String(data);
+    }
+  };
 
   // ── Teams: detecting ─────────────────────────────────────
   if (!teamsChecked) {
@@ -83,6 +112,35 @@ export default function Home() {
         <p className="text-zinc-700 text-xs text-center">
           Please close and reopen the app in Teams, or contact your administrator.
         </p>
+        {authLogs.length > 0 && (
+          <details className="w-full max-w-md">
+            <summary className="text-zinc-700 text-[10px] cursor-pointer hover:text-zinc-500 transition-colors text-center">
+              Show auth logs
+            </summary>
+            <div className="mt-2 max-h-60 overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 text-left text-[9px] text-zinc-500 space-y-1">
+              {authLogs.map((entry, index) => (
+                <div key={`${entry.ts}-${index}`} className="flex gap-2 whitespace-pre-wrap break-all">
+                  <span className="text-zinc-700">{entry.ts}</span>
+                  <span
+                    className={
+                      entry.level === "error"
+                        ? "text-red-400"
+                        : entry.level === "warn"
+                          ? "text-yellow-400"
+                          : "text-emerald-400"
+                    }
+                  >
+                    {String(entry.level ?? "info").toUpperCase()}
+                  </span>
+                  <span className="text-zinc-400">{entry.message}</span>
+                  {entry.data ? (
+                    <span className="text-zinc-600">{formatLogData(entry.data)}</span>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
       </div>
     );
   }
