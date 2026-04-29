@@ -55,20 +55,21 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
       try {
         await bootstrapTeamsMsal(instance, loginRequest);
         console.log("[AuthGuard] ✅ bootstrapTeamsMsal completed");
-     // In the catch block inside tryTeamsAuth:
-} catch (err) {
-  const msg = err?.message ?? "Teams authentication failed";
-  if (!cancelled) {
-    setDebugInfo({
-      error: msg,
-      origin: window.location.origin,
-      clientId: "6ccf8b01-7af5-497b-9e23-45a92d68a226",
-      time: new Date().toISOString(),
-      authLog: err?.authLog ?? [],   // ← NEW
-    });
-    setTeamsAuthError(msg);
-  }
-}finally {
+      } catch (err) {
+        const msg = err?.message ?? "Teams authentication failed";
+        console.error("[AuthGuard] ❌ bootstrapTeamsMsal threw:", msg);
+
+        // Collect debug info for the error screen
+        if (!cancelled) {
+          setDebugInfo({
+            error:    msg,
+            origin:   typeof window !== "undefined" ? window.location.origin : "unknown",
+            clientId: "6ccf8b01-7af5-497b-9e23-45a92d68a226",
+            time:     new Date().toISOString(),
+          });
+          setTeamsAuthError(msg);
+        }
+      } finally {
         if (!cancelled) setTeamsChecked(true);
       }
     };
@@ -161,34 +162,17 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
           ))}
         </div>
 
-      {debugInfo?.authLog?.length > 0 && (
-  <div className="w-full">
-    <div className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-t-lg px-3 py-2">
-      <span className="text-zinc-500 text-[10px]">Auth trace</span>
-      <span className="text-zinc-700 text-[9px]">{debugInfo.authLog.length} events</span>
-    </div>
-    <div className="bg-zinc-950 border border-zinc-800 border-t-0 rounded-b-lg p-3 max-h-48 overflow-y-auto space-y-2">
-      {debugInfo.authLog.map((entry, i) => (
-        <div key={i} className="flex gap-2 items-start font-mono">
-          <span className="text-zinc-700 text-[9px] whitespace-nowrap shrink-0">{entry.t}</span>
-          <span className={`text-[8px] px-1.5 py-0.5 rounded shrink-0 mt-0.5 font-medium ${
-            entry.level === "error" ? "bg-red-500/10 text-red-400" :
-            entry.level === "warn"  ? "bg-yellow-500/10 text-yellow-400" :
-            "bg-blue-500/10 text-blue-400"
-          }`}>{entry.level}</span>
-          <div>
-            <div className="text-zinc-500 text-[9px] leading-relaxed">{entry.msg}</div>
-            {entry.detail && (
-              <div className="text-zinc-700 text-[9px] mt-0.5 break-all">
-                {typeof entry.detail === "string" ? entry.detail : JSON.stringify(entry.detail)}
-              </div>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+        {/* Debug panel — visible in dev OR when explicitly enabled */}
+        {(isDev || debugInfo) && debugInfo && (
+          <details className="w-full">
+            <summary className="text-zinc-700 text-[10px] cursor-pointer hover:text-zinc-500 transition-colors">
+              Show debug info
+            </summary>
+            <pre className="mt-2 text-left text-[9px] text-zinc-600 bg-zinc-900 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
+              {JSON.stringify(debugInfo, null, 2)}
+            </pre>
+          </details>
+        )}
 
         <button
           onClick={() => {
