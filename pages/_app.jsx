@@ -88,17 +88,18 @@ function AppContent({ Component, pageProps }) {
   useEffect(() => {
     if (typeof window === "undefined" || window.self === window.top) return;
 
-const initTeams = async () => {
-  try {
-    const { app } = await import("@microsoft/teams-js");
-    await app.initialize();
-    app.notifyAppLoaded();   // ← add this
-    app.notifySuccess();
-    console.log("[Teams] SDK initialized");
-  } catch {
-    // not in Teams
-  }
-};
+    const initTeams = async () => {
+      try {
+        const { app } = await import("@microsoft/teams-js");
+        await app.initialize();
+        console.log("[Teams] SDK initialized");
+
+        // Notify Teams that the app is ready (removes loading indicator)
+        app.notifySuccess();
+      } catch {
+        // Silently ignore — not running inside Teams
+      }
+    };
 
     void initTeams();
   }, []);
