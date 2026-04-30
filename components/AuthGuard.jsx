@@ -1,15 +1,17 @@
-// AuthGuard.jsx — Fixed for Teams Store App
-// Changes:
-//   - teamsAuthError now receives the full error message from bootstrapTeamsMsal
-//   - Error UI shows actionable diagnosis hints
-//   - Debug info panel in dev mode
-//   - Teams check no longer re-triggers on every isAuthenticated change
+// AuthGuard.jsx — Teams Store App
+//
+// Key behaviors:
+//   - Teams SSO runs once on mount via bootstrapTeamsMsal (OBO flow)
+//   - teamsAuthenticated flag (sessionStorage) allows bypass of MSAL isAuthenticated
+//     for Teams desktop where acquireTokenSilent/ssoSilent always times out
+//   - Normal browser flow still uses MSAL loginRedirect as before
+//   - Duplicate consent gate removed (was running twice)
 
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { InteractionStatus } from "@azure/msal-browser";
 import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/router";
-import { loginRequest, apiRequest } from "@/lib/msalConfig";
+import { loginRequest } from "@/lib/msalConfig";
 import { isRunningInTeams, bootstrapTeamsMsal } from "@/lib/teamsAuth";
 import dynamic from "next/dynamic";
 import AppNotificationBadgeSync from "@/components/AppNotificationBadgeSync";
@@ -21,14 +23,15 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   const { instance, accounts, inProgress } = useMsal();
   const router = useRouter();
 
-  const [verified, setVerified]           = useState(null);
-  const [teamsChecked, setTeamsChecked]   = useState(false);
+  const [verified, setVerified]             = useState(null);
+  const [teamsChecked, setTeamsChecked]     = useState(false);
   const [teamsAuthError, setTeamsAuthError] = useState(null);
-  const [debugInfo, setDebugInfo]         = useState(null); // dev-mode only
+  const [debugInfo, setDebugInfo]           = useState(null);
 
-  // ── Teams SSO bootstrap ──────────────────────────────────────────────────
+  // ── Teams SSO bootstrap ────────────────────────────────────────────────────
+  // Runs exactly once on mount. OBO flow sets sessionStorage flags that the
+  // consent gate below reads to bypass the MSAL isAuthenticated requirement.
   useEffect(() => {
-    // Only run once — guard against re-runs on isAuthenticated changes
     if (teamsChecked) return;
 
     let cancelled = false;
@@ -44,13 +47,15 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
         return;
       }
 
+      // Already authenticated via MSAL (e.g. page reload after first SSO)
       if (isAuthenticated) {
-        console.log("[AuthGuard] Already authenticated — skipping bootstrap");
+        console.log("[AuthGuard] Already MSAL-authenticated — skipping bootstrap");
         if (!cancelled) setTeamsChecked(true);
         return;
       }
 
-      console.log("[AuthGuard] In Teams, not authenticated — running bootstrapTeamsMsal…");
+      // Teams desktop OBO flow — sets teams_authenticated in sessionStorage
+      console.log("[AuthGuard] In Teams, not MSAL-authenticated — running bootstrapTeamsMsal…");
 
       try {
         await bootstrapTeamsMsal(instance, loginRequest);
@@ -59,13 +64,12 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
         const msg = err?.message ?? "Teams authentication failed";
         console.error("[AuthGuard] ❌ bootstrapTeamsMsal threw:", msg);
 
-        // Collect debug info for the error screen
         if (!cancelled) {
-          setDebugInfo({
-            error:    msg,
-            origin:   typeof window !== "undefined" ? window.location.origin : "unknown",
+          setDebugInfo(err?.debugInfo ?? {
+            error: msg,
+            origin: typeof window !== "undefined" ? window.location.origin : "unknown",
             clientId: "6ccf8b01-7af5-497b-9e23-45a92d68a226",
-            time:     new Date().toISOString(),
+            time: new Date().toISOString(),
           });
           setTeamsAuthError(msg);
         }
@@ -77,14 +81,19 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
     tryTeamsAuth();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ← intentionally empty — run exactly once on mount
+  }, []); // intentionally empty — run once on mount only
 
-  // ── Normal auth redirect (browser / non-Teams only) ──────────────────────
+  // ── Normal auth redirect (browser only) ───────────────────────────────────
+  // Skipped when in Teams (teamsAuthError guard) or already authenticated.
   useEffect(() => {
     if (!teamsChecked) return;
     if (inProgress !== InteractionStatus.None) return;
     if (isAuthenticated) return;
     if (teamsAuthError) return;
+
+    // Don't redirect if Teams OBO already handled auth
+    const teamsAuthenticated = sessionStorage.getItem("teams_authenticated") === "1";
+    if (teamsAuthenticated) return;
 
     isRunningInTeams().then((inTeams) => {
       if (!inTeams) {
@@ -94,10 +103,17 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
     });
   }, [isAuthenticated, inProgress, instance, teamsChecked, teamsAuthError]);
 
-  // ── Consent gate ─────────────────────────────────────────────────────────
+  // ── Consent gate ──────────────────────────────────────────────────────────
+  // Accepts EITHER MSAL isAuthenticated OR the Teams OBO flag.
+  // bootstrapTeamsMsal sets both consent_verified AND teams_authenticated,
+  // so Teams desktop users skip /checking automatically.
   useEffect(() => {
-    if (!isAuthenticated) return;
     if (inProgress !== InteractionStatus.None) return;
+
+    const teamsAuthenticated = sessionStorage.getItem("teams_authenticated") === "1";
+
+    // Must have one of: MSAL auth or Teams OBO auth
+    if (!isAuthenticated && !teamsAuthenticated) return;
 
     const isVerified = sessionStorage.getItem("consent_verified") === "1";
     if (isVerified) {
@@ -106,9 +122,10 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
       console.log("[AuthGuard] consent_verified not set — routing to /checking");
       router.replace("/checking");
     }
-  }, [isAuthenticated, inProgress, router]);
+  }, [isAuthenticated, inProgress, teamsChecked, router]);
+  // teamsChecked in deps ensures this re-runs after bootstrap completes
 
-  // ── Role check ────────────────────────────────────────────────────────────
+  // ── Role check ─────────────────────────────────────────────────────────────
   const hasRequiredRole = useMemo(() => {
     if (!requiredRoles || requiredRoles.length === 0) return true;
     const roles = (accounts[0]?.idTokenClaims?.roles ?? []).map(String);
@@ -121,7 +138,7 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
     }
   }, [isAuthenticated, verified, requiredRoles, hasRequiredRole, router]);
 
-  // ── Shared loading screen ─────────────────────────────────────────────────
+  // ── Shared loading screen ──────────────────────────────────────────────────
   const loadingScreen = (message) => (
     <div className="flex min-h-screen items-center justify-center bg-black">
       {message ? (
@@ -132,10 +149,8 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
     </div>
   );
 
-  // ── Teams auth error screen ───────────────────────────────────────────────
+  // ── Teams auth error screen ────────────────────────────────────────────────
   if (teamsAuthError) {
-    const isDev = process.env.NODE_ENV === "development";
-
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-4 px-6 text-center max-w-md mx-auto">
         <div className="h-10 w-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
@@ -148,12 +163,16 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
         </div>
 
         <div className="w-full border border-zinc-800 rounded-lg p-3 text-left space-y-1.5">
-          <p className="text-zinc-500 text-[11px] font-medium uppercase tracking-wider">Things to check</p>
+          <p className="text-zinc-500 text-[11px] font-medium uppercase tracking-wider">
+            Things to check
+          </p>
           {[
             "Admin consent has been granted for this app in your tenant",
             "The Teams app manifest includes the correct webApplicationInfo",
             "Your validDomains list covers this app's domain",
             "The Azure app exposes api://CLIENT_ID/access_as_user scope",
+            "AZURE_CLIENT_SECRET is set on the backend and not expired",
+            "The /teamsauth/obo-exchange endpoint is reachable from Teams",
           ].map((tip, i) => (
             <div key={i} className="flex gap-2 items-start">
               <span className="text-zinc-600 text-[10px] mt-0.5">•</span>
@@ -162,8 +181,7 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
           ))}
         </div>
 
-        {/* Debug panel — visible in dev OR when explicitly enabled */}
-        {(isDev || debugInfo) && debugInfo && (
+        {debugInfo && (
           <details className="w-full">
             <summary className="text-zinc-700 text-[10px] cursor-pointer hover:text-zinc-500 transition-colors">
               Show debug info
@@ -175,10 +193,7 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
         )}
 
         <button
-          onClick={() => {
-            // Clear cached Teams detection so retry works fresh
-            window.location.reload();
-          }}
+          onClick={() => window.location.reload()}
           className="mt-1 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm hover:bg-violet-700 transition-colors"
         >
           Retry
@@ -191,14 +206,18 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
     );
   }
 
-  // ── Loading gates ─────────────────────────────────────────────────────────
-  if (!teamsChecked)                                              return loadingScreen(null);
-  if (inProgress !== InteractionStatus.None)                     return loadingScreen(null);
-  if (!isAuthenticated)                                          return loadingScreen("Signing in…");
-  if (verified !== true)                                         return loadingScreen(null);
-  if (requiredRoles?.length > 0 && !hasRequiredRole)            return loadingScreen("Checking permissions…");
+  // ── Loading gates ──────────────────────────────────────────────────────────
+  const teamsAuthenticated =
+    typeof window !== "undefined" &&
+    sessionStorage.getItem("teams_authenticated") === "1";
 
-  // ── Authenticated layout ──────────────────────────────────────────────────
+  if (!teamsChecked)                                                 return loadingScreen(null);
+  if (inProgress !== InteractionStatus.None)                         return loadingScreen(null);
+  if (!isAuthenticated && !teamsAuthenticated)                       return loadingScreen("Signing in…");
+  if (verified !== true)                                             return loadingScreen(null);
+  if (requiredRoles?.length > 0 && !hasRequiredRole)                return loadingScreen("Checking permissions…");
+
+  // ── Authenticated layout ───────────────────────────────────────────────────
   return (
     <div className="flex h-screen overflow-hidden bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300 w-full">
       <AppNotificationBadgeSync />
