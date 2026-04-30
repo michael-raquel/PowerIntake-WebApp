@@ -1,7 +1,8 @@
-import { createContext, useContext, useState, useEffect, useRef, useCallback  } from "react";
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from "react";
 import { useMsal } from "@azure/msal-react";
 import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
+import { getStoredTeamsToken } from "@/lib/teamsAuth";
 import socket from "@/lib/socket";
 import { toast } from "sonner";
 
@@ -17,20 +18,41 @@ function decodeJwt(token) {
   }
 }
 
+// Build a tokenInfo-shaped object from a raw OBO/Teams token
+// so the rest of the app (login-sync, socket join, etc.) works identically.
+function buildTeamsTokenInfo(token) {
+  const claims = decodeJwt(token);
+  if (!claims) return null;
+  return {
+    accessToken: token,
+    idToken: token, // OBO token serves as both in Teams desktop path
+    expiresOn: claims.exp ? new Date(claims.exp * 1000).toString() : null,
+    scopes: ["User.Read"],
+    account: {
+      name:           claims.name           ?? claims.preferred_username ?? "",
+      username:       claims.preferred_username ?? claims.upn ?? "",
+      localAccountId: claims.oid            ?? "",
+      tenantId:       claims.tid            ?? "",
+      environment:    "login.windows.net",
+      roles:          claims.roles          ?? [],
+    },
+  };
+}
+
 export function AuthProvider({ children }) {
   const { instance, accounts } = useMsal();
   const account = accounts[0] ?? null;
 
-  const [accessToken, setAccessToken]     = useState(null);
-  const [tokenInfo, setTokenInfo]         = useState(null);
-  const [userInfo, setUserInfo]           = useState(null);
-  const [isGlobalAdmin, setIsGlobalAdmin] = useState(false);
+  const [accessToken, setAccessToken]         = useState(null);
+  const [tokenInfo, setTokenInfo]             = useState(null);
+  const [userInfo, setUserInfo]               = useState(null);
+  const [isGlobalAdmin, setIsGlobalAdmin]     = useState(false);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
 
-  const logoutIntervalRef = useRef(null);
-  const logoutToastIdRef = useRef(null);
-  
-   const startLogoutCountdown = useCallback((seconds = 10) => {
+  const logoutIntervalRef  = useRef(null);
+  const logoutToastIdRef   = useRef(null);
+
+  const startLogoutCountdown = useCallback((seconds = 10) => {
     if (logoutIntervalRef.current) {
       clearInterval(logoutIntervalRef.current);
       logoutIntervalRef.current = null;
@@ -41,8 +63,7 @@ export function AuthProvider({ children }) {
     }
 
     let remaining = Math.max(1, Number(seconds) || 10);
-    const message = (value) =>
-      `Your account was updated. You will be logged out in ${value}s.`;
+    const message = (v) => `Your account was updated. You will be logged out in ${v}s.`;
 
     logoutToastIdRef.current = toast.warning(message(remaining), { duration: Infinity });
 
@@ -56,7 +77,6 @@ export function AuthProvider({ children }) {
         instance.logoutRedirect({ postLogoutRedirectUri: "/" });
         return;
       }
-
       toast.warning(message(remaining), {
         id: logoutToastIdRef.current,
         duration: Infinity,
@@ -64,7 +84,7 @@ export function AuthProvider({ children }) {
     }, 1000);
   }, [instance]);
 
-  //Profile Photo
+  // ── Profile photo (MSAL path only — Teams OBO token has Graph User.Read) ──
   const fetchProfilePhoto = useCallback(async () => {
     if (!account) return null;
 
@@ -82,49 +102,53 @@ export function AuthProvider({ children }) {
       if (!photoRes.ok) throw new Error("Graph photo request failed");
 
       const blob = await photoRes.blob();
-      const url = URL.createObjectURL(blob);
-
+      const url  = URL.createObjectURL(blob);
       setProfilePhotoUrl(url);
       return url;
-    } catch (err) {
+    } catch {
       return null;
     }
   }, [account, instance]);
 
-  useEffect(() => {
-    fetchProfilePhoto();
-  }, [fetchProfilePhoto]);
+  useEffect(() => { fetchProfilePhoto(); }, [fetchProfilePhoto]);
 
   useEffect(() => {
-    return () => {
-      if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl);
-    };
+    return () => { if (profilePhotoUrl) URL.revokeObjectURL(profilePhotoUrl); };
   }, [profilePhotoUrl]);
-  
-  // ── Your API token ──────────────────────────────────────
+
+  // ── Token acquisition ──────────────────────────────────────────────────────
+  // Path A: MSAL account present (browser / Teams mobile after ssoSilent)
+  // Path B: No MSAL account but Teams OBO token in sessionStorage (Teams desktop)
   useEffect(() => {
+    const teamsOboToken = getStoredTeamsToken();
+
+    // ── Path B: Teams desktop OBO ─────────────────────────────────────────
+    if (!account && teamsOboToken) {
+      console.log("[AuthContext] No MSAL account — using Teams OBO token");
+      const info = buildTeamsTokenInfo(teamsOboToken);
+      if (info) {
+        setAccessToken(teamsOboToken);
+        setTokenInfo(info);
+      }
+      return;
+    }
+
+    // ── Path A: Normal MSAL flow ──────────────────────────────────────────
     if (!account) return;
 
     const acquire = async () => {
       try {
-        const response    = await instance.acquireTokenSilent({ ...apiRequest, account });
-        const token       = response.accessToken;
-        const idToken     = response.idToken;
-        const claims      = decodeJwt(token);
+        const response = await instance.acquireTokenSilent({ ...apiRequest, account });
+        const token    = response.accessToken;
+        const claims   = decodeJwt(token);
         const expectedAud = msalConfig.auth.clientId;
 
-        if (claims?.aud !== expectedAud && claims?.aud !== `api://${expectedAud}`) {
-          // console.error("[TOKEN] Wrong token — aud:", claims?.aud);
-          return;
-        }
-
-        // console.log("[AUTH] Access Token (silent):", token);
-        // console.log("[AUTH] ID Token (silent):", idToken);
+        if (claims?.aud !== expectedAud && claims?.aud !== `api://${expectedAud}`) return;
 
         setAccessToken(token);
         setTokenInfo({
           accessToken: token,
-          idToken,
+          idToken:     response.idToken,
           expiresOn:   response.expiresOn?.toString(),
           scopes:      response.scopes,
           account: {
@@ -141,16 +165,12 @@ export function AuthProvider({ children }) {
           try {
             const response = await instance.acquireTokenPopup({ ...apiRequest, account });
             const token    = response.accessToken;
-            const idToken  = response.idToken;
             const claims   = decodeJwt(token);
-
-            // console.log("[AUTH] Access Token (popup):", token);
-            // console.log("[AUTH] ID Token (popup):", idToken);
 
             setAccessToken(token);
             setTokenInfo({
               accessToken: token,
-              idToken,
+              idToken:     response.idToken,
               expiresOn:   response.expiresOn?.toString(),
               scopes:      response.scopes,
               account: {
@@ -162,11 +182,9 @@ export function AuthProvider({ children }) {
                 roles:          claims?.roles ?? [],
               },
             });
-          } catch (popupErr) {
-            // console.error("[TOKEN] Popup failed:", popupErr);
+          } catch {
+            // popup failed — user may need to re-auth
           }
-        } else {
-          // console.error("[TOKEN] Acquisition failed:", err);
         }
       }
     };
@@ -174,52 +192,47 @@ export function AuthProvider({ children }) {
     acquire();
   }, [account, instance]);
 
- // ── Graph token — only for wids / Global Admin check ────
-useEffect(() => {
-  if (!account) return;
+  // ── Global admin check (MSAL path only) ───────────────────────────────────
+  useEffect(() => {
+    if (!account) return;
 
-  const checkGlobalAdmin = async () => {
-    try {
-      const graphRes = await instance.acquireTokenSilent({
-        scopes: ["https://graph.microsoft.com/User.Read"],
-        account,
-      });
+    const checkGlobalAdmin = async () => {
+      try {
+        const graphRes = await instance.acquireTokenSilent({
+          scopes: ["https://graph.microsoft.com/User.Read"],
+          account,
+        });
 
-      const claims = decodeJwt(graphRes.accessToken);
-      const wids   = claims?.wids ?? [];
+        const claims = decodeJwt(graphRes.accessToken);
+        const wids   = claims?.wids ?? [];
 
-      // wids is populated only when the enterprise app (SP) exists in the tenant.
-      // If it's missing (e.g. SP was deleted), fall back to a direct Graph call.
-      if (wids.includes(GLOBAL_ADMIN_WID)) {
-        setIsGlobalAdmin(true);
-        return;
-      }
+        if (wids.includes(GLOBAL_ADMIN_WID)) {
+          setIsGlobalAdmin(true);
+          return;
+        }
 
-      // Fallback: query directory roles directly via Graph
-      const rolesRes = await fetch(
-        "https://graph.microsoft.com/v1.0/me/transitiveMemberOf/microsoft.graph.directoryRole?$select=roleTemplateId",
-        { headers: { Authorization: `Bearer ${graphRes.accessToken}` } },
-      );
-
-      if (rolesRes.ok) {
-        const rolesData = await rolesRes.json();
-        const isAdmin = (rolesData.value ?? []).some(
-          (r) => r.roleTemplateId === GLOBAL_ADMIN_WID,
+        const rolesRes = await fetch(
+          "https://graph.microsoft.com/v1.0/me/transitiveMemberOf/microsoft.graph.directoryRole?$select=roleTemplateId",
+          { headers: { Authorization: `Bearer ${graphRes.accessToken}` } }
         );
-        setIsGlobalAdmin(isAdmin);
-      } else {
+
+        if (rolesRes.ok) {
+          const rolesData = await rolesRes.json();
+          setIsGlobalAdmin(
+            (rolesData.value ?? []).some((r) => r.roleTemplateId === GLOBAL_ADMIN_WID)
+          );
+        } else {
+          setIsGlobalAdmin(false);
+        }
+      } catch {
         setIsGlobalAdmin(false);
       }
-    } catch (err) {
-      // console.warn("[AUTH] Could not get Graph token:", err.errorCode ?? err.message);
-      setIsGlobalAdmin(false);
-    }
-  };
+    };
 
-  checkGlobalAdmin();
-}, [account, instance]);
+    checkGlobalAdmin();
+  }, [account, instance]);
 
-  // ── Login sync ───────────────────────────────────────────
+  // ── Login sync ─────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!accessToken || !tokenInfo) return;
 
@@ -227,25 +240,16 @@ useEffect(() => {
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/login-sync`,
-          { method: "POST", headers: { Authorization: `Bearer ${accessToken}` } },
+          { method: "POST", headers: { Authorization: `Bearer ${accessToken}` } }
         );
 
-        // 403 = tenant not registered — AuthGuard handles redirect
-        if (res.status === 403) {
-          // console.warn("[LOGIN SYNC] Tenant not registered — AuthGuard will redirect.");
-          return;
-        }
+        if (res.status === 403) return; // tenant not registered — AuthGuard handles redirect
 
-        // Any other non-2xx — log and bail, don't cascade into res.json()
-        if (!res.ok) {
-          // console.warn("[LOGIN SYNC] Skipping sync — server returned:", res.status);
-          return;
-        }
+        if (!res.ok) return;
 
         const data = await res.json();
         setUserInfo(data.user ?? null);
 
-        // Socket join only runs on successful sync
         const entrauserid   = tokenInfo.account.localAccountId;
         const entratenantid = tokenInfo.account.tenantId;
 
@@ -260,16 +264,15 @@ useEffect(() => {
         } else {
           joinRooms();
         }
-
-      } catch (err) {
-        // console.error("[AUTH] syncUser error:", err);
+      } catch {
+        // network error — non-fatal
       }
     };
 
     syncUser();
   }, [accessToken, tokenInfo]);
 
-  // ── Reconnect handler ────────────────────────────────────
+  // ── Socket reconnect ───────────────────────────────────────────────────────
   useEffect(() => {
     if (!tokenInfo?.account?.localAccountId) return;
 
@@ -284,14 +287,10 @@ useEffect(() => {
     return () => socket.off("connect", handleReconnect);
   }, [tokenInfo?.account?.localAccountId, tokenInfo?.account?.tenantId]);
 
-  // ── Socket error logging ─────────────────────────────────
+  // ── Socket error logging ───────────────────────────────────────────────────
   useEffect(() => {
-    const onDisconnect   = (reason) => {
-      // console.log("[WS] socket disconnected:", reason);
-    };
-    const onConnectError = (err)    => {
-      // console.error("[WS] connect_error:", err.message);
-    };
+    const onDisconnect   = (reason) => console.log("[WS] disconnected:", reason);
+    const onConnectError = (err)    => console.error("[WS] connect_error:", err.message);
 
     socket.on("disconnect",    onDisconnect);
     socket.on("connect_error", onConnectError);
@@ -302,7 +301,7 @@ useEffect(() => {
     };
   }, []);
 
-  //Change role from another session or admin portal triggers a logout in all sessions with a countdown and toast notification. (Will change if it fails -Jasper)
+  // ── Role changed → countdown logout ───────────────────────────────────────
   useEffect(() => {
     if (!tokenInfo?.account?.localAccountId) return;
 
@@ -326,15 +325,21 @@ useEffect(() => {
     };
   }, [tokenInfo?.account?.localAccountId, startLogoutCountdown]);
 
-// ── Logout ───────────────────────────────────────────────
-useEffect(() => {
-  if (!account) {
-    socket.disconnect();
-
-    // Clear consent gate so the next login re-runs /checking verification
-    sessionStorage.removeItem("consent_verified");
-  }
-}, [account]);
+  // ── Logout cleanup ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!account) {
+      // Only disconnect socket if also no Teams OBO token
+      const teamsOboToken = getStoredTeamsToken();
+      if (!teamsOboToken) {
+        socket.disconnect();
+        sessionStorage.removeItem("consent_verified");
+        sessionStorage.removeItem("teams_authenticated");
+        sessionStorage.removeItem("teams_obo_token");
+        sessionStorage.removeItem("teams_obo_expires_at");
+        sessionStorage.removeItem("teams_login_hint");
+      }
+    }
+  }, [account]);
 
   return (
     <AuthContext.Provider value={{
