@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import { useMsal, useIsAuthenticated } from "@azure/msal-react";
 import { useAuth } from "@/context/AuthContext";
 import { apiRequest } from "@/lib/msalConfig";
+import { getStoredTeamsToken } from "@/lib/teamsAuth"; // ← FIX: import OBO token helper
 
 export default function Checking() {
   const isAuthenticated = useIsAuthenticated();
@@ -14,30 +15,61 @@ export default function Checking() {
   const [status, setStatus] = useState("Verifying your access...");
 
   useEffect(() => {
-    if (!isAuthenticated || !accounts?.[0]) return;
+    // ── FIX: Teams desktop fast path ──────────────────────────────────────────
+    // bootstrapTeamsMsal already set both flags during AuthGuard bootstrap.
+    // If both are present we are fully verified — skip this page entirely.
+    // Without this guard, Teams desktop users (who have no MSAL account in
+    // cache) fall through the isAuthenticated check below and spin forever.
+    const teamsAuthenticated = sessionStorage.getItem("teams_authenticated") === "1";
+    const consentAlreadyVerified = sessionStorage.getItem("consent_verified") === "1";
+
+    if (teamsAuthenticated && consentAlreadyVerified) {
+      console.log("[Checking] Teams OBO already verified — skipping to /home");
+      router.replace("/home");
+      return;
+    }
+
+    // ── Normal MSAL path ───────────────────────────────────────────────────────
+    // Also supports Teams desktop fallback: if MSAL silent fails but we have a
+    // stored OBO token from sessionStorage, use that instead of erroring out.
+    if (!isAuthenticated && !accounts?.[0]) return;
 
     const check = async () => {
       try {
-        const tokenRes = await instance.acquireTokenSilent({
-          ...apiRequest,
-          account: accounts[0],
-        });
+        let accessToken;
+
+        // FIX: Try MSAL silent first; fall back to stored OBO token for Teams
+        // desktop where acquireTokenSilent always fails (no hidden iframe support).
+        try {
+          const tokenRes = await instance.acquireTokenSilent({
+            ...apiRequest,
+            account: accounts[0],
+          });
+          accessToken = tokenRes.accessToken;
+        } catch (silentErr) {
+          const storedToken = getStoredTeamsToken();
+          if (storedToken) {
+            console.log("[Checking] acquireTokenSilent failed — using stored Teams OBO token");
+            accessToken = storedToken;
+          } else {
+            // No fallback available — re-throw so the catch below handles it
+            throw silentErr;
+          }
+        }
 
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_API_BASE_URL}/consent/consent-status`,
-          { headers: { Authorization: `Bearer ${tokenRes.accessToken}` } },
+          { headers: { Authorization: `Bearer ${accessToken}` } },
         );
 
         if (!res.ok) throw new Error("Consent status request failed");
 
         const data = await res.json();
-        const claims = JSON.parse(atob(tokenRes.accessToken.split(".")[1]));
+        const claims = JSON.parse(atob(accessToken.split(".")[1]));
         const tid = claims?.tid;
         const consented = data?.consented === true;
         const isactive = data?.isactive === true;
         const isapproved = data?.isapproved === true;
-
-        // console.log("[CHECKING]", data);
 
         if (!isapproved) {
           setStatus("Awaiting Sparta Services approval...");
@@ -65,9 +97,9 @@ export default function Checking() {
             localStorage.setItem(
               "pre_consent_account",
               JSON.stringify({
-                homeAccountId: accounts[0].homeAccountId,
+                homeAccountId: accounts[0]?.homeAccountId ?? null,
                 tenantId: tid,
-                loginHint: accounts[0].username,
+                loginHint: accounts[0]?.username ?? sessionStorage.getItem("teams_login_hint"),
               }),
             );
 

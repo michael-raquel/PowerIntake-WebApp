@@ -4,8 +4,8 @@
 //   - Teams SSO runs once on mount via bootstrapTeamsMsal (OBO flow)
 //   - teamsAuthenticated flag (sessionStorage) allows bypass of MSAL isAuthenticated
 //     for Teams desktop where acquireTokenSilent/ssoSilent always times out
+//   - Consent gate now waits for teamsChecked before running (race condition fix)
 //   - Normal browser flow still uses MSAL loginRedirect as before
-//   - Duplicate consent gate removed (was running twice)
 
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import { InteractionStatus } from "@azure/msal-browser";
@@ -104,10 +104,12 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   }, [isAuthenticated, inProgress, instance, teamsChecked, teamsAuthError]);
 
   // ── Consent gate ──────────────────────────────────────────────────────────
-  // Accepts EITHER MSAL isAuthenticated OR the Teams OBO flag.
-  // bootstrapTeamsMsal sets both consent_verified AND teams_authenticated,
-  // so Teams desktop users skip /checking automatically.
+  // FIX: Guard on teamsChecked FIRST so this never runs before OBO bootstrap
+  // completes. Previously, this could fire with stale sessionStorage while
+  // bootstrapTeamsMsal was still in-flight, routing Teams desktop users to
+  // /checking before teams_authenticated was ever written.
   useEffect(() => {
+    if (!teamsChecked) return;                            // ← FIX: wait for bootstrap
     if (inProgress !== InteractionStatus.None) return;
 
     const teamsAuthenticated = sessionStorage.getItem("teams_authenticated") === "1";
