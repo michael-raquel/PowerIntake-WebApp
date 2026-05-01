@@ -2,10 +2,10 @@
 //
 // Key behaviors:
 //   - Teams SSO runs once on mount via bootstrapTeamsMsal (OBO flow)
+//   - Early exit if valid OBO token already in sessionStorage (skips full OBO)
 //   - teamsAuthenticated flag (sessionStorage) allows bypass of MSAL isAuthenticated
 //     for Teams desktop where acquireTokenSilent/ssoSilent always times out
 //   - Normal browser flow still uses MSAL loginRedirect as before
-//   - Duplicate consent gate removed (was running twice)
 //   - 10s timeout on Teams bootstrap — shows dev console on failure
 
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
@@ -24,12 +24,12 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   const { instance, accounts, inProgress } = useMsal();
   const router = useRouter();
 
-  const [verified, setVerified]             = useState(null);
-  const [teamsChecked, setTeamsChecked]     = useState(false);
+  const [verified, setVerified]           = useState(null);
+  const [teamsChecked, setTeamsChecked]   = useState(false);
   const [teamsAuthError, setTeamsAuthError] = useState(null);
-  const [teamsTimedOut, setTeamsTimedOut]   = useState(false);
-  const [debugInfo, setDebugInfo]           = useState(null);
-  const [logs, setLogs]                     = useState([]);
+  const [teamsTimedOut, setTeamsTimedOut] = useState(false);
+  const [debugInfo, setDebugInfo]         = useState(null);
+  const [logs, setLogs]                   = useState([]);
 
   const addLog = useCallback((level, msg, data = null) => {
     const entry = {
@@ -68,9 +68,28 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
         return;
       }
 
-      addLog("info", "In Teams — starting bootstrapTeamsMsal");
+      addLog("info", "In Teams — checking for existing valid OBO token...");
       addLog("info", `Origin: ${typeof window !== "undefined" ? window.location.origin : "unknown"}`);
       addLog("info", `User agent: ${typeof navigator !== "undefined" ? navigator.userAgent : "unknown"}`);
+
+      // ── Early exit: valid OBO token already present ──────────────────────
+      // Handles page reloads where sessionStorage survived but consent_verified
+      // was wiped by the AuthContext logout cleanup (which fires when MSAL loses
+      // the account on Teams desktop). Re-stamp both flags and skip the OBO flow
+      // entirely — this is what was causing the 10s timeout on reload.
+      const existingOboToken = sessionStorage.getItem("teams_obo_token");
+      const oboExpiresAt     = Number(sessionStorage.getItem("teams_obo_expires_at") ?? 0);
+      const oboStillValid    = existingOboToken && Date.now() < oboExpiresAt;
+
+      if (oboStillValid) {
+        addLog("info", `Valid OBO token found (expires ${new Date(oboExpiresAt).toISOString()}) — re-stamping auth flags, skipping bootstrap`);
+        sessionStorage.setItem("teams_authenticated", "1");
+        sessionStorage.setItem("consent_verified", "1");
+        if (!cancelled) setTeamsChecked(true);
+        return;
+      }
+
+      addLog("info", "No valid cached OBO token — calling bootstrapTeamsMsal, timeout in 10s...");
 
       const TIMEOUT_MS = 10_000;
       const timeoutPromise = new Promise((_, reject) =>
@@ -82,7 +101,6 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
       );
 
       try {
-        addLog("info", "Calling bootstrapTeamsMsal — timeout in 10s...");
         await Promise.race([bootstrapTeamsMsal(instance, loginRequest), timeoutPromise]);
         addLog("info", "✅ bootstrapTeamsMsal completed successfully");
       } catch (err) {
