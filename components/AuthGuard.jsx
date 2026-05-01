@@ -28,76 +28,61 @@ export default function AuthGuard({ children, requiredRoles, showSidebar }) {
   const [teamsAuthError, setTeamsAuthError] = useState(null);
   const [debugInfo, setDebugInfo]           = useState(null);
 
-  // At the top of AuthGuard, add this state:
-const [teamsTimedOut, setTeamsTimedOut] = useState(false);
+  // ── Teams SSO bootstrap ────────────────────────────────────────────────────
+  // Runs exactly once on mount. OBO flow sets sessionStorage flags that the
+  // consent gate below reads to bypass the MSAL isAuthenticated requirement.
+  useEffect(() => {
+    if (teamsChecked) return;
 
-// Replace the Teams SSO bootstrap useEffect:
-useEffect(() => {
-  if (teamsChecked) return;
+    let cancelled = false;
 
-  let cancelled = false;
+    const tryTeamsAuth = async () => {
+      console.log("[AuthGuard] Checking Teams environment…");
 
-  const tryTeamsAuth = async () => {
-    console.log("[AuthGuard] Checking Teams environment…");
+      const inTeams = await isRunningInTeams();
+      console.log("[AuthGuard] isRunningInTeams →", inTeams);
 
-    const inTeams = await isRunningInTeams();
-    console.log("[AuthGuard] isRunningInTeams →", inTeams);
-
-    if (!inTeams) {
-      if (!cancelled) setTeamsChecked(true);
-      return;
-    }
-
-    if (isAuthenticated) {
-      console.log("[AuthGuard] Already MSAL-authenticated — skipping bootstrap");
-      if (!cancelled) setTeamsChecked(true);
-      return;
-    }
-
-    console.log("[AuthGuard] In Teams, not MSAL-authenticated — running bootstrapTeamsMsal…");
-
-    const TIMEOUT_MS = 10_000;
-    const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(
-        () => reject(new Error("Teams sign-in timed out. Please try again.")),
-        TIMEOUT_MS
-      )
-    );
-
-    try {
-      await Promise.race([bootstrapTeamsMsal(instance, loginRequest), timeoutPromise]);
-      console.log("[AuthGuard] ✅ bootstrapTeamsMsal completed");
-    } catch (err) {
-      const msg = err?.message ?? "Teams authentication failed";
-      console.error("[AuthGuard] ❌ bootstrapTeamsMsal threw:", msg);
-
-      // Clear stale auth state so retry is clean
-      sessionStorage.removeItem("teams_authenticated");
-      sessionStorage.removeItem("consent_verified");
-      sessionStorage.removeItem("teams_obo_token");
-      sessionStorage.removeItem("teams_obo_expires_at");
-      sessionStorage.removeItem("teams_login_hint");
-
-      if (!cancelled) {
-        const isTimeout = msg.includes("timed out");
-        setTeamsTimedOut(isTimeout);
-        setDebugInfo(err?.debugInfo ?? {
-          error: msg,
-          origin: typeof window !== "undefined" ? window.location.origin : "unknown",
-          clientId: "6ccf8b01-7af5-497b-9e23-45a92d68a226",
-          time: new Date().toISOString(),
-        });
-        setTeamsAuthError(msg);
+      if (!inTeams) {
+        if (!cancelled) setTeamsChecked(true);
+        return;
       }
-    } finally {
-      if (!cancelled) setTeamsChecked(true);
-    }
-  };
 
-  tryTeamsAuth();
-  return () => { cancelled = true; };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+      // Already authenticated via MSAL (e.g. page reload after first SSO)
+      if (isAuthenticated) {
+        console.log("[AuthGuard] Already MSAL-authenticated — skipping bootstrap");
+        if (!cancelled) setTeamsChecked(true);
+        return;
+      }
+
+      // Teams desktop OBO flow — sets teams_authenticated in sessionStorage
+      console.log("[AuthGuard] In Teams, not MSAL-authenticated — running bootstrapTeamsMsal…");
+
+      try {
+        await bootstrapTeamsMsal(instance, loginRequest);
+        console.log("[AuthGuard] ✅ bootstrapTeamsMsal completed");
+      } catch (err) {
+        const msg = err?.message ?? "Teams authentication failed";
+        console.error("[AuthGuard] ❌ bootstrapTeamsMsal threw:", msg);
+
+        if (!cancelled) {
+          setDebugInfo(err?.debugInfo ?? {
+            error: msg,
+            origin: typeof window !== "undefined" ? window.location.origin : "unknown",
+            clientId: "6ccf8b01-7af5-497b-9e23-45a92d68a226",
+            time: new Date().toISOString(),
+          });
+          setTeamsAuthError(msg);
+        }
+      } finally {
+        if (!cancelled) setTeamsChecked(true);
+      }
+    };
+
+    tryTeamsAuth();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally empty — run once on mount only
+
   // ── Normal auth redirect (browser only) ───────────────────────────────────
   // Skipped when in Teams (teamsAuthError guard) or already authenticated.
   useEffect(() => {
@@ -164,27 +149,19 @@ useEffect(() => {
     </div>
   );
 
-// Replace the teamsAuthError render block:
-if (teamsAuthError) {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-4 px-6 text-center max-w-md mx-auto">
-      <div className="h-10 w-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
-        <span className="text-red-400 text-lg">!</span>
-      </div>
+  // ── Teams auth error screen ────────────────────────────────────────────────
+  if (teamsAuthError) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-4 px-6 text-center max-w-md mx-auto">
+        <div className="h-10 w-10 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+          <span className="text-red-400 text-lg">!</span>
+        </div>
 
-      <div className="space-y-1">
-        <p className="text-red-400 text-sm font-medium">
-          {teamsTimedOut ? "Sign-in timed out" : "Microsoft Teams sign-in failed"}
-        </p>
-        <p className="text-zinc-500 text-xs leading-relaxed max-w-xs">
-          {teamsTimedOut
-            ? "An error occurred, please try again. If this keeps happening, contact your IT administrator."
-            : teamsAuthError}
-        </p>
-      </div>
+        <div className="space-y-1">
+          <p className="text-red-400 text-sm font-medium">Microsoft Teams sign-in failed</p>
+          <p className="text-zinc-500 text-xs leading-relaxed max-w-xs">{teamsAuthError}</p>
+        </div>
 
-      {/* Only show the checklist for non-timeout errors */}
-      {!teamsTimedOut && (
         <div className="w-full border border-zinc-800 rounded-lg p-3 text-left space-y-1.5">
           <p className="text-zinc-500 text-[11px] font-medium uppercase tracking-wider">
             Things to check
@@ -203,40 +180,31 @@ if (teamsAuthError) {
             </div>
           ))}
         </div>
-      )}
 
-      {!teamsTimedOut && debugInfo && (
-        <details className="w-full">
-          <summary className="text-zinc-700 text-[10px] cursor-pointer hover:text-zinc-500 transition-colors">
-            Show debug info
-          </summary>
-          <pre className="mt-2 text-left text-[9px] text-zinc-600 bg-zinc-900 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
-            {JSON.stringify(debugInfo, null, 2)}
-          </pre>
-        </details>
-      )}
+        {debugInfo && (
+          <details className="w-full">
+            <summary className="text-zinc-700 text-[10px] cursor-pointer hover:text-zinc-500 transition-colors">
+              Show debug info
+            </summary>
+            <pre className="mt-2 text-left text-[9px] text-zinc-600 bg-zinc-900 rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
+              {JSON.stringify(debugInfo, null, 2)}
+            </pre>
+          </details>
+        )}
 
-      <button
-        onClick={() => {
-          // Nuke everything and reload for a clean retry
-          sessionStorage.removeItem("teams_authenticated");
-          sessionStorage.removeItem("consent_verified");
-          sessionStorage.removeItem("teams_obo_token");
-          sessionStorage.removeItem("teams_obo_expires_at");
-          sessionStorage.removeItem("teams_login_hint");
-          window.location.reload();
-        }}
-        className="mt-1 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm hover:bg-violet-700 transition-colors"
-      >
-        Retry
-      </button>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-1 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm hover:bg-violet-700 transition-colors"
+        >
+          Retry
+        </button>
 
-      <p className="text-zinc-700 text-[10px]">
-        If this persists, contact your IT administrator.
-      </p>
-    </div>
-  );
-}
+        <p className="text-zinc-700 text-[10px]">
+          If this persists, contact your IT administrator.
+        </p>
+      </div>
+    );
+  }
 
   // ── Loading gates ──────────────────────────────────────────────────────────
   const teamsAuthenticated =
