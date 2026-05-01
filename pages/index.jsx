@@ -10,11 +10,11 @@ export default function Home() {
   const { instance, accounts } = useMsal();
   const router = useRouter();
 
-  const [teamsChecked, setTeamsChecked]     = useState(false);
-  const [inTeams, setInTeams]               = useState(false);
-  const [teamsError, setTeamsError]         = useState(null);
+  const [teamsChecked, setTeamsChecked] = useState(false);
+  const [inTeams, setInTeams]           = useState(false);
+  const [teamsError, setTeamsError]     = useState(null);
   const [teamsDebugInfo, setTeamsDebugInfo] = useState(null);
-  const [logs, setLogs]                     = useState([]);
+  const [logs, setLogs]                 = useState([]);
 
   const addLog = useCallback((level, msg, data = null) => {
     const entry = {
@@ -55,24 +55,9 @@ export default function Home() {
       }
 
       if (!cancelled) setInTeams(true);
-      addLog("info", "In Teams environment — checking for existing valid OBO token...");
+      addLog("info", "In Teams environment — starting bootstrapTeamsMsal");
       addLog("info", `Origin: ${window.location.origin}`);
       addLog("info", `User agent: ${navigator.userAgent}`);
-
-      // ── Early exit: valid OBO token already present ──────────────────────
-      const existingOboToken = sessionStorage.getItem("teams_obo_token");
-      const oboExpiresAt     = Number(sessionStorage.getItem("teams_obo_expires_at") ?? 0);
-      const oboStillValid    = existingOboToken && Date.now() < oboExpiresAt;
-
-      if (oboStillValid) {
-        addLog("info", `Valid OBO token found (expires ${new Date(oboExpiresAt).toISOString()}) — re-stamping auth flags, skipping bootstrap`);
-        sessionStorage.setItem("teams_authenticated", "1");
-        sessionStorage.setItem("consent_verified", "1");
-        if (!cancelled) setTeamsChecked(true);
-        return;
-      }
-
-      addLog("info", "No valid cached OBO token — calling bootstrapTeamsMsal, timeout in 10s...");
 
       const TIMEOUT_MS = 10_000;
       const timeoutPromise = new Promise((_, reject) =>
@@ -84,6 +69,7 @@ export default function Home() {
       );
 
       try {
+        addLog("info", "Calling bootstrapTeamsMsal — timeout in 10s...");
         await Promise.race([bootstrapTeamsMsal(instance, loginRequest), timeoutPromise]);
         addLog("info", "bootstrapTeamsMsal completed successfully");
       } catch (err) {
@@ -140,7 +126,7 @@ export default function Home() {
     navigator.clipboard?.writeText(text).catch(() => {});
   };
 
-  // ── Teams: detecting ──────────────────────────────────────
+  // ── Teams: detecting ─────────────────────────────────────
   if (!teamsChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
@@ -236,7 +222,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* Full debug JSON */}
+        {/* Full debug JSON — always shown on error for dev visibility */}
         {teamsDebugInfo && (
           <details className="w-full max-w-sm text-left">
             <summary className="text-zinc-700 text-[10px] cursor-pointer hover:text-zinc-500 transition-colors">
