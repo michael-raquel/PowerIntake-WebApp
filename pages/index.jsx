@@ -10,9 +10,9 @@ export default function Home() {
   const { instance, accounts } = useMsal();
   const router = useRouter();
 
-  const [teamsChecked, setTeamsChecked]     = useState(false);
-  const [inTeams, setInTeams]               = useState(false);
-  const [teamsError, setTeamsError]         = useState(null);
+  const [teamsChecked, setTeamsChecked] = useState(false);
+  const [inTeams, setInTeams] = useState(false);
+  const [teamsError, setTeamsError] = useState(null);
   const [teamsDebugInfo, setTeamsDebugInfo] = useState(null); // ← structured debug payload
 
   // Already authenticated → go to /home
@@ -22,7 +22,8 @@ export default function Home() {
     }
   }, [isAuthenticated, accounts, router]);
 
-  // Teams bootstrap — runs once, no popups, no redirects
+  // Replace the bootstrap useEffect in index.jsx
+
   useEffect(() => {
     if (isAuthenticated) return;
 
@@ -38,14 +39,32 @@ export default function Home() {
 
       if (!cancelled) setInTeams(true);
 
+      const TIMEOUT_MS = 10_000;
+
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Teams sign-in timed out. Please try again.")),
+          TIMEOUT_MS,
+        ),
+      );
+
       try {
-        await bootstrapTeamsMsal(instance, loginRequest);
-        // On success, isAuthenticated flips true → useEffect above → /home
+        await Promise.race([
+          bootstrapTeamsMsal(instance, loginRequest),
+          timeoutPromise,
+        ]);
       } catch (err) {
         console.error("[TeamsAuth] Silent bootstrap failed:", err);
         if (!cancelled) {
+          // Clear all auth state so retry starts fresh
+          sessionStorage.removeItem("teams_authenticated");
+          sessionStorage.removeItem("consent_verified");
+          sessionStorage.removeItem("teams_obo_token");
+          sessionStorage.removeItem("teams_obo_expires_at");
+          sessionStorage.removeItem("teams_login_hint");
+
           setTeamsError(err.message || "Teams sign-in failed");
-          setTeamsDebugInfo(err.debugInfo ?? null); // ← capture structured info
+          setTeamsDebugInfo(err.debugInfo ?? null);
         }
       } finally {
         if (!cancelled) setTeamsChecked(true);
@@ -82,16 +101,25 @@ export default function Home() {
   if (inTeams && teamsError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-4 px-6 text-center">
-        <Image src="/powerintakelogo.png" alt="Power Intake" width={40} height={40} />
+        <Image
+          src="/powerintakelogo.png"
+          alt="Power Intake"
+          width={40}
+          height={40}
+        />
 
         <div className="space-y-1">
           <p className="text-red-400 text-sm font-medium">Sign-in failed.</p>
-          <p className="text-zinc-500 text-xs max-w-xs leading-relaxed">{teamsError}</p>
+          <p className="text-zinc-500 text-xs max-w-xs leading-relaxed">
+            {teamsError}
+          </p>
         </div>
 
         {/* Diagnosis checklist */}
         <div className="w-full max-w-sm border border-zinc-800 rounded-lg p-3 text-left space-y-1.5">
-          <p className="text-zinc-500 text-[11px] font-medium uppercase tracking-wider">Things to check</p>
+          <p className="text-zinc-500 text-[11px] font-medium uppercase tracking-wider">
+            Things to check
+          </p>
           {[
             "Admin consent has been granted for this app in your tenant",
             "The Teams app manifest includes the correct webApplicationInfo",
@@ -100,7 +128,9 @@ export default function Home() {
           ].map((tip, i) => (
             <div key={i} className="flex gap-2 items-start">
               <span className="text-zinc-600 text-[10px] mt-0.5">•</span>
-              <span className="text-zinc-600 text-[10px] leading-relaxed">{tip}</span>
+              <span className="text-zinc-600 text-[10px] leading-relaxed">
+                {tip}
+              </span>
             </div>
           ))}
         </div>
@@ -108,7 +138,9 @@ export default function Home() {
         {/* Error code quick-read — most useful field surfaced prominently */}
         {teamsDebugInfo && (
           <div className="w-full max-w-sm border border-zinc-800 rounded-lg p-3 text-left space-y-2">
-            <p className="text-zinc-500 text-[11px] font-medium uppercase tracking-wider">Error codes</p>
+            <p className="text-zinc-500 text-[11px] font-medium uppercase tracking-wider">
+              Error codes
+            </p>
 
             <div className="space-y-1">
               <p className="text-zinc-600 text-[10px]">
@@ -153,7 +185,14 @@ export default function Home() {
         )}
 
         <button
-          onClick={() => window.location.reload()}
+          onClick={() => {
+            sessionStorage.removeItem("teams_authenticated");
+            sessionStorage.removeItem("consent_verified");
+            sessionStorage.removeItem("teams_obo_token");
+            sessionStorage.removeItem("teams_obo_expires_at");
+            sessionStorage.removeItem("teams_login_hint");
+            window.location.reload();
+          }}
           className="mt-1 px-4 py-2 rounded-lg bg-violet-600 text-white text-sm hover:bg-violet-700 transition-colors"
         >
           Retry
@@ -221,7 +260,8 @@ export default function Home() {
                 </span>
               </h1>
               <p className="mt-4 text-base text-slate-400 leading-relaxed max-w-md">
-                A universal ticketing tool — intuitive, accountable, and built for everyone.
+                A universal ticketing tool — intuitive, accountable, and built
+                for everyone.
               </p>
               <div className="mt-10 flex flex-col gap-5">
                 {[
@@ -288,8 +328,12 @@ export default function Home() {
                       {icon}
                     </div>
                     <div>
-                      <h3 className="text-sm font-semibold text-violet-200">{title}</h3>
-                      <p className="mt-0.5 text-sm leading-relaxed text-slate-400">{desc}</p>
+                      <h3 className="text-sm font-semibold text-violet-200">
+                        {title}
+                      </h3>
+                      <p className="mt-0.5 text-sm leading-relaxed text-slate-400">
+                        {desc}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -313,7 +357,9 @@ export default function Home() {
                     <h2 className="text-xl font-bold text-white tracking-tight">
                       Welcome to Power Intake!
                     </h2>
-                    <p className="mt-1.5 text-sm text-slate-400">Sign in to continue.</p>
+                    <p className="mt-1.5 text-sm text-slate-400">
+                      Sign in to continue.
+                    </p>
                   </div>
                   <div className="mb-6 flex items-center gap-3">
                     <div className="h-px flex-1 bg-slate-700/60" />
@@ -324,7 +370,10 @@ export default function Home() {
                   </div>
                   <button
                     onClick={() =>
-                      instance.loginRedirect({ ...loginRequest, prompt: "select_account" })
+                      instance.loginRedirect({
+                        ...loginRequest,
+                        prompt: "select_account",
+                      })
                     }
                     className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-md transition-all duration-200 hover:bg-slate-50 hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-900"
                   >
@@ -342,14 +391,20 @@ export default function Home() {
                   </p>
                 </div>
                 <div className="mt-4 flex items-center justify-center gap-1.5">
-                  <svg className="h-3 w-3 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="h-3 w-3 text-slate-600"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
                       fillRule="evenodd"
                       d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="text-xs text-slate-600">Secured by Microsoft Identity</span>
+                  <span className="text-xs text-slate-600">
+                    Secured by Microsoft Identity
+                  </span>
                 </div>
               </div>
             </section>
