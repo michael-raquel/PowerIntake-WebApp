@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useRef, useCallback } f
 import { useMsal } from "@azure/msal-react";
 import { apiRequest, msalConfig } from "@/lib/msalConfig";
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
-import { getStoredTeamsToken } from "@/lib/teamsAuth"; // ← FIX: import OBO token helper
+import { getStoredTeamsToken } from "@/lib/teamsAuth";
 import socket from "@/lib/socket";
 import { toast } from "sonner";
 
@@ -28,8 +28,8 @@ export function AuthProvider({ children }) {
   const [isGlobalAdmin, setIsGlobalAdmin]     = useState(false);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState(null);
 
-  const logoutIntervalRef  = useRef(null);
-  const logoutToastIdRef   = useRef(null);
+  const logoutIntervalRef = useRef(null);
+  const logoutToastIdRef  = useRef(null);
 
   const startLogoutCountdown = useCallback((seconds = 10) => {
     if (logoutIntervalRef.current) {
@@ -65,6 +65,8 @@ export function AuthProvider({ children }) {
   }, [instance]);
 
   // ── Profile photo ─────────────────────────────────────────────────────────
+  // Only runs when MSAL has an account (browser + Teams mobile).
+  // Teams desktop skips this because account is null — no Graph token available.
   const fetchProfilePhoto = useCallback(async () => {
     if (!account) return null;
 
@@ -97,32 +99,45 @@ export function AuthProvider({ children }) {
   }, [profilePhotoUrl]);
 
   // ── API access token ──────────────────────────────────────────────────────
-  // FIX: On Teams desktop, acquireTokenSilent always fails because the MSAL
-  // hidden-iframe flow is blocked in the Teams sandbox. When it fails and we
-  // are not in an InteractionRequired state, check sessionStorage for the OBO
-  // token written by bootstrapTeamsMsal and use that instead. This is what
-  // allows every API call (login-sync, tickets, etc.) to work on desktop.
   useEffect(() => {
+    // ── Teams desktop path (no MSAL account in cache) ─────────────────────
+    // On Teams desktop, acquireTokenSilent is blocked by the sandbox iframe
+    // restrictions, so MSAL never populates accounts[]. bootstrapTeamsMsal
+    // stores the OBO token in sessionStorage instead — read it directly here.
+    //
+    // After the backend fix, this token now has aud = your API client ID
+    // (not graph.microsoft.com), so the audience check below will pass and
+    // tokenInfo will be populated with the user's real name, UPN, oid, tid.
     if (!account) {
-      // FIX: No MSAL account on Teams desktop — try OBO token directly.
-      // account is null because acquireTokenSilent never populated the cache,
-      // but bootstrapTeamsMsal stored the token in sessionStorage.
       const storedToken = getStoredTeamsToken();
       if (!storedToken) return;
 
       const claims = decodeJwt(storedToken);
       if (!claims) return;
 
+      // FIX: Properly validate audience — accept all three valid forms.
+      // Previously the condition had a logic bug (!storedToken was always
+      // false) AND didn't accept the api:// domain-prefixed form that Azure
+      // returns for custom API scopes.
       const expectedAud = msalConfig.auth.clientId;
-      if (
-        claims?.aud !== expectedAud &&
-        claims?.aud !== `api://${expectedAud}` &&
-        // OBO tokens issued for Graph have a different aud — accept them too
-        // since the backend validates on its side
-        !storedToken
-      ) return;
+      const audOk =
+        claims.aud === expectedAud ||
+        claims.aud === `api://${expectedAud}` ||
+        claims.aud === `api://powerintake.spartaserv.com/${expectedAud}`;
 
-      console.log("[AUTH] No MSAL account — using stored Teams OBO token");
+      if (!audOk) {
+        console.warn(
+          "[AUTH] OBO token aud mismatch — got:", claims.aud,
+          "expected one of:", expectedAud,
+          `| api://${expectedAud}`,
+          `| api://powerintake.spartaserv.com/${expectedAud}`,
+          "— check that teamsauth.routes.js requests your API scope, not Graph"
+        );
+        return;
+      }
+
+      console.log("[AUTH] Teams desktop — OBO token accepted, aud:", claims.aud,
+        "| user:", claims.preferred_username ?? claims.upn);
 
       setAccessToken(storedToken);
       setTokenInfo({
@@ -133,27 +148,28 @@ export function AuthProvider({ children }) {
         ).toString(),
         scopes: apiRequest.scopes,
         account: {
-          name:           claims?.name ?? sessionStorage.getItem("teams_login_hint") ?? "",
-          username:       claims?.preferred_username ?? sessionStorage.getItem("teams_login_hint") ?? "",
-          localAccountId: claims?.oid ?? "",
-          tenantId:       claims?.tid ?? "",
+          name:           claims.name           ?? sessionStorage.getItem("teams_login_hint") ?? "",
+          username:       claims.preferred_username ?? sessionStorage.getItem("teams_login_hint") ?? "",
+          localAccountId: claims.oid            ?? "",
+          tenantId:       claims.tid            ?? "",
           environment:    "login.windows.net",
-          roles:          claims?.roles ?? [],
+          roles:          claims.roles          ?? [],
         },
       });
       return;
     }
 
-    // Normal MSAL path (browser + Teams mobile where silent succeeds)
+    // ── Normal MSAL path (browser + Teams mobile) ──────────────────────────
     const acquire = async () => {
       try {
-        const response = await instance.acquireTokenSilent({ ...apiRequest, account });
-        const token    = response.accessToken;
-        const idToken  = response.idToken;
-        const claims   = decodeJwt(token);
+        const response    = await instance.acquireTokenSilent({ ...apiRequest, account });
+        const token       = response.accessToken;
+        const idToken     = response.idToken;
+        const claims      = decodeJwt(token);
         const expectedAud = msalConfig.auth.clientId;
 
         if (claims?.aud !== expectedAud && claims?.aud !== `api://${expectedAud}`) {
+          console.warn("[AUTH] MSAL token aud mismatch:", claims?.aud);
           return;
         }
 
@@ -199,8 +215,9 @@ export function AuthProvider({ children }) {
             // Popup blocked or cancelled — silent fail
           }
         } else {
-          // FIX: Non-interaction error on a real MSAL account (unexpected).
-          // Fall back to OBO token if available so the session doesn't break.
+          // Unexpected silent failure — fall back to stored OBO token if
+          // present (e.g. Teams mobile session where OBO ran but MSAL also
+          // partially succeeded then lost the cache on navigation)
           const storedToken = getStoredTeamsToken();
           if (storedToken) {
             const claims = decodeJwt(storedToken);
@@ -214,12 +231,12 @@ export function AuthProvider({ children }) {
               ).toString(),
               scopes: apiRequest.scopes,
               account: {
-                name:           claims?.name ?? account.name,
+                name:           claims?.name           ?? account.name,
                 username:       claims?.preferred_username ?? account.username,
-                localAccountId: claims?.oid ?? account.localAccountId,
-                tenantId:       claims?.tid ?? account.tenantId,
+                localAccountId: claims?.oid            ?? account.localAccountId,
+                tenantId:       claims?.tid            ?? account.tenantId,
                 environment:    "login.windows.net",
-                roles:          claims?.roles ?? [],
+                roles:          claims?.roles          ?? [],
               },
             });
           }
@@ -231,6 +248,9 @@ export function AuthProvider({ children }) {
   }, [account, instance]);
 
   // ── Global Admin check ────────────────────────────────────────────────────
+  // Skipped on Teams desktop (account is null, no Graph token available).
+  // isGlobalAdmin stays false for Teams desktop users — acceptable tradeoff
+  // since admin consent flows run in the browser anyway.
   useEffect(() => {
     if (!account) return;
 
@@ -348,8 +368,8 @@ export function AuthProvider({ children }) {
     socket.on("user:role_changed", onRoleChanged);
     return () => {
       socket.off("user:role_changed", onRoleChanged);
-      if (logoutIntervalRef.current)  clearInterval(logoutIntervalRef.current);
-      if (logoutToastIdRef.current)   toast.dismiss(logoutToastIdRef.current);
+      if (logoutIntervalRef.current) clearInterval(logoutIntervalRef.current);
+      if (logoutToastIdRef.current)  toast.dismiss(logoutToastIdRef.current);
     };
   }, [tokenInfo?.account?.localAccountId, startLogoutCountdown]);
 
@@ -358,8 +378,6 @@ export function AuthProvider({ children }) {
     if (!account) {
       socket.disconnect();
       sessionStorage.removeItem("consent_verified");
-      // FIX: Also clear Teams OBO tokens on logout so stale tokens
-      // can't be picked up by a different user on the same machine.
       sessionStorage.removeItem("teams_authenticated");
       sessionStorage.removeItem("teams_obo_token");
       sessionStorage.removeItem("teams_obo_expires_at");
