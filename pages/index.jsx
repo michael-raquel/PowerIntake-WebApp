@@ -13,16 +13,23 @@ export default function Home() {
   const [teamsChecked, setTeamsChecked]     = useState(false);
   const [inTeams, setInTeams]               = useState(false);
   const [teamsError, setTeamsError]         = useState(null);
-  const [teamsDebugInfo, setTeamsDebugInfo] = useState(null); // ← structured debug payload
+  const [teamsDebugInfo, setTeamsDebugInfo] = useState(null);
 
-  // Already authenticated → go to /home
+  // ── Already authenticated → go to /home ───────────────────────────────────
+  // FIX: Also check Teams OBO flags — on Teams desktop isAuthenticated stays
+  // false even after successful bootstrap because no MSAL account lands in
+  // cache. Without this second condition Teams desktop users are stuck on the
+  // login page after a successful OBO exchange.
   useEffect(() => {
-    if (isAuthenticated && accounts[0]) {
+    const teamsAuthenticated  = sessionStorage.getItem("teams_authenticated") === "1";
+    const consentVerified     = sessionStorage.getItem("consent_verified") === "1";
+
+    if ((isAuthenticated && accounts[0]) || (teamsAuthenticated && consentVerified)) {
       router.push("/home");
     }
   }, [isAuthenticated, accounts, router]);
 
-  // Teams bootstrap — runs once, no popups, no redirects
+  // ── Teams bootstrap ────────────────────────────────────────────────────────
   useEffect(() => {
     if (isAuthenticated) return;
 
@@ -40,12 +47,16 @@ export default function Home() {
 
       try {
         await bootstrapTeamsMsal(instance, loginRequest);
-        // On success, isAuthenticated flips true → useEffect above → /home
+        // FIX: On Teams desktop, isAuthenticated never flips to true after
+        // a successful OBO exchange (MSAL cache stays empty). Push to /home
+        // manually here rather than relying on the useEffect above reacting
+        // to isAuthenticated, which won't fire.
+        if (!cancelled) router.push("/home");
       } catch (err) {
         console.error("[TeamsAuth] Silent bootstrap failed:", err);
         if (!cancelled) {
           setTeamsError(err.message || "Teams sign-in failed");
-          setTeamsDebugInfo(err.debugInfo ?? null); // ← capture structured info
+          setTeamsDebugInfo(err.debugInfo ?? null);
         }
       } finally {
         if (!cancelled) setTeamsChecked(true);
@@ -53,13 +64,11 @@ export default function Home() {
     };
 
     bootstrap();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Teams: detecting ─────────────────────────────────────
+  // ── Teams: detecting ──────────────────────────────────────────────────────
   if (!teamsChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-black">
@@ -68,7 +77,7 @@ export default function Home() {
     );
   }
 
-  // ── Teams: bootstrapping (ssoSilent in flight) ───────────
+  // ── Teams: bootstrapping ───────────────────────────────────────────────────
   if (inTeams && !teamsError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-3">
@@ -78,7 +87,7 @@ export default function Home() {
     );
   }
 
-  // ── Teams: error ─────────────────────────────────────────
+  // ── Teams: error ──────────────────────────────────────────────────────────
   if (inTeams && teamsError) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-black gap-4 px-6 text-center">
@@ -89,7 +98,6 @@ export default function Home() {
           <p className="text-zinc-500 text-xs max-w-xs leading-relaxed">{teamsError}</p>
         </div>
 
-        {/* Diagnosis checklist */}
         <div className="w-full max-w-sm border border-zinc-800 rounded-lg p-3 text-left space-y-1.5">
           <p className="text-zinc-500 text-[11px] font-medium uppercase tracking-wider">Things to check</p>
           {[
@@ -105,7 +113,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Error code quick-read — most useful field surfaced prominently */}
         {teamsDebugInfo && (
           <div className="w-full max-w-sm border border-zinc-800 rounded-lg p-3 text-left space-y-2">
             <p className="text-zinc-500 text-[11px] font-medium uppercase tracking-wider">Error codes</p>
@@ -140,7 +147,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Full debug JSON — collapsible */}
         {teamsDebugInfo && (
           <details className="w-full max-w-sm text-left">
             <summary className="text-zinc-700 text-[10px] cursor-pointer hover:text-zinc-500 transition-colors">
@@ -166,7 +172,7 @@ export default function Home() {
     );
   }
 
-  // ── Normal browser landing page ───────────────────────────
+  // ── Normal browser landing page ───────────────────────────────────────────
   return (
     <div
       className="relative min-h-screen bg-cover bg-center bg-no-repeat"
@@ -229,18 +235,8 @@ export default function Home() {
                     title: "Improving Accessibility",
                     desc: "Making Power Intake a universal ticketing tool, easy and intuitive for everyone, everywhere!",
                     icon: (
-                      <svg
-                        className="h-4 w-4 text-violet-400 flex-shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z"
-                        />
+                      <svg className="h-4 w-4 text-violet-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
                       </svg>
                     ),
                   },
@@ -248,18 +244,8 @@ export default function Home() {
                     title: "Promoting Accountability",
                     desc: "Every ticket matters! Ensuring responsibility and transparency in every step of the ticketing process.",
                     icon: (
-                      <svg
-                        className="h-4 w-4 text-violet-400 flex-shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
+                      <svg className="h-4 w-4 text-violet-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     ),
                   },
@@ -267,18 +253,8 @@ export default function Home() {
                     title: "Exceptional Service",
                     desc: "Going beyond ticketing! Delivering a seamless, efficient, and superior service experience for all.",
                     icon: (
-                      <svg
-                        className="h-4 w-4 text-violet-400 flex-shrink-0"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
-                        />
+                      <svg className="h-4 w-4 text-violet-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" />
                       </svg>
                     ),
                   },
@@ -302,30 +278,18 @@ export default function Home() {
                 <div className="relative w-full rounded-2xl border border-slate-700/50 bg-slate-900/80 p-8 shadow-2xl shadow-black/50 backdrop-blur-xl ring-1 ring-white/5">
                   <div className="mb-8 flex flex-col items-center text-center">
                     <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500/20 to-violet-600/10 ring-1 ring-violet-500/30 shadow-lg shadow-violet-500/10">
-                      <Image
-                        src="/powerintakelogo.png"
-                        alt="Power Intake logo"
-                        width={32}
-                        height={32}
-                        className="drop-shadow-md"
-                      />
+                      <Image src="/powerintakelogo.png" alt="Power Intake logo" width={32} height={32} className="drop-shadow-md" />
                     </div>
-                    <h2 className="text-xl font-bold text-white tracking-tight">
-                      Welcome to Power Intake!
-                    </h2>
+                    <h2 className="text-xl font-bold text-white tracking-tight">Welcome to Power Intake!</h2>
                     <p className="mt-1.5 text-sm text-slate-400">Sign in to continue.</p>
                   </div>
                   <div className="mb-6 flex items-center gap-3">
                     <div className="h-px flex-1 bg-slate-700/60" />
-                    <span className="text-xs text-slate-500 tracking-widest uppercase">
-                      Authenticate
-                    </span>
+                    <span className="text-xs text-slate-500 tracking-widest uppercase">Authenticate</span>
                     <div className="h-px flex-1 bg-slate-700/60" />
                   </div>
                   <button
-                    onClick={() =>
-                      instance.loginRedirect({ ...loginRequest, prompt: "select_account" })
-                    }
+                    onClick={() => instance.loginRedirect({ ...loginRequest, prompt: "select_account" })}
                     className="group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-800 shadow-md transition-all duration-200 hover:bg-slate-50 hover:shadow-lg active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 focus:ring-offset-slate-900"
                   >
                     <span className="grid h-5 w-5 grid-cols-2 grid-rows-2 gap-[2px] flex-shrink-0">
@@ -343,11 +307,7 @@ export default function Home() {
                 </div>
                 <div className="mt-4 flex items-center justify-center gap-1.5">
                   <svg className="h-3 w-3 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
-                    <path
-                      fillRule="evenodd"
-                      d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
-                      clipRule="evenodd"
-                    />
+                    <path fillRule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clipRule="evenodd" />
                   </svg>
                   <span className="text-xs text-slate-600">Secured by Microsoft Identity</span>
                 </div>
