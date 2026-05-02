@@ -288,30 +288,15 @@ export function AuthProvider({ children }) {
         const data = await res.json();
         setUserInfo(data.user ?? null);
 
-<<<<<<< Updated upstream
-        const entrauserid   = tokenInfo.account.localAccountId;
-        const entratenantid = tokenInfo.account.tenantId;
-=======
         // Socket join only runs on successful sync
         // const entrauserid   = tokenInfo.account.localAccountId;
         // const entratenantid = tokenInfo.account.tenantId;
->>>>>>> Stashed changes
 
         // const joinRooms = () => {
         //   socket.emit("join", entrauserid);
         //   if (entratenantid) socket.emit("join", entratenantid);
         // };
 
-<<<<<<< Updated upstream
-        if (!socket.connected) {
-          socket.connect();
-          socket.once("connect", joinRooms);
-        } else {
-          joinRooms();
-        }
-      } catch {
-        // Silent fail — non-critical
-=======
         // if (!socket.connected) {
         //   socket.connect();
         //   socket.once("connect", joinRooms);
@@ -321,7 +306,6 @@ export function AuthProvider({ children }) {
 
       } catch (err) {
         // console.error("[AUTH] syncUser error:", err);
->>>>>>> Stashed changes
       }
     };
 
