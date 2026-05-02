@@ -1,3 +1,10 @@
+# [1.10.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.5...v1.10.0-dev.6) (2026-05-02)
+
+
+### Bug Fixes
+
+* st-2270- First Time user tutorial guide ([87e6fed](https://github.com/michael-raquel/PowerIntake-WebApp/commit/87e6fed2f7c54472081b1eca9826533796857d42))
+
 # [1.10.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.4...v1.10.0-dev.5) (2026-04-27)
 
 
