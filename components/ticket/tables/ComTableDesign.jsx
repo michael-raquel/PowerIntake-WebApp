@@ -13,6 +13,7 @@ export default function ComTableDesign({
   onRowClick,
   isSyncing,
   syncNode,
+  getRowProps,
   actions,
   className = "",
 }) {
@@ -217,17 +218,20 @@ export default function ComTableDesign({
               ) : (
                 sortedData.map((row, i) => {
                   const syncing = isSyncing?.(row) ?? false;
+                  const rowProps = getRowProps?.(row) ?? {};
+                  const { className: extraRowClassName = "", ...restRowProps } = rowProps;
                   return (
                     <tr
                       key={row.v_ticketuuid ?? row.v_entrauserid ?? i}
                       onClick={() => !syncing && onRowClick?.(row)}
+                      {...restRowProps}
                       className={`transition-colors ${
                         syncing
                           ? "bg-violet-50 dark:bg-violet-950/20 cursor-wait"
                           : onRowClick
                           ? "hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
                           : ""
-                      }`}
+                      } ${extraRowClassName}`}
                     >
                       {columns.map((col, ci) => (
                         <td

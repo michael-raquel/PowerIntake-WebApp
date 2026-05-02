@@ -7,9 +7,10 @@ import SuperAdminTab from "@/components/manage/SuperAdminTab";
 import useManagerCheck from "@/hooks/UseManagerCheck";
 import { useAuth } from "@/context/AuthContext";
 import { ExternalLink, Users } from "lucide-react";
+import ManageTutorial from './ManageTutorial';
 
 export default function Manage() {
-  const { isManager } = useManagerCheck();
+  const { isManager, loading: isManagerLoading } = useManagerCheck();
   const { tokenInfo } = useAuth();
   const [activeTab, setActiveTab] = useState("company");
   const [filters, setFilters] = useState({
@@ -23,12 +24,14 @@ export default function Manage() {
 
   const roles = tokenInfo?.account?.roles ?? [];
   const isSuperAdmin = roles.includes("SuperAdmin");
+  const isAdmin = isSuperAdmin || roles.includes("Admin");
+  const userId = tokenInfo?.account?.localAccountId;
 
   const tabs = [
     ...(isSuperAdmin ? [{ id: "clients", label: "My Clients" }] : []),
     ...(isSuperAdmin ? [{ id: "admin", label: "Super Admin" }] : []),
-    { id: "company", label: "My Company" },
-    ...(isManager ? [{ id: "team", label: "My Team" }] : []),
+    { id: "company", label: "My Company", dataTutorial: "manage-my-company-tab" },
+    ...(isManager ? [{ id: "team", label: "My Team", dataTutorial: "manage-my-team-tab" }] : []),
 
   ];
 
@@ -41,6 +44,16 @@ export default function Manage() {
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  useEffect(() => {
+    window.__tutorialOpenManageTeam = () => setActiveTab("team");
+    window.__tutorialOpenManageCompany = () => setActiveTab("company");
+
+    return () => {
+      delete window.__tutorialOpenManageTeam;
+      delete window.__tutorialOpenManageCompany;
+    };
   }, []);
 
   // Mobile 
@@ -145,6 +158,12 @@ export default function Manage() {
             </p>
           </div>
         </footer>
+        <ManageTutorial
+          userId={userId}
+          isManager={isManager}
+          isAdmin={isAdmin}
+          isManagerLoading={isManagerLoading}
+        />
       </div>
     );
   }
@@ -250,6 +269,12 @@ export default function Manage() {
           </p>
         </div>
       </footer>
+      <ManageTutorial
+        userId={userId}
+        isManager={isManager}
+        isAdmin={isAdmin}
+        isManagerLoading={isManagerLoading}
+      />
     </div>
   );
 }

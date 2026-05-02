@@ -7,6 +7,7 @@ import ComTableDesign from './ComTableDesign';
 import useAutoSyncDynamics from "@/hooks/UseSyncTickets";
 import { RefreshCw } from "lucide-react";
 import socket from "@/lib/socket";
+import { useDemoTicketTutorial } from "@/components/tutorial/ComDemoDataTutorial";
 
 
 const CARD_FIELDS = [
@@ -117,9 +118,16 @@ export default function ComTableMyTickets({
   onDeleted,
   onUpdated,
   hideCompleted = false,
+  onDemoDialogOpen = () => {},
 }) {
   const { tokenInfo } = useAuth();
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const {
+    dummyTicket,
+    dummyDialogOpen,
+    openDummyDialog,
+    closeDummyDialog,
+  } = useDemoTicketTutorial({ onOpen: onDemoDialogOpen });
   const { tickets, loading, error, setTickets } = useFetchTicket({
     entrauserid: tokenInfo?.account?.localAccountId,
     refreshKey,
@@ -217,6 +225,13 @@ export default function ComTableMyTickets({
     [filteredTickets, currentPage, recordsPerPage]
   );
 
+  const tableData = useMemo(() => {
+    if (!dummyTicket) return paginated;
+    return [{ ...dummyTicket, __tutorialRow: true }, ...paginated];
+  }, [dummyTicket, paginated]);
+
+  const displayedTotalRecords = filteredTickets.length;
+
   useEffect(() => {
     if (JSON.stringify(prevTicketsRef.current) === JSON.stringify(myTickets)) return;
     prevTicketsRef.current = myTickets;
@@ -255,11 +270,23 @@ export default function ComTableMyTickets({
       <div className="md:hidden">
         <div className="sticky top-0 z-10 flex justify-between items-center px-0 py-2 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            {filteredTickets.length} Total Records
+            {displayedTotalRecords} Total Records
           </span>
          {/* {syncButton} */}
         </div>
       <div className="space-y-3 p-3">
+          {dummyTicket && (
+            <ComCard
+              dataTutorial="ticket-dummy-row-mobile"
+              ticket={dummyTicket}
+              onClick={() => {
+                setSelectedTicket(null);
+                openDummyDialog();
+              }}
+              isSyncing={false}
+            />
+          )}
+
           {loading ? (
             <p className="text-sm text-center text-gray-500 dark:text-gray-400 py-6">Loading...</p>
           ) : error ? (
@@ -287,12 +314,27 @@ export default function ComTableMyTickets({
       <ComTableDesign
         
         columns={COLUMNS}
-        data={paginated}
+        data={tableData}
         loading={loading}
         emptyText="No tickets found."
-        totalRecords={filteredTickets.length}
-        onRowClick={setSelectedTicket}
-        isSyncing={(row) => pendingSyncUuid === row.v_ticketuuid}
+        totalRecords={displayedTotalRecords}
+        onRowClick={(row) => {
+          if (row.__tutorialRow) {
+            setSelectedTicket(null);
+            openDummyDialog();
+            return;
+          }
+          setSelectedTicket(row);
+        }}
+        isSyncing={(row) => !row.__tutorialRow && pendingSyncUuid === row.v_ticketuuid}
+        getRowProps={(row) => (
+          row.__tutorialRow
+            ? {
+                'data-tutorial': 'ticket-dummy-row-desktop',
+                className: 'bg-violet-50/70 dark:bg-violet-950/20 border-y border-violet-200 dark:border-violet-800',
+              }
+            : {}
+        )}
        // actions={syncButton}
       />
 
@@ -301,6 +343,14 @@ export default function ComTableMyTickets({
           ticket={selectedTicket}
           onClose={() => setSelectedTicket(null)}
           onUpdated={onTicketUpdated}
+        />
+      )}
+
+      {dummyDialogOpen && dummyTicket && (
+        <ComUpdateForm
+          ticket={dummyTicket}
+          onClose={closeDummyDialog}
+          onUpdated={() => {}}
         />
       )}
     </>

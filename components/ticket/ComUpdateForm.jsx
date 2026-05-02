@@ -352,6 +352,7 @@ if (!ticket) return null;
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 dark:bg-black/70"
       style={{ padding: 'env(safe-area-inset-top, 16px) env(safe-area-inset-right, 16px) env(safe-area-inset-bottom, 16px) env(safe-area-inset-left, 16px)' }}>
       <div
+        data-tutorial="dialog-overview"
         className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl w-full max-w-[95vw] lg:max-w-[75vw] xl:max-w-[65vw] 2xl:max-w-[55vw] flex flex-col overflow-hidden relative"
         style={{ height: 'min(95dvh, 95vh)', maxHeight: 'min(95dvh, 95vh)' }}>
 
@@ -370,6 +371,7 @@ if (!ticket) return null;
   <div className="flex items-center justify-start sm:justify-end gap-2">
     {canReactivate && (
       <Button
+        data-tutorial="dialog-reactivate-btn"
         variant="outline"
         size="sm"
         onClick={handleReactivate}
@@ -524,9 +526,10 @@ if (!ticket) return null;
             )}
           </div>
 
-          <div className="w-12 sm:w-14 lg:w-16 border-l border-gray-200 dark:border-gray-800 flex flex-col items-center py-4 gap-2 shrink-0 bg-gray-50/50 dark:bg-gray-800/50">
+          <div data-tutorial="dialog-panel-tabs" className="w-12 sm:w-14 lg:w-16 border-l border-gray-200 dark:border-gray-800 flex flex-col items-center py-4 gap-2 shrink-0 bg-gray-50/50 dark:bg-gray-800/50">
             {TABS.map(({ id, icon: Icon, label }) => (
               <button key={id}
+                data-tutorial={`dialog-${id}-tab`}
                 onClick={() => { if (activeTab === id) { setPanelOpen(false); setTimeout(() => setActiveTab(null), 200); } else { setActiveTab(id); setPanelOpen(true); } }}
                 title={label}
                 className={cn('w-8 h-8 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center transition-all',

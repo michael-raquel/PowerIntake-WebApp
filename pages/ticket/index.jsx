@@ -6,6 +6,7 @@ import ComTicketTable from '@/components/ticket/ComTicketTable';
 import ComCreateTicket from '@/components/ticket/ComCreateTicket';
 import ComUpdateForm from '@/components/ticket/ComUpdateForm';
 import ComCard from '@/components/ticket/tables/ComCard';
+import TicketTutorial from './TicketTutorial';
 import Notification from '@/components/Notification';
 import { useAuth } from '@/context/AuthContext';
 import useManagerCheck from '@/hooks/UseManagerCheck';
@@ -13,6 +14,7 @@ import { useFetchTicket } from '@/hooks/UseFetchTicket';
 import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateRecordCount } from '@/hooks/UseUpdateRecordCount';
 import { useUpdateHideTickets } from '@/hooks/UseUpdateHideTickets';
+import { useUpdateTutorial } from '@/hooks/UseUpdateTutorial';
 import { ExternalLink, ChevronLeft, ChevronRight, Ticket } from 'lucide-react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
@@ -23,6 +25,18 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import {
+  clearTutorialPlayRequest,
+  getTutorialPlayRequest,
+  getTicketTutorialSteps,
+  hasSeenTutorial,
+  isTutorialScheduled,
+  markTutorialSeen,
+  setTutorialScheduled,
+  syncSeenTutorialsFromDB,
+  requestTutorialPlay,
+  TUTORIAL_IDS,
+} from '@/lib/tutorialSteps/userTutorial';
 
 const MOBILE_PER_PAGE = 10;
 const ROW_HEIGHT = 50;
@@ -40,11 +54,17 @@ const VALID_TABS = new Set(['my-client', 'my-company', 'my-team', 'my-ticket']);
 const VALID_DETAIL_TABS = new Set(['notes', 'attachments']);
 const TEXT_INPUT_FILTERS = new Set(['Client', 'Manager']);
 
+const TICKET_TAB_TUTORIAL_IDS = {
+  'my-ticket': 'ticket-my-ticket-tab',
+  'my-team': 'ticket-my-team-tab',
+  'my-company': 'ticket-my-company-tab',
+};
+
 export default function TicketPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { tokenInfo } = useAuth();
-  const { isManager } = useManagerCheck();
+  const { isManager, loading: isManagerLoading } = useManagerCheck();
 
   const roles = tokenInfo?.account?.roles ?? [];
   const isSuperAdmin = roles.includes('SuperAdmin');
@@ -83,8 +103,21 @@ export default function TicketPage() {
   const tableContainerRef = useRef(null);
 
   const { userSettings } = useFetchUserSettings({ entrauserid: userId });
+  const { updateTutorial } = useUpdateTutorial();
   const { updateRecordCount, loading: updating } = useUpdateRecordCount();
   const { updateHideTickets } = useUpdateHideTickets();
+
+  useEffect(() => {
+    if (!userId || !userSettings || userSettings.length === 0) return;
+    const seentutorials = userSettings[0]?.v_seentutorials ?? userSettings[0]?.seentutorials;
+    if (seentutorials) {
+      try {
+        syncSeenTutorialsFromDB(userId, seentutorials);
+      } catch (err) {
+        
+      }
+    }
+  }, [userId, userSettings]);
 
   const settingsRowsPerPage = useMemo(() => {
     if (userSettings && userSettings.length > 0) {
@@ -104,6 +137,12 @@ export default function TicketPage() {
   const safePage = Math.min(currentPage, totalPages);
   const [hideCompleted, setHideCompleted] = useState(false);
   const [pendingSyncUuid, setPendingSyncUuid] = useState(null);
+  const [shouldRunCreateTutorial, setShouldRunCreateTutorial] = useState(() => {
+    const requested = getTutorialPlayRequest();
+    return requested === TUTORIAL_IDS.CREATE || isTutorialScheduled(userId, TUTORIAL_IDS.CREATE) || !hasSeenTutorial(userId, TUTORIAL_IDS.CREATE);
+  });
+  const [shouldRunTicketTutorial, setShouldRunTicketTutorial] = useState(false);
+  const [shouldRunTicketOpeningTutorial, setShouldRunTicketOpeningTutorial] = useState(false);
 
   const initialHideCompleted = useMemo(() => {
     if (userSettings && userSettings.length > 0) {
@@ -129,6 +168,11 @@ export default function TicketPage() {
     const ids = tabs.map(t => t.id);
     return ids.includes(activeTab) ? activeTab : 'my-ticket';
   }, [tabs, activeTab]);
+
+  const ticketTutorialSteps = useMemo(
+    () => getTicketTutorialSteps({ isManager, isAdmin: isAdmin || isSuperAdmin }),
+    [isManager, isAdmin, isSuperAdmin]
+  );
 
   const ticketQuery = useMemo(() => {
     if (!userId || safeTab === 'my-team') return { enabled: false };
@@ -193,6 +237,16 @@ export default function TicketPage() {
     setSelectedTicket(ticket);
   }, []);
 
+  const handleDemoDialogOpen = useCallback(() => {
+    if (userId && shouldRunTicketTutorial) {
+      markTutorialSeen(userId, TUTORIAL_IDS.TICKET_LIST);
+      updateTutorial({ entrauserid: userId, tutorial_name: TUTORIAL_IDS.TICKET_LIST }).catch(() => {});
+    }
+    setShouldRunTicketTutorial(false);
+    requestTutorialPlay(TUTORIAL_IDS.TICKET_OPENING);
+    setShouldRunTicketOpeningTutorial(true);
+  }, [shouldRunTicketTutorial, updateTutorial, userId]);
+
   const handleDialogClose = useCallback(() => {
     setSelectedTicketTab(null);
     setSelectedTicket(null);
@@ -256,6 +310,24 @@ export default function TicketPage() {
     // toast.info('A ticket has been updated');
   }, []);
 
+  // ticket tutorial lifecycle and gating are now handled in pages/ticket/TicketTutorial.jsx
+
+  const handleCreateTutorialComplete = useCallback(() => {
+    if (!userId) return;
+    markTutorialSeen(userId, TUTORIAL_IDS.CREATE);
+    setTutorialScheduled(userId, TUTORIAL_IDS.CREATE, false);
+    if (getTutorialPlayRequest() === TUTORIAL_IDS.CREATE) {
+      clearTutorialPlayRequest();
+    }
+    setShouldRunCreateTutorial(false);
+    // Persist seen state to the server (best-effort)
+    try {
+      updateTutorial({ entrauserid: userId, tutorial_name: TUTORIAL_IDS.CREATE }).catch(() => {});
+    } catch (err) {
+      // ignore
+    }
+  }, [userId, updateTutorial]);
+
   useEffect(() => {
     setHideCompleted(initialHideCompleted);
   }, [initialHideCompleted]);
@@ -311,6 +383,16 @@ export default function TicketPage() {
   }, []);
 
   useEffect(() => {
+    window.__tutorialOpenCreateTicket = () => setShowCreateTicket(true);
+    window.__tutorialCloseCreateTicket = () => setShowCreateTicket(false);
+
+    return () => {
+      delete window.__tutorialOpenCreateTicket;
+      delete window.__tutorialCloseCreateTicket;
+    };
+  }, []);
+
+  useEffect(() => {
     if (isMobile) return;
     const update = () => {
       if (!tableContainerRef.current) return;
@@ -334,6 +416,8 @@ export default function TicketPage() {
           setCurrentPage(1);
           setShowCreateTicket(false);
         }}
+        tutorialAutoStart={shouldRunCreateTutorial}
+        onTutorialComplete={handleCreateTutorialComplete}
       />
     );
   }
@@ -353,12 +437,13 @@ export default function TicketPage() {
   );
 
   const tabBar = (
-    <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
+    <div data-tutorial="ticket-tabs" className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
       <nav className="flex gap-x-1">
         {tabs.map(({ id, label }) => (
           <button
             key={id}
             onClick={() => handleTabChange(id)}
+            {...(TICKET_TAB_TUTORIAL_IDS[id] ? { 'data-tutorial': TICKET_TAB_TUTORIAL_IDS[id] } : {})}
             className={`px-4 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150 rounded-t-lg border-b-2 cursor-pointer ${safeTab === id
               ? 'border-violet-600 text-violet-600 bg-violet-50 dark:bg-violet-950/30 dark:border-violet-400 dark:text-violet-400 font-semibold'
               : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-white/[0.04]'
@@ -532,7 +617,10 @@ export default function TicketPage() {
     onDeleted: handleOnDeleted,
     onUpdated: handleOnUpdated,
     hideCompleted,
+    onDemoDialogOpen: handleDemoDialogOpen,
   };
+
+  // ticket tutorial is handled in a separate component to keep this page minimal
 
   // ── Mobile 
   if (isMobile) {
@@ -556,7 +644,7 @@ export default function TicketPage() {
               />
             </div>
             <div className="border-t border-gray-200 dark:border-gray-800 flex-shrink-0" />
-            <div className="px-4 pb-4 pt-0 flex-1 min-h-0 overflow-auto">
+            <div data-tutorial="ticket-table-area-mobile" className="px-4 pb-4 pt-0 flex-1 min-h-0 overflow-auto">
               <ComTicketTable {...tableProps} recordsPerPage={mobileRecordsPerPage} renderAs="cards" CardComponent={ComCard} />
             </div>
             {pagination}
@@ -571,6 +659,18 @@ export default function TicketPage() {
             onUpdated={handleTicketUpdated}
           />
         )}
+        <TicketTutorial
+          userId={userId}
+          isManager={isManager}
+          isAdmin={isAdmin || isSuperAdmin}
+          isManagerLoading={isManagerLoading}
+          shouldRunTicketTutorial={shouldRunTicketTutorial}
+          setShouldRunTicketTutorial={setShouldRunTicketTutorial}
+          shouldRunTicketOpeningTutorial={shouldRunTicketOpeningTutorial}
+          setShouldRunTicketOpeningTutorial={setShouldRunTicketOpeningTutorial}
+          setShowCreateTicket={setShowCreateTicket}
+          setShouldRunCreateTutorial={setShouldRunCreateTutorial}
+        />
       </div>
     );
   }
@@ -596,7 +696,7 @@ export default function TicketPage() {
             />
           </div>
           <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-800 mt-3" />
-          <div ref={tableContainerRef} className="flex-1 min-h-0 overflow-auto">
+          <div ref={tableContainerRef} data-tutorial="ticket-table-area" className="flex-1 min-h-0 overflow-auto">
             <ComTicketTable {...tableProps} recordsPerPage={effectiveRecordsPerPage} hideCompleted={hideCompleted} />
           </div>
           {pagination}
@@ -611,6 +711,18 @@ export default function TicketPage() {
           onUpdated={handleTicketUpdated}
         />
       )}
+      <TicketTutorial
+        userId={userId}
+        isManager={isManager}
+        isAdmin={isAdmin || isSuperAdmin}
+        isManagerLoading={isManagerLoading}
+        shouldRunTicketTutorial={shouldRunTicketTutorial}
+        setShouldRunTicketTutorial={setShouldRunTicketTutorial}
+        shouldRunTicketOpeningTutorial={shouldRunTicketOpeningTutorial}
+        setShouldRunTicketOpeningTutorial={setShouldRunTicketOpeningTutorial}
+        setShowCreateTicket={setShowCreateTicket}
+        setShouldRunCreateTutorial={setShouldRunCreateTutorial}
+      />
     </div>
   );
 }

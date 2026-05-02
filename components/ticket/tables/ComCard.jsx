@@ -44,7 +44,7 @@ const formatTime = (val) => {
 
 const SKELETON_WIDTHS = ['w-16', 'w-20', 'w-14', 'w-18', 'w-16', 'w-12', 'w-14'];
 
-export default function ComCard({ ticket = {}, onClick, isSyncing = false }) {
+export default function ComCard({ ticket = {}, onClick, isSyncing = false, dataTutorial = undefined }) {
   const ticketId = ticket?.v_ticketnumber || '—';
   const status = ticket?.v_status || '—';
   const priority = ticket?.v_priority || '—';
@@ -77,6 +77,7 @@ export default function ComCard({ ticket = {}, onClick, isSyncing = false }) {
 
   return (
     <div
+      data-tutorial={dataTutorial}
       onClick={isSyncing ? undefined : onClick}
       onKeyDown={handleKeyDown}
       role="button"

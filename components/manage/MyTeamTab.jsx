@@ -314,7 +314,10 @@ export default function MyTeamTab({ selectedFilters = {}, searchValue = "", onFi
   }, [handleResize, stopResize]);
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
+    <div
+      data-tutorial="manage-my-team-body"
+      className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1"
+    >
 
       <MyTeamFilter
         onFiltersChange={handleFiltersChange}
