@@ -1,3 +1,18 @@
+## [1.10.1-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0...v1.10.1-dev.1) (2026-05-02)
+
+
+### Bug Fixes
+
+* st-2270- First Time user tutorial guide ([87e6fed](https://github.com/michael-raquel/PowerIntake-WebApp/commit/87e6fed2f7c54472081b1eca9826533796857d42))
+* ST-no ticket number comment out the call now button on support call ([6c4f996](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6c4f9964c305c138627aa0c709d2e99d95c6eaa0))
+
+# [1.10.0-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.6...v1.10.0-dev.7) (2026-05-02)
+
+
+### Bug Fixes
+
+* ST-no ticket number comment out the call now button on support call ([6c4f996](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6c4f9964c305c138627aa0c709d2e99d95c6eaa0))
+
 # [1.10.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.5...v1.10.0-dev.6) (2026-05-02)
 
 
