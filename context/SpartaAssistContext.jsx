@@ -9,6 +9,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useMsal } from "@azure/msal-react";
 import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
+import { syncSeenTutorialsFromDB } from '@/lib/tutorialSteps/userTutorial';
 
 const SpartaAssistContext = createContext(null);
 
@@ -46,6 +47,18 @@ export function SpartaAssistProvider({ children }) {
       0,
     );
   }, [entrauserid, userSettings, loading]);
+
+  useEffect(() => {
+    if (!entrauserid || !userSettings || userSettings.length === 0) return;
+    const seentutorials = userSettings[0]?.v_seentutorials ?? userSettings[0]?.seentutorials;
+    if (seentutorials) {
+      try {
+        syncSeenTutorialsFromDB(entrauserid, seentutorials);
+      } catch (err) {
+        // console.error('syncSeenTutorialsFromDB failed', err);
+      }
+    }
+  }, [entrauserid, userSettings]);
 
   // Set email globally before widget mounts so lcw:ready always has it
   useEffect(() => {

@@ -506,7 +506,10 @@ export default function MyCompanyTab({ filters = {}, onFiltersChange = () => {} 
     }
   }, [localPage, displayTotalPages]);
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1">
+    <div
+      data-tutorial="manage-my-company-body"
+      className="bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-800 flex flex-col min-h-0 flex-1"
+    >
 
       <CompanyFilter
         onFilter={handleFilter}
