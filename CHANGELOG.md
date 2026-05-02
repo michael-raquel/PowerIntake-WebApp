@@ -1,3 +1,10 @@
+# [1.10.0-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.6...v1.10.0-dev.7) (2026-05-02)
+
+
+### Bug Fixes
+
+* ST-no ticket number comment out the call now button on support call ([6c4f996](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6c4f9964c305c138627aa0c709d2e99d95c6eaa0))
+
 # [1.10.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.5...v1.10.0-dev.6) (2026-05-02)
 
 
