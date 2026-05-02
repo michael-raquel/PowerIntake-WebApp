@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useFetchHomeManagerTicket } from '@/hooks/home/UseFetchHomeManagerTicket';
 import useManagerCheck from '@/hooks/UseManagerCheck';
 import Notification from '@/components/Notification';
+import HomeTutorial from './HomeTutorial';
 
 const images = [
   { src: '/homebanner.png', alt: 'Home Banner' },
@@ -47,6 +48,12 @@ const DOT_COLORS = {
   purple: 'bg-purple-500', gray: 'bg-gray-400', orange: 'bg-orange-500',
 };
 
+const HOME_TAB_TUTORIAL_IDS = {
+  'my-ticket': 'home-my-tickets-tab',
+  'my-team': 'home-my-team-tab',
+  'my-company': 'home-my-company-tab',
+};
+
 const DotRow = ({ color, label }) => (
   <div className="flex items-center gap-1 min-w-0 overflow-hidden">
     <span className={`inline-block w-1.5 h-1.5 rounded-full shrink-0 ${DOT_COLORS[color] ?? 'bg-gray-400'}`} />
@@ -73,15 +80,18 @@ const StatCard = ({ icon, label, value, dots }) => (
 const TabBar = ({ active, onChange, tabs }) => (
   <div className="flex border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
     <nav className="flex gap-x-1">
-      {tabs.map(tab => (
+      {tabs.map(tab => {
+        const tutorialId = HOME_TAB_TUTORIAL_IDS[tab.value];
+        return (
         <button key={tab.value} onClick={() => onChange(tab.value)}
+        {...(tutorialId ? { 'data-tutorial': tutorialId } : {})}
           className={`px-4 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150 rounded-t-lg border-b-2 cursor-pointer ${active === tab.value
             ? 'border-violet-600 text-violet-600 bg-violet-50 dark:bg-violet-950/30 dark:border-violet-400 dark:text-violet-400 font-semibold'
             : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-white/[0.04]'
             }`}>
           {tab.label}
         </button>
-      ))}
+      )})}
     </nav>
   </div>
 );
@@ -197,7 +207,7 @@ const TicketCard = ({ ticket, onClick, showOwner }) => {
 export default function HomePage() {
   const { account, tokenInfo } = useAuth();
   const router = useRouter();
-  const { isManager } = useManagerCheck();
+  const { isManager, loading: isManagerLoading } = useManagerCheck();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [activeTab, setActiveTab] = useState('my-ticket');
 
@@ -335,6 +345,7 @@ export default function HomePage() {
                 <Notification isDesktopFloating />
               </div>
               <button
+               data-tutorial="home-submit-btn"
                 onClick={() => router.push('/ticket?create=true')}
                 className="inline-flex items-center gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
               >
@@ -347,14 +358,14 @@ export default function HomePage() {
 
         <TabBar active={safeActiveTab} onChange={setActiveTab} tabs={tabs} />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div data-tutorial="home-stat-cards" className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <StatCard icon="/icons/myticket.svg" label="My Tickets" value={stats.total} dots={[{ color: 'green', label: `${stats.newCount} New` }, { color: 'blue', label: `${stats.inProgressCount} In Progress` }, { color: 'purple', label: `${stats.completedCount} Completed` }]} />
           <StatCard icon="/icons/completed.svg" label="New" value={stats.newCount} dots={[{ color: 'green', label: `${stats.newCount} New` }]} />
           <StatCard icon="/icons/inprogress.svg" label="In Progress" value={stats.inProgressCount} dots={[{ color: 'blue', label: 'Being worked on' }]} />
           <StatCard icon="/icons/completionrate.svg" label="Completion Rate" value={`${stats.completionRate}%`} dots={[{ color: 'purple', label: `${completionBreakdown.workCompletedCount} Work Completed` }, { color: 'green', label: `${completionBreakdown.completeCount} Complete` }]} />
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
+        <div data-tutorial="home-recent-tickets" className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 overflow-hidden">
           <div className="px-5 sm:px-6 py-4 sm:py-5 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 dark:from-purple-950/10 dark:to-indigo-950/10 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
             <div><h2 className="text-base sm:text-xl font-semibold text-gray-900 dark:text-white">Recent tickets</h2><p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5">Your latest 5 active tickets</p></div>
             <button
@@ -422,6 +433,13 @@ export default function HomePage() {
 
         </div>
       </footer>
+
+      <HomeTutorial
+        userId={userId}
+        isManager={isManager}
+        isAdmin={isAdmin || isSuperAdmin}
+        isManagerLoading={isManagerLoading}
+      />
     </div>
   );
 }

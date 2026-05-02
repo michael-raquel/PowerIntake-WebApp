@@ -1,14 +1,16 @@
-# [1.10.0](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.9.1...v1.10.0) (2026-04-27)
+# [1.10.0-dev.7](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.6...v1.10.0-dev.7) (2026-05-02)
 
 
 ### Bug Fixes
 
-* updated the profile pic in the auth context ([030ef28](https://github.com/michael-raquel/PowerIntake-WebApp/commit/030ef282590f8650f10349087583d7356d249738))
+* ST-no ticket number comment out the call now button on support call ([6c4f996](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6c4f9964c305c138627aa0c709d2e99d95c6eaa0))
+
+# [1.10.0-dev.6](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.5...v1.10.0-dev.6) (2026-05-02)
 
 
-### Features
+### Bug Fixes
 
-* ST-2140 click to call functionality ([6767821](https://github.com/michael-raquel/PowerIntake-WebApp/commit/6767821a1e261633bca9ca3138665338c2b69df5))
+* st-2270- First Time user tutorial guide ([87e6fed](https://github.com/michael-raquel/PowerIntake-WebApp/commit/87e6fed2f7c54472081b1eca9826533796857d42))
 
 # [1.10.0-dev.5](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.0-dev.4...v1.10.0-dev.5) (2026-04-27)
 

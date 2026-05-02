@@ -1,19 +1,23 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useMsal } from '@azure/msal-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppTheme } from '@/context/ThemeContext';
 import { useSpartaAssist } from '@/context/SpartaAssistContext';
 import { useFetchUserSettings } from '@/hooks/UseFetchUserSettings';
 import { useUpdateUserSettings } from '@/hooks/UseUpdateUserSettings';
+import useManagerCheck from '@/hooks/UseManagerCheck';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Settings } from 'lucide-react';
+import { ChevronDown, ExternalLink, Settings } from 'lucide-react';
 import { AssistSection, DarkModeSection } from '@/components/settings/ComCards';
+import { TUTORIAL_IDS, getScheduledTutorialIds, setTutorialScheduled } from '@/lib/tutorialSteps/userTutorial';
+import { Switch } from '@/components/ui/switch';
 
 export default function SettingsPage() {
   const { accounts } = useMsal();
-  const { account } = useAuth();
+  const { account, tokenInfo } = useAuth();
+  const { isManager } = useManagerCheck();
   const { isDarkMode, toggleTheme } = useAppTheme();
   const { updateSpartaAssist } = useSpartaAssist();
   const [localSettings, setLocalSettings] = useState({});
@@ -21,7 +25,12 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [loadingToggles, setLoadingToggles] = useState({});
   const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [tutorialsOpen, setTutorialsOpen] = useState(false);
+  const [scheduledTutorialIds, setScheduledTutorialIds] = useState([]);
 
+  const roles = tokenInfo?.account?.roles ?? [];
+  const isSuperAdmin = roles.includes('SuperAdmin');
+  const isAdmin = isSuperAdmin || roles.includes('Admin');
   const entrauserid = useMemo(() =>
     account?.localAccountId || accounts?.[0]?.localAccountId || '',
     [account?.localAccountId, accounts]
@@ -120,6 +129,56 @@ export default function SettingsPage() {
   const isReady = settingsLoaded && !loading && !error;
   const showLoading = loading || !settingsLoaded;
 
+  const tutorialOptions = useMemo(() => {
+    const base = [
+      {
+        id: TUTORIAL_IDS.HOME,
+        label: 'Home Page',
+        description: 'Get familiar with the dashboard, view your ticket statistics at a glance and quickly jump to your most recent active tickets.',
+        href: '/',
+      },
+      {
+        id: TUTORIAL_IDS.CREATE,
+        label: 'Create Ticket',
+        description: 'Learn how to submit a support request, enter your incident details, schedule a support call, and attach any relevant files before submitting.',
+        href: '/ticket?create=true',
+      },
+      {
+        id: TUTORIAL_IDS.TICKET_LIST,
+        label: 'Ticket List ',
+        description: 'Learn the ticket tab bar, the ticket list, and the sample row used to open the ticket details flow.',
+        href: '/ticket',
+      },
+      {
+        id: TUTORIAL_IDS.TICKET_OPENING,
+        label: 'Ticket Opening ',
+        description: 'Learn the full ticket details view, the panel rail, and the reactivate action.',
+        href: '/ticket',
+      },
+    ];
+
+    if (isManager || isAdmin) {
+      base.push({
+        id: TUTORIAL_IDS.MANAGE,
+        label: 'Manage Page',
+        description: 'Learn how to oversee your team\'s tickets, review company users, and monitor activity across your organization.',
+        href: '/manage',
+      });
+    }
+
+    return base;
+  }, [isManager, isAdmin]);
+
+  useEffect(() => {
+    setScheduledTutorialIds(getScheduledTutorialIds(entrauserid));
+  }, [entrauserid]);
+
+  const handleToggleTutorial = useCallback((tutorialId, value) => {
+    if (!tutorialId) return;
+    setTutorialScheduled(entrauserid, tutorialId, value);
+    setScheduledTutorialIds(getScheduledTutorialIds(entrauserid));
+  }, [entrauserid]);
+
   return (
     <div className="min-h-[100dvh] flex flex-col p-4 pb-0">
       <div className="flex flex-col gap-4 flex-1">
@@ -165,6 +224,52 @@ export default function SettingsPage() {
               loadingToggles={loadingToggles}
               isLoading={loading}
             />
+
+            <div className="rounded-lg border border-gray-200 dark:border-gray-800 p-4 sm:p-5">
+              <button
+                type="button"
+                onClick={() => setTutorialsOpen((prev) => !prev)}
+                className="w-full flex items-center justify-between text-left"
+              >
+                <div>
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+                    📖 Tutorials
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    These tutorials will help you get familiar with the key features of the application. You can revisit them at any time.
+                  </p>
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-500 transition-transform ${tutorialsOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {tutorialsOpen && (
+                <div className="mt-4 grid gap-2">
+                  {tutorialOptions.map((option) => (
+                    <div
+                      key={option.id}
+                      className="w-full rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/40 px-3 py-3 text-left transition-colors"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white">{option.label}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{option.description}</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs text-gray-600 dark:text-gray-300">{scheduledTutorialIds.includes(option.id) ? 'On' : 'Off'}</span>
+                          <Switch
+                            checked={scheduledTutorialIds.includes(option.id)}
+                            onCheckedChange={(v) => handleToggleTutorial(option.id, !!v)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <div className="flex justify-end">
               <Button
                 onClick={handleReset}

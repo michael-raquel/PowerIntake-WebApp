@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo, useCallback } from 'react';
 import { X, Plus, Upload, Clock, MapPin, Calendar as CalendarIcon, AlertCircle, FileText, RefreshCw, ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,9 @@ import useUploadImage from '@/hooks/UseUploadImage';
 import { useSpartaAssistOnce } from "@/hooks/UseSpartaAssist";
 import { useFetchUserSettings } from "@/hooks/UseFetchUserSettings";
 import powersuiteaiicon from '../settings/assets/powersuiteai.svg';
+import ComUserTutorial from '@/components/tutorial/ComUserTutorial';
+import { getCreateTutorialSteps, TUTORIAL_IDS } from '@/lib/tutorialSteps/userTutorial';
+import { useUpdateTutorial } from '@/hooks/UseUpdateTutorial';
 
 const LOCATIONS = ['Remote', 'Hybrid', 'Office'];
 const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
@@ -242,7 +245,12 @@ function UserInfoPanel({ profile, profileLoading }) {
   );
 }
 
-export default function ComCreateTicket({ onClose, onTicketCreated }) {
+export default function ComCreateTicket({
+  onClose,
+  onTicketCreated,
+  tutorialAutoStart = false,
+  onTutorialComplete = () => {},
+}) {
   const { account } = useAuth();
   const { profile, loading: profileLoading } = useFetchUserProfile(account?.localAccountId);
   const { uploadImage } = useUploadImage();
@@ -265,10 +273,32 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
 
   const { userSettings } = useFetchUserSettings({ entrauserid: account?.localAccountId });
   const powersuiteaiEnabled = userSettings?.[0]?.v_powersuiteai ?? false;
+  const createTutorialSteps = useMemo(() => getCreateTutorialSteps(), []);
+  const { updateTutorial } = useUpdateTutorial();
+
+  const exampleTitle = 'Example Ticket Create';
+  const exampleDescription = "Example Description: My AVD is not working";
+  const injectedFromTutorialRef = useRef(false);
+  const userEditedRef = useRef(false);
+
+  const handleLocalTutorialComplete = useCallback(() => {
+    const entrauserid = account?.localAccountId;
+    if (entrauserid) {
+      // best-effort persist to DB
+      updateTutorial({ entrauserid, tutorial_name: TUTORIAL_IDS.CREATE }).catch(() => {});
+    }
+    // notify parent
+    try {
+      onTutorialComplete?.();
+    } catch (err) {
+      // ignore
+    }
+  }, [account, onTutorialComplete, updateTutorial]);
 
   const handleInputChange = ({ target: { name, value } }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
     setErrors(prev => ({ ...prev, [name]: false }));
+    userEditedRef.current = true;
   };
 
   const processFiles = files => {
@@ -410,7 +440,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
 
-           <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
+           <div data-tutorial="create-title-desc" className="bg-white dark:bg-gray-900 rounded-lg border p-6">
               <div className="p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg flex gap-2 mb-4">
                 <AlertCircle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-800 dark:text-blue-300">Please review all details before submitting.</p>
@@ -576,7 +606,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
             </div>
 
             {/* Support Call Schedule */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
+            <div data-tutorial="create-support-call" className="bg-white dark:bg-gray-900 rounded-lg border p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h2 className="text-lg font-medium">Support Call Schedule</h2>
@@ -708,7 +738,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
             </div>
 
             {/* Attachments */}
-            <div className="bg-white dark:bg-gray-900 rounded-lg border p-6">
+            <div data-tutorial="create-attachments" className="bg-white dark:bg-gray-900 rounded-lg border p-6">
               <h2 className="text-lg font-medium mb-4">Attachments</h2>
               <div
                 onClick={() => !submitting && fileInputRef.current?.click()}
@@ -775,6 +805,7 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
                 </Button>
 
                 <Button
+                  data-tutorial="create-submit-btn"
                   onClick={handleSubmit}
                   disabled={isSubmitDisabled}
                   className="gap-1 sm:gap-2 shrink-0 bg-purple-600 hover:bg-purple-700 text-white px-2 sm:px-3 h-8 sm:h-10 rounded-md text-xs sm:text-sm font-medium transition-colors whitespace-nowrap"
@@ -791,19 +822,40 @@ export default function ComCreateTicket({ onClose, onTicketCreated }) {
             </div>
 
             {/* Mobile User Info */}
-            <div className="block lg:hidden bg-white dark:bg-gray-900 rounded-lg border p-6">
+            <div data-tutorial="create-user-info-mobile" className="block lg:hidden bg-white dark:bg-gray-900 rounded-lg border p-6">
               <h2 className="text-lg font-medium mb-4">User Information</h2>
               <UserInfoPanel profile={profile} profileLoading={profileLoading} />
             </div>
           </div>
 
           {/* Desktop User Info */}
-          <div className="hidden lg:block bg-white dark:bg-gray-900 rounded-lg border p-6 sticky top-6 h-fit">
+          <div data-tutorial="create-user-info" className="hidden lg:block bg-white dark:bg-gray-900 rounded-lg border p-6 sticky top-6 h-fit">
             <h2 className="text-lg font-medium mb-4">User Information</h2>
             <UserInfoPanel profile={profile} profileLoading={profileLoading} />
           </div>
         </div>
       </div>
+      <ComUserTutorial
+        steps={createTutorialSteps}
+        autoStart={tutorialAutoStart}
+        startDelay={1000}
+        onBeforeStart={() => {
+          // inject example text for the create tutorial
+          setFormData(prev => ({ ...prev, title: prev.title || exampleTitle, description: prev.description || exampleDescription }));
+          injectedFromTutorialRef.current = true;
+          userEditedRef.current = false;
+        }}
+        onComplete={() => {
+          // if the fields were injected and user did not edit them, clear them
+          if (injectedFromTutorialRef.current && !userEditedRef.current) {
+            setFormData(DEFAULT_FORM);
+            try { clearSuggestion?.(); } catch (e) {}
+          }
+          injectedFromTutorialRef.current = false;
+          userEditedRef.current = false;
+          handleLocalTutorialComplete();
+        }}
+      />
     </div>
   );
 }

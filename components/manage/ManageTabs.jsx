@@ -7,6 +7,7 @@ export default function ManageTabs({ tabs, activeTab, onTabChange }) {
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}
+            {...(tab.dataTutorial ? { "data-tutorial": tab.dataTutorial } : {})}
             className={`px-4 py-2.5 text-xs sm:text-sm font-medium transition-all duration-150 rounded-t-lg border-b-2 cursor-pointer ${
               activeTab === tab.id
                 ? "border-violet-600 text-violet-600 bg-violet-50 dark:bg-violet-950/30 dark:border-violet-400 dark:text-violet-400 font-semibold"
