@@ -136,14 +136,14 @@ export default function SupportRoute() {
                             Available 24/7, after regular business hours.
                           </p>
 
-                          <button
+                          {/* <button
                             type="button"
                             onClick={() => setCallOpen(true)}
                             className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-purple-600 hover:bg-purple-700 px-3 py-2 text-xs font-semibold text-white transition-all"
                           >
                             <PhoneCall className="h-3.5 w-3.5" />
                             Call Now
-                          </button>
+                          </button> */}
                         </div>
                       )
                     }
