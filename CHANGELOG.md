@@ -1,3 +1,10 @@
+## [1.10.2-dev.2](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.2-dev.1...v1.10.2-dev.2) (2026-05-02)
+
+
+### Bug Fixes
+
+* ST-ticket create web socket fix ([15cd797](https://github.com/michael-raquel/PowerIntake-WebApp/commit/15cd797c56f5a6de29982b3d0a91c4a9e8226dd0))
+
 ## [1.10.2-dev.1](https://github.com/michael-raquel/PowerIntake-WebApp/compare/v1.10.1...v1.10.2-dev.1) (2026-05-02)
 
 
