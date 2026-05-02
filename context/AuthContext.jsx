@@ -289,20 +289,20 @@ export function AuthProvider({ children }) {
         setUserInfo(data.user ?? null);
 
         // Socket join only runs on successful sync
-        // const entrauserid   = tokenInfo.account.localAccountId;
-        // const entratenantid = tokenInfo.account.tenantId;
+        const entrauserid   = tokenInfo.account.localAccountId;
+        const entratenantid = tokenInfo.account.tenantId;
 
-        // const joinRooms = () => {
-        //   socket.emit("join", entrauserid);
-        //   if (entratenantid) socket.emit("join", entratenantid);
-        // };
+        const joinRooms = () => {
+          socket.emit("join", entrauserid);
+          if (entratenantid) socket.emit("join", entratenantid);
+        };
 
-        // if (!socket.connected) {
-        //   socket.connect();
-        //   socket.once("connect", joinRooms);
-        // } else {
-        //   joinRooms();
-        // }
+        if (!socket.connected) {
+          socket.connect();
+          socket.once("connect", joinRooms);
+        } else {
+          joinRooms();
+        }
 
       } catch (err) {
         // console.error("[AUTH] syncUser error:", err);
